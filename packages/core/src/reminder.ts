@@ -21,6 +21,23 @@ export interface Reminder {
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+/** Whole days from `today` to `expiryDate` (negative once expired). Shared by both functions. */
+function daysUntil(expiryDate: Date, today: Date): number {
+  return Math.round((expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
+}
+
+export type ExpiryStatus = "Valid" | "ExpiringSoon" | "Expired";
+
+export function expiryStatus(
+  serviceRecord: ServiceRecord,
+  _window: number,
+  today: Date,
+): ExpiryStatus {
+  const days = daysUntil(serviceRecord.expiryDate, today);
+  if (days < 0) return "Expired";
+  throw new Error("expiryStatus: not implemented for non-expired records yet");
+}
+
 export function dueReminders(
   serviceRecords: ServiceRecord[],
   windows: ReminderWindows,
@@ -32,9 +49,7 @@ export function dueReminders(
     const windowDays = windows[record.serviceType];
     if (windowDays === undefined) continue;
 
-    const daysUntilExpiry = Math.round(
-      (record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY,
-    );
+    const daysUntilExpiry = daysUntil(record.expiryDate, today);
 
     if (daysUntilExpiry >= 0 && daysUntilExpiry <= windowDays) {
       reminders.push({
