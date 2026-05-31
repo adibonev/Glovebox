@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Glovebox",
+    "slug": "glovebox",
+    "scheme": "glovebox",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.glovebox.app"
+    },
+    "android": {
+      "package": "com.glovebox.app"
+    }
+  }
+}
