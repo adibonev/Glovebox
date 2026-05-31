@@ -20,8 +20,10 @@ const config: Config = {
         status: statusColors,
       },
       fontFamily: {
+        // Fraunces (Latin) for display/numerals. Hanken Grotesk has no Cyrillic, so
+        // Manrope covers Bulgarian body text. JetBrains Mono ships Cyrillic.
         display: [fonts.display, "serif"],
-        body: [fonts.body, "sans-serif"],
+        body: [fonts.body, "Manrope", "sans-serif"],
         mono: [fonts.mono, "monospace"],
       },
     },
