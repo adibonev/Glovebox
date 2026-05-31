@@ -3,11 +3,7 @@
  * First tracer bullet: return the Reminders due for a set of Service Records.
  */
 
-export interface ServiceRecord {
-  id: string;
-  serviceType: string;
-  expiryDate: Date;
-}
+import type { ServiceRecord } from "./domain";
 
 /** Reminder Window (days before Expiry Date) per Service Type. */
 export type ReminderWindows = Record<string, number>;

@@ -8,6 +8,7 @@ describe("dueReminders", () => {
     const serviceRecords = [
       {
         id: "go-2026",
+        vehicleId: "car-1",
         serviceType: "civil_liability",
         expiryDate: new Date("2026-06-15"),
       },
@@ -35,6 +36,7 @@ describe("dueReminders", () => {
     const serviceRecords = [
       {
         id: "go-2026",
+        vehicleId: "car-1",
         serviceType: "civil_liability",
         expiryDate: new Date("2026-07-31"),
       },
@@ -57,6 +59,7 @@ describe("dueReminders", () => {
     const serviceRecords = [
       {
         id: "go-2026",
+        vehicleId: "car-1",
         serviceType: "civil_liability",
         expiryDate: new Date("2026-05-22"),
       },
@@ -82,13 +85,13 @@ describe("dueReminders", () => {
 
     const serviceRecords = [
       // Civil Liability expiring in 14 days — within its 30-day Reminder Window → due.
-      { id: "go-due", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
+      { id: "go-due", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
       // Vignette expiring in 10 days — within its 14-day Reminder Window → due.
-      { id: "vignette-due", serviceType: "vignette", expiryDate: new Date("2026-06-11") },
+      { id: "vignette-due", vehicleId: "car-1", serviceType: "vignette", expiryDate: new Date("2026-06-11") },
       // Civil Liability expiring in 60 days — beyond its 30-day window → not due.
-      { id: "go-far", serviceType: "civil_liability", expiryDate: new Date("2026-07-31") },
+      { id: "go-far", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-07-31") },
       // Vignette expiring in 20 days — within 30 but beyond its own 14-day window → not due.
-      { id: "vignette-far", serviceType: "vignette", expiryDate: new Date("2026-06-21") },
+      { id: "vignette-far", vehicleId: "car-1", serviceType: "vignette", expiryDate: new Date("2026-06-21") },
     ];
 
     const due = dueReminders(serviceRecords, windows, today);
@@ -113,6 +116,7 @@ describe("dueReminders", () => {
     const serviceRecords = [
       {
         id: "go-2026",
+        vehicleId: "car-1",
         serviceType: "civil_liability",
         expiryDate: new Date("2026-06-15"),
       },
@@ -138,9 +142,9 @@ describe("dueReminders", () => {
 
     // Given out of order: 25 days, 5 days, 14 days until expiry.
     const serviceRecords = [
-      { id: "go-far", serviceType: "civil_liability", expiryDate: new Date("2026-06-26") },
-      { id: "go-soon", serviceType: "civil_liability", expiryDate: new Date("2026-06-06") },
-      { id: "go-mid", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
+      { id: "go-far", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-06-26") },
+      { id: "go-soon", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-06-06") },
+      { id: "go-mid", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
     ];
 
     const due = dueReminders(serviceRecords, windows, today);

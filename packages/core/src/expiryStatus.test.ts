@@ -6,6 +6,7 @@ describe("expiryStatus", () => {
   it("is Expired when the Expiry Date is in the past", () => {
     const serviceRecord = {
       id: "go-2026",
+      vehicleId: "car-1",
       serviceType: "civil_liability",
       expiryDate: new Date("2026-05-22"), // 10 days before today
     };
@@ -18,6 +19,7 @@ describe("expiryStatus", () => {
   it("is ExpiringSoon when the Expiry Date falls within the Reminder Window", () => {
     const serviceRecord = {
       id: "go-2026",
+      vehicleId: "car-1",
       serviceType: "civil_liability",
       expiryDate: new Date("2026-06-15"), // 14 days from today, window is 30
     };
@@ -30,6 +32,7 @@ describe("expiryStatus", () => {
   it("is Valid when the Expiry Date is before the Reminder Window", () => {
     const serviceRecord = {
       id: "go-2026",
+      vehicleId: "car-1",
       serviceType: "civil_liability",
       expiryDate: new Date("2026-07-31"), // 60 days from today, window is 30
     };
