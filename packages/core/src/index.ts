@@ -11,4 +11,6 @@ export * from "./domain";
 export * from "./reminder";
 export * from "./repository";
 export * from "./repository.in-memory";
+export * from "./repository.supabase";
 export * from "./use-cases";
+export type { Database } from "./database.types";
