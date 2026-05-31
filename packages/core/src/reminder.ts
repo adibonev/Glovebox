@@ -30,11 +30,12 @@ export type ExpiryStatus = "Valid" | "ExpiringSoon" | "Expired";
 
 export function expiryStatus(
   serviceRecord: ServiceRecord,
-  _window: number,
+  window: number,
   today: Date,
 ): ExpiryStatus {
   const days = daysUntil(serviceRecord.expiryDate, today);
   if (days < 0) return "Expired";
+  if (days <= window) return "ExpiringSoon";
   throw new Error("expiryStatus: not implemented for non-expired records yet");
 }
 

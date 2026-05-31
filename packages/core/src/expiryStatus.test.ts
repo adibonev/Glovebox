@@ -14,4 +14,16 @@ describe("expiryStatus", () => {
 
     expect(status).toBe("Expired");
   });
+
+  it("is ExpiringSoon when the Expiry Date falls within the Reminder Window", () => {
+    const serviceRecord = {
+      id: "go-2026",
+      serviceType: "civil_liability",
+      expiryDate: new Date("2026-06-15"), // 14 days from today, window is 30
+    };
+
+    const status = expiryStatus(serviceRecord, 30, new Date("2026-06-01"));
+
+    expect(status).toBe("ExpiringSoon");
+  });
 });
