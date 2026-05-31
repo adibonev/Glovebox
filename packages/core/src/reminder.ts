@@ -15,6 +15,8 @@ export type ReminderWindows = Record<string, number>;
 export interface Reminder {
   serviceRecordId: string;
   serviceType: string;
+  expiryDate: Date;
+  daysUntilExpiry: number;
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -38,9 +40,11 @@ export function dueReminders(
       reminders.push({
         serviceRecordId: record.id,
         serviceType: record.serviceType,
+        expiryDate: record.expiryDate,
+        daysUntilExpiry,
       });
     }
   }
 
-  return reminders;
+  return reminders.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
 }

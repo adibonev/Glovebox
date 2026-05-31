@@ -94,8 +94,57 @@ describe("dueReminders", () => {
     const due = dueReminders(serviceRecords, windows, today);
 
     expect(due).toEqual([
-      { serviceRecordId: "go-due", serviceType: "civil_liability" },
-      { serviceRecordId: "vignette-due", serviceType: "vignette" },
+      {
+        serviceRecordId: "vignette-due",
+        serviceType: "vignette",
+        expiryDate: new Date("2026-06-11"),
+        daysUntilExpiry: 10,
+      },
+      {
+        serviceRecordId: "go-due",
+        serviceType: "civil_liability",
+        expiryDate: new Date("2026-06-15"),
+        daysUntilExpiry: 14,
+      },
     ]);
+  });
+
+  it("includes the Expiry Date and days until expiry on each Reminder for the UI to display", () => {
+    const serviceRecords = [
+      {
+        id: "go-2026",
+        serviceType: "civil_liability",
+        expiryDate: new Date("2026-06-15"),
+      },
+    ];
+    const windows = { civil_liability: 30 };
+    const today = new Date("2026-06-01");
+
+    const due = dueReminders(serviceRecords, windows, today);
+
+    expect(due).toEqual([
+      {
+        serviceRecordId: "go-2026",
+        serviceType: "civil_liability",
+        expiryDate: new Date("2026-06-15"),
+        daysUntilExpiry: 14,
+      },
+    ]);
+  });
+
+  it("returns the Reminders sorted by soonest Expiry Date first", () => {
+    const windows = { civil_liability: 30 };
+    const today = new Date("2026-06-01");
+
+    // Given out of order: 25 days, 5 days, 14 days until expiry.
+    const serviceRecords = [
+      { id: "go-far", serviceType: "civil_liability", expiryDate: new Date("2026-06-26") },
+      { id: "go-soon", serviceType: "civil_liability", expiryDate: new Date("2026-06-06") },
+      { id: "go-mid", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
+    ];
+
+    const due = dueReminders(serviceRecords, windows, today);
+
+    expect(due.map((r) => r.daysUntilExpiry)).toEqual([5, 14, 25]);
   });
 });
