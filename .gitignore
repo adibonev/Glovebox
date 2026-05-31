@@ -17,10 +17,10 @@ next-env.d.ts
 npm-debug.log*
 pnpm-debug.log*
 
-# Env
+# Env — never commit real secrets. .env.example (committed) is the template.
 .env
-.env.local
-.env*.local
+.env.*
+!.env.example
 
 # OS / editor
 .DS_Store

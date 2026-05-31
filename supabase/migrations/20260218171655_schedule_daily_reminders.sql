@@ -1,0 +1,22 @@
+-- Scheduled daily reminders — NEUTRALIZED for the Glovebox rebuild (no-op).
+--
+-- The legacy job below cannot apply cleanly to a fresh database and is environment-
+-- specific:
+--   * needs the pg_cron + pg_net extensions (not enabled on a new project);
+--   * hardcodes the OLD production URL and a `check-reminders` Edge Function that does
+--     not exist in Glovebox;
+--   * relies on a GUC `app.service_role_key` that is not set here.
+--
+-- Reminders are being rebuilt as a pure core module plus a cron Edge Function (ADR-0007),
+-- so this operational cron is intentionally a no-op. A cron job is not part of the table
+-- schema, so parity with production's schema is preserved.
+--
+-- Original (for reference only — do NOT re-enable as-is):
+--   SELECT cron.schedule(
+--     'daily-reminders',
+--     '0 8 * * *',
+--     $$SELECT net.http_post(
+--       url := 'https://lytoaknjphiirxxyzohd.supabase.co/functions/v1/check-reminders',
+--       headers := '{"Authorization": "Bearer ' || current_setting('app.service_role_key', true) || '"}'::jsonb
+--     )$$
+--   );

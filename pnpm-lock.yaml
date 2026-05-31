@@ -17,6 +17,9 @@ importers:
       eslint:
         specifier: ^9.17.0
         version: 9.39.4(jiti@1.21.7)
+      supabase:
+        specifier: ^2.102.0
+        version: 2.102.0
       turbo:
         specifier: ^2.3.3
         version: 2.9.16
@@ -1384,6 +1387,50 @@ packages:
 
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
+
+  '@supabase/cli-darwin-arm64@2.102.0':
+    resolution: {integrity: sha512-DzQetP1iOnxAmbarZJLoFr3yMtyDrfOC/T2aNpYEASykFGnvCb87CbWMQhjp9zDdA0pFfDYgzM5yESg7cC/anw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@supabase/cli-darwin-x64@2.102.0':
+    resolution: {integrity: sha512-jJxyULNvgBuWxDrjVySwIB76IUlWOf5lYd/2Zz/Lrop8r1sr7aKJFULz7l1A1vk09ImbvnbkM9IBtH8rNdmBUg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@supabase/cli-linux-arm64-musl@2.102.0':
+    resolution: {integrity: sha512-VCEJiXK4JhDRXPR32UcIijKdsVT0zg81EoIt6ydmNDJ9vfPI+eFRIzJpeEST1XobTMAVzbJEBw/b/zq5BywR5w==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@supabase/cli-linux-arm64@2.102.0':
+    resolution: {integrity: sha512-vOEdz4mWoqSpygXliGysYsDobtTlZLMhC2KpDsoYio9vQuQPRgaK2kW4fIGPKfagR4Odv3PycgjoNfdsg7TYUQ==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@supabase/cli-linux-x64-musl@2.102.0':
+    resolution: {integrity: sha512-KFzdivlbk8rnMHebxFa//AlQE3uxCWF6ZNIWkYUjE+1EBVXJr/j2Mr1SxkJJyt9h/8jztBUUPJgzuRzIJW0GyA==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@supabase/cli-linux-x64@2.102.0':
+    resolution: {integrity: sha512-Jcekp6NOWlLuj8vs/ToR11bbqGWhlijs0rmMRyQvDRocWFgeDWX5IBWZwCXZX2xxr7pICJaSdRZx6V8uW2XVEQ==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@supabase/cli-windows-arm64@2.102.0':
+    resolution: {integrity: sha512-yY3qbHhMtQFI2TBXbU611UI7b0TaShxGwbunMUwmTUyaCLDTSsxOjxwbpCyfvgY7eDEeYI0WnkbBKHKxknKVDQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@supabase/cli-windows-x64@2.102.0':
+    resolution: {integrity: sha512-PpIBXxGRi3bk0Zj2JeDCsr2edDt2qd5j31aaixuxHSsPJh0A052kDEDw4jSOWFHBL1UEai6rGF7zWuX/F3gNiw==}
+    cpu: [x64]
+    os: [win32]
 
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
@@ -3448,6 +3495,10 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
+  supabase@2.102.0:
+    resolution: {integrity: sha512-PMoWgoQOb1/mZ3Y+e/HIIvWmEfui20cWELXYURrb6s66Swvo1jnkBmRvtCtSA8lan+aHtkgVQAyekocugle2eg==}
+    hasBin: true
+
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
     engines: {node: '>=4'}
@@ -5329,6 +5380,30 @@ snapshots:
   '@sinonjs/fake-timers@10.3.0':
     dependencies:
       '@sinonjs/commons': 3.0.1
+
+  '@supabase/cli-darwin-arm64@2.102.0':
+    optional: true
+
+  '@supabase/cli-darwin-x64@2.102.0':
+    optional: true
+
+  '@supabase/cli-linux-arm64-musl@2.102.0':
+    optional: true
+
+  '@supabase/cli-linux-arm64@2.102.0':
+    optional: true
+
+  '@supabase/cli-linux-x64-musl@2.102.0':
+    optional: true
+
+  '@supabase/cli-linux-x64@2.102.0':
+    optional: true
+
+  '@supabase/cli-windows-arm64@2.102.0':
+    optional: true
+
+  '@supabase/cli-windows-x64@2.102.0':
+    optional: true
 
   '@swc/helpers@0.5.15':
     dependencies:
@@ -7610,6 +7685,17 @@ snapshots:
       pirates: 4.0.7
       tinyglobby: 0.2.17
       ts-interface-checker: 0.1.13
+
+  supabase@2.102.0:
+    optionalDependencies:
+      '@supabase/cli-darwin-arm64': 2.102.0
+      '@supabase/cli-darwin-x64': 2.102.0
+      '@supabase/cli-linux-arm64': 2.102.0
+      '@supabase/cli-linux-arm64-musl': 2.102.0
+      '@supabase/cli-linux-x64': 2.102.0
+      '@supabase/cli-linux-x64-musl': 2.102.0
+      '@supabase/cli-windows-arm64': 2.102.0
+      '@supabase/cli-windows-x64': 2.102.0
 
   supports-color@5.5.0:
     dependencies:
