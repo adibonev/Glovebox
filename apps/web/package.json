@@ -11,6 +11,8 @@
   "dependencies": {
     "@glovebox/core": "workspace:*",
     "@glovebox/ui": "workspace:*",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
     "framer-motion": "^12.40.0",
     "next": "^15.1.3",
     "react": "19.0.0",

@@ -1,4 +1,8 @@
+import { redirect } from "next/navigation";
+
 import { dueReminders, expiryStatus } from "@glovebox/core";
+
+import { createClient } from "@/lib/supabase/server";
 
 import { ExpiryGauge } from "./_components/ExpiryGauge";
 import { ServiceList } from "./_components/ServiceList";
@@ -15,13 +19,21 @@ import {
   sampleWindows,
   today,
 } from "./_lib/sampleVehicle";
+import { signOut } from "./login/actions";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const daysUntil = (date: Date) =>
   Math.round((date.getTime() - today.getTime()) / MS_PER_DAY);
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
   // Expiry Status per Service Record (core), sorted by urgency: overdue/soonest first.
+  // TODO: swap sampleServiceRecords for the signed-in user's records via the repository.
   const items = sampleServiceRecords
     .map((record) => {
       const status = expiryStatus(
@@ -54,16 +66,26 @@ export default function DashboardPage() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-12 px-6 py-16 sm:py-20">
-        <header className="flex flex-col gap-2">
-          <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-copper">
-            Табло на колата
-          </p>
-          <h1 className="font-display text-5xl leading-none text-ivory sm:text-6xl">
-            {sampleVehicle.name}
-          </h1>
-          <p className="font-mono text-sm tracking-wide text-silver/70">
-            {sampleVehicle.plate} · {sampleVehicle.year}
-          </p>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-copper">
+              Табло на колата
+            </p>
+            <h1 className="font-display text-5xl leading-none text-ivory sm:text-6xl">
+              {sampleVehicle.name}
+            </h1>
+            <p className="font-mono text-sm tracking-wide text-silver/70">
+              {sampleVehicle.plate} · {sampleVehicle.year}
+            </p>
+          </div>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="font-mono text-[11px] uppercase tracking-wider text-silver/50 transition hover:text-copper"
+            >
+              Изход
+            </button>
+          </form>
         </header>
 
         {urgent && (
