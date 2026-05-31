@@ -22,6 +22,13 @@ export async function authenticate(
   const supabase = await createClient();
 
   if (intent === "signup") {
+    const confirm = String(formData.get("confirm") ?? "");
+    if (password.length < 6) {
+      return { error: "Паролата трябва да е поне 6 знака." };
+    }
+    if (password !== confirm) {
+      return { error: "Паролите не съвпадат." };
+    }
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
     if (!data.session) {
