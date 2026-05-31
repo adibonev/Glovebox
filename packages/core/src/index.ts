@@ -11,3 +11,4 @@ export * from "./domain";
 export * from "./reminder";
 export * from "./repository";
 export * from "./repository.in-memory";
+export * from "./use-cases";
