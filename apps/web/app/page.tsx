@@ -1,62 +1,15 @@
 import { redirect } from "next/navigation";
 
-import { dueReminders, expiryStatus } from "@glovebox/core";
-
-import { createClient } from "@/lib/supabase/server";
-
 import { ExpiryGauge } from "./_components/ExpiryGauge";
 import { ServiceList } from "./_components/ServiceList";
-import {
-  SERVICE_TYPE_LABELS,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  formatDate,
-  formatDaysRemaining,
-} from "./_lib/labels";
-import {
-  sampleServiceRecords,
-  sampleVehicle,
-  sampleWindows,
-  today,
-} from "./_lib/sampleVehicle";
+import { getDashboardData } from "./_lib/dashboard";
 import { signOut } from "./login/actions";
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-const daysUntil = (date: Date) =>
-  Math.round((date.getTime() - today.getTime()) / MS_PER_DAY);
-
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const data = await getDashboardData();
+  if (!data) redirect("/login");
 
-  // Expiry Status per Service Record (core), sorted by urgency: overdue/soonest first.
-  // TODO: swap sampleServiceRecords for the signed-in user's records via the repository.
-  const items = sampleServiceRecords
-    .map((record) => {
-      const status = expiryStatus(
-        record,
-        sampleWindows[record.serviceType] ?? 30,
-        today,
-      );
-      const days = daysUntil(record.expiryDate);
-      return {
-        id: record.id,
-        typeLabel: SERVICE_TYPE_LABELS[record.serviceType] ?? record.serviceType,
-        statusLabel: STATUS_LABELS[status],
-        color: STATUS_COLORS[status],
-        daysText: formatDaysRemaining(days),
-        days,
-      };
-    })
-    .sort((a, b) => a.days - b.days);
-
-  // Most urgent upcoming obligation → the gauge (first of the sorted dueReminders).
-  const due = dueReminders(sampleServiceRecords, sampleWindows, today);
-  const urgent = due[0];
-  const urgentWindow = urgent ? sampleWindows[urgent.serviceType] ?? 30 : 30;
+  const { vehicle, urgent, items } = data;
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -72,11 +25,13 @@ export default async function DashboardPage() {
               Табло на колата
             </p>
             <h1 className="font-display text-5xl leading-none text-ivory sm:text-6xl">
-              {sampleVehicle.name}
+              {vehicle?.name ?? "Моята кола"}
             </h1>
-            <p className="font-mono text-sm tracking-wide text-silver/70">
-              {sampleVehicle.plate} · {sampleVehicle.year}
-            </p>
+            {vehicle && (
+              <p className="font-mono text-sm tracking-wide text-silver/70">
+                {[vehicle.plate, vehicle.year].filter(Boolean).join(" · ")}
+              </p>
+            )}
           </div>
           <form action={signOut}>
             <button
@@ -90,21 +45,13 @@ export default async function DashboardPage() {
 
         {urgent && (
           <section className="flex flex-col items-center gap-6">
-            <ExpiryGauge
-              days={urgent.daysUntilExpiry}
-              fraction={urgent.daysUntilExpiry / urgentWindow}
-              color={STATUS_COLORS.ExpiringSoon}
-            />
+            <ExpiryGauge days={urgent.days} fraction={urgent.fraction} color={urgent.color} />
             <div className="text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-silver/55">
                 Най-скоро изтича
               </p>
-              <p className="mt-1.5 font-body text-lg text-ivory">
-                {SERVICE_TYPE_LABELS[urgent.serviceType] ?? urgent.serviceType}
-              </p>
-              <p className="font-mono text-sm text-silver/70">
-                {formatDate(urgent.expiryDate)}
-              </p>
+              <p className="mt-1.5 font-body text-lg text-ivory">{urgent.typeLabel}</p>
+              <p className="font-mono text-sm text-silver/70">{urgent.dateLabel}</p>
             </div>
           </section>
         )}
@@ -113,7 +60,13 @@ export default async function DashboardPage() {
           <h2 className="font-mono text-[11px] uppercase tracking-[0.3em] text-silver/45">
             Услуги и срокове
           </h2>
-          <ServiceList items={items} />
+          {items.length > 0 ? (
+            <ServiceList items={items} />
+          ) : (
+            <p className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-6 text-center font-body text-silver/60 backdrop-blur-md">
+              Нямаш добавени услуги още.
+            </p>
+          )}
         </section>
       </div>
     </main>
