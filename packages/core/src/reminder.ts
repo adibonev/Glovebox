@@ -34,7 +34,7 @@ export function dueReminders(
       (record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY,
     );
 
-    if (daysUntilExpiry <= windowDays) {
+    if (daysUntilExpiry >= 0 && daysUntilExpiry <= windowDays) {
       reminders.push({
         serviceRecordId: record.id,
         serviceType: record.serviceType,

@@ -29,4 +29,73 @@ describe("dueReminders", () => {
       serviceType: "civil_liability",
     });
   });
+
+  it("returns an empty array for a Service Record whose Expiry Date is outside its Service Type's Reminder Window", () => {
+    // A Civil Liability Insurance Service Record expiring 60 days out.
+    const serviceRecords = [
+      {
+        id: "go-2026",
+        serviceType: "civil_liability",
+        expiryDate: new Date("2026-07-31"),
+      },
+    ];
+
+    // Reminder Window of 30 days — the Expiry Date (60 days away) is beyond it.
+    const windows = {
+      civil_liability: 30,
+    };
+
+    const today = new Date("2026-06-01");
+
+    const due = dueReminders(serviceRecords, windows, today);
+
+    expect(due).toEqual([]);
+  });
+
+  it("returns an empty array for an already-Expired Service Record", () => {
+    // A Civil Liability Insurance Service Record whose Expiry Date is 10 days in the past.
+    const serviceRecords = [
+      {
+        id: "go-2026",
+        serviceType: "civil_liability",
+        expiryDate: new Date("2026-05-22"),
+      },
+    ];
+
+    const windows = {
+      civil_liability: 30,
+    };
+
+    const today = new Date("2026-06-01");
+
+    const due = dueReminders(serviceRecords, windows, today);
+
+    expect(due).toEqual([]);
+  });
+
+  it("returns exactly the due Reminders across multiple Service Types, each honoring its own Reminder Window", () => {
+    const windows = {
+      civil_liability: 30,
+      vignette: 14,
+    };
+    const today = new Date("2026-06-01");
+
+    const serviceRecords = [
+      // Civil Liability expiring in 14 days — within its 30-day Reminder Window → due.
+      { id: "go-due", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
+      // Vignette expiring in 10 days — within its 14-day Reminder Window → due.
+      { id: "vignette-due", serviceType: "vignette", expiryDate: new Date("2026-06-11") },
+      // Civil Liability expiring in 60 days — beyond its 30-day window → not due.
+      { id: "go-far", serviceType: "civil_liability", expiryDate: new Date("2026-07-31") },
+      // Vignette expiring in 20 days — within 30 but beyond its own 14-day window → not due.
+      { id: "vignette-far", serviceType: "vignette", expiryDate: new Date("2026-06-21") },
+    ];
+
+    const due = dueReminders(serviceRecords, windows, today);
+
+    expect(due).toEqual([
+      { serviceRecordId: "go-due", serviceType: "civil_liability" },
+      { serviceRecordId: "vignette-due", serviceType: "vignette" },
+    ]);
+  });
 });
