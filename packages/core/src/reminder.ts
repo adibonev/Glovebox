@@ -36,7 +36,7 @@ export function expiryStatus(
   const days = daysUntil(serviceRecord.expiryDate, today);
   if (days < 0) return "Expired";
   if (days <= window) return "ExpiringSoon";
-  throw new Error("expiryStatus: not implemented for non-expired records yet");
+  return "Valid";
 }
 
 export function dueReminders(
@@ -50,16 +50,15 @@ export function dueReminders(
     const windowDays = windows[record.serviceType];
     if (windowDays === undefined) continue;
 
-    const daysUntilExpiry = daysUntil(record.expiryDate, today);
+    // A Service Record is due exactly when its Expiry Status is ExpiringSoon.
+    if (expiryStatus(record, windowDays, today) !== "ExpiringSoon") continue;
 
-    if (daysUntilExpiry >= 0 && daysUntilExpiry <= windowDays) {
-      reminders.push({
-        serviceRecordId: record.id,
-        serviceType: record.serviceType,
-        expiryDate: record.expiryDate,
-        daysUntilExpiry,
-      });
-    }
+    reminders.push({
+      serviceRecordId: record.id,
+      serviceType: record.serviceType,
+      expiryDate: record.expiryDate,
+      daysUntilExpiry: daysUntil(record.expiryDate, today),
+    });
   }
 
   return reminders.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);

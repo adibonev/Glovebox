@@ -26,4 +26,16 @@ describe("expiryStatus", () => {
 
     expect(status).toBe("ExpiringSoon");
   });
+
+  it("is Valid when the Expiry Date is before the Reminder Window", () => {
+    const serviceRecord = {
+      id: "go-2026",
+      serviceType: "civil_liability",
+      expiryDate: new Date("2026-07-31"), // 60 days from today, window is 30
+    };
+
+    const status = expiryStatus(serviceRecord, 30, new Date("2026-06-01"));
+
+    expect(status).toBe("Valid");
+  });
 });
