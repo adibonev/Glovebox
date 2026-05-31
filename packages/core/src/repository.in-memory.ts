@@ -1,5 +1,9 @@
-import type { ServiceRecord, Vehicle } from "./domain";
-import type { ServiceRecordRepository, VehicleRepository } from "./repository";
+import type { ServiceRecord, User, Vehicle } from "./domain";
+import type {
+  ServiceRecordRepository,
+  UserRepository,
+  VehicleRepository,
+} from "./repository";
 
 /** In-memory VehicleRepository for tests (a real seam alongside the Supabase adapter). */
 export class InMemoryVehicleRepository implements VehicleRepository {
@@ -30,5 +34,24 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
     return this.serviceRecords.filter((record) =>
       ownedVehicleIds.has(record.vehicleId),
     );
+  }
+}
+
+/** In-memory UserRepository for tests. */
+export class InMemoryUserRepository implements UserRepository {
+  constructor(private readonly users: User[] = []) {}
+
+  async findByAuthId(authUserId: string): Promise<User | null> {
+    return this.users.find((user) => user.authUserId === authUserId) ?? null;
+  }
+
+  async create(input: { authUserId: string; email: string }): Promise<User> {
+    const user: User = {
+      id: String(this.users.length + 1),
+      authUserId: input.authUserId,
+      email: input.email,
+    };
+    this.users.push(user);
+    return user;
   }
 }

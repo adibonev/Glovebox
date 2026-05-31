@@ -1,8 +1,12 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "./database.types";
-import type { ServiceRecord, Vehicle } from "./domain";
-import type { ServiceRecordRepository, VehicleRepository } from "./repository";
+import type { ServiceRecord, User, Vehicle } from "./domain";
+import type {
+  ServiceRecordRepository,
+  UserRepository,
+  VehicleRepository,
+} from "./repository";
 
 /**
  * Supabase adapters for the repository seam (ARCHITECTURE.md). They implement the
@@ -86,5 +90,32 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
       .eq("car_id", Number(vehicleId))
       .not("expiry_date", "is", null);
     return rowsOrThrow(result, "services.listByVehicle").map(serviceRecordFromRow);
+  }
+}
+
+export class SupabaseUserRepository implements UserRepository {
+  constructor(private readonly client: SupabaseClient<Database>) {}
+
+  async findByAuthId(authUserId: string): Promise<User | null> {
+    const { data, error } = await this.client
+      .from("users")
+      .select("id, email")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+    if (error) {
+      throw new Error(`Supabase users.findByAuthId failed: ${error.message}`);
+    }
+    if (!data) return null;
+    return { id: String(data.id), authUserId, email: data.email };
+  }
+
+  async create(input: { authUserId: string; email: string }): Promise<User> {
+    const { data, error } = await this.client
+      .from("users")
+      .insert({ auth_user_id: input.authUserId, email: input.email })
+      .select("id")
+      .single();
+    if (error) throw new Error(`Supabase users.create failed: ${error.message}`);
+    return { id: String(data.id), authUserId: input.authUserId, email: input.email };
   }
 }

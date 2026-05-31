@@ -25,3 +25,11 @@ export interface ServiceRecord {
   serviceType: string;
   expiryDate: Date;
 }
+
+/** The authenticated person who owns Vehicles; bridges the Supabase Auth Identity. */
+export interface User {
+  id: string;
+  /** The Supabase auth identity id (`auth.users.id` = `users.auth_user_id`). */
+  authUserId: string;
+  email: string;
+}

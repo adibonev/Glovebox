@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ServiceRecord, Vehicle } from "./domain";
 import {
   InMemoryServiceRecordRepository,
+  InMemoryUserRepository,
   InMemoryVehicleRepository,
 } from "./repository.in-memory";
 
@@ -43,5 +44,17 @@ describe("InMemoryServiceRecordRepository", () => {
     const records = await repo.listByUser("user-1");
 
     expect(records.map((r) => r.id)).toEqual(["rec-1"]);
+  });
+});
+
+describe("InMemoryUserRepository", () => {
+  it("creates a User and finds it by Auth Identity", async () => {
+    const repo = new InMemoryUserRepository();
+
+    expect(await repo.findByAuthId("auth-1")).toBeNull();
+
+    const created = await repo.create({ authUserId: "auth-1", email: "a@b.bg" });
+    expect(created).toMatchObject({ authUserId: "auth-1", email: "a@b.bg" });
+    expect(await repo.findByAuthId("auth-1")).toEqual(created);
   });
 });

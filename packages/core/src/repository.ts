@@ -1,4 +1,4 @@
-import type { ServiceRecord, Vehicle } from "./domain";
+import type { ServiceRecord, User, Vehicle } from "./domain";
 
 /**
  * Read access to Vehicles (a seam, ARCHITECTURE.md). The production adapter is
@@ -15,4 +15,13 @@ export interface VehicleRepository {
 export interface ServiceRecordRepository {
   listByUser(userId: string): Promise<ServiceRecord[]>;
   listByVehicle(vehicleId: string): Promise<ServiceRecord[]>;
+}
+
+/**
+ * Resolves a Supabase Auth Identity to the app's User and provisions the profile
+ * row on first sign-in (the `cars.user_id` foreign key points at `users.id`).
+ */
+export interface UserRepository {
+  findByAuthId(authUserId: string): Promise<User | null>;
+  create(input: { authUserId: string; email: string }): Promise<User>;
 }
