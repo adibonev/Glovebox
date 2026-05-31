@@ -10,6 +10,7 @@ export default tseslint.config(
       "**/.next/**",
       "**/.expo/**",
       "**/.turbo/**",
+      "**/next-env.d.ts",
     ],
   },
   {
