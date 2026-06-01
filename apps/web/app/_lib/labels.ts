@@ -46,3 +46,14 @@ const dateFormatter = new Intl.DateTimeFormat("bg-BG", {
 export function formatDate(date: Date): string {
   return dateFormatter.format(date);
 }
+
+/** A small icon per Service Type for the picker cards. */
+export const SERVICE_TYPE_ICONS: Record<string, string> = {
+  civil_liability: "🛡️",
+  casco: "💎",
+  vignette: "🛣️",
+  inspection: "🔧",
+  tax: "💰",
+  fire_extinguisher: "🧯",
+  maintenance: "🛢️",
+};

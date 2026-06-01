@@ -52,6 +52,7 @@ export async function addService(formData: FormData): Promise<void> {
   const vehicleId = Number(formData.get("vehicleId"));
   const serviceType = String(formData.get("serviceType") ?? "");
   const expiryDate = String(formData.get("expiryDate") ?? "");
+  const notes = String(formData.get("notes") ?? "").trim();
   if (!vehicleId || !serviceType || !expiryDate) return;
 
   await supabase.from("services").insert({
@@ -59,8 +60,10 @@ export async function addService(formData: FormData): Promise<void> {
     user_id: userId,
     service_type: serviceType,
     expiry_date: expiryDate,
+    notes: notes || null,
   });
   revalidatePath("/");
+  redirect("/");
 }
 
 export async function deleteService(formData: FormData): Promise<void> {

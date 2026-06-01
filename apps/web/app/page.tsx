@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AddServiceForm } from "./_components/AddServiceForm";
 import { AddVehicleForm } from "./_components/AddVehicleForm";
 import { ExpiryGauge } from "./_components/ExpiryGauge";
 import { ServiceList } from "./_components/ServiceList";
@@ -73,7 +73,12 @@ export default async function DashboardPage() {
                   Нямаш добавени услуги още.
                 </p>
               )}
-              <AddServiceForm vehicleId={vehicle.id} />
+              <Link
+                href="/add-service"
+                className="self-start rounded-xl border border-copper/40 px-4 py-2.5 font-body text-sm text-copper transition hover:bg-copper/10"
+              >
+                + Добави услуга
+              </Link>
             </section>
           </>
         )}
