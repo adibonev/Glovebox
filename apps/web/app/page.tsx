@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { AddServiceForm } from "./_components/AddServiceForm";
+import { AddVehicleForm } from "./_components/AddVehicleForm";
 import { ExpiryGauge } from "./_components/ExpiryGauge";
 import { ServiceList } from "./_components/ServiceList";
 import { getDashboardData } from "./_lib/dashboard";
@@ -43,31 +45,38 @@ export default async function DashboardPage() {
           </form>
         </header>
 
-        {urgent && (
-          <section className="flex flex-col items-center gap-6">
-            <ExpiryGauge days={urgent.days} fraction={urgent.fraction} color={urgent.color} />
-            <div className="text-center">
-              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-silver/55">
-                Най-скоро изтича
-              </p>
-              <p className="mt-1.5 font-body text-lg text-ivory">{urgent.typeLabel}</p>
-              <p className="font-mono text-sm text-silver/70">{urgent.dateLabel}</p>
-            </div>
-          </section>
-        )}
+        {!vehicle ? (
+          <AddVehicleForm />
+        ) : (
+          <>
+            {urgent && (
+              <section className="flex flex-col items-center gap-6">
+                <ExpiryGauge days={urgent.days} fraction={urgent.fraction} color={urgent.color} />
+                <div className="text-center">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-silver/55">
+                    Най-скоро изтича
+                  </p>
+                  <p className="mt-1.5 font-body text-lg text-ivory">{urgent.typeLabel}</p>
+                  <p className="font-mono text-sm text-silver/70">{urgent.dateLabel}</p>
+                </div>
+              </section>
+            )}
 
-        <section className="flex flex-col gap-4">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.3em] text-silver/45">
-            Услуги и срокове
-          </h2>
-          {items.length > 0 ? (
-            <ServiceList items={items} />
-          ) : (
-            <p className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-6 text-center font-body text-silver/60 backdrop-blur-md">
-              Нямаш добавени услуги още.
-            </p>
-          )}
-        </section>
+            <section className="flex flex-col gap-4">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.3em] text-silver/45">
+                Услуги и срокове
+              </h2>
+              {items.length > 0 ? (
+                <ServiceList items={items} />
+              ) : (
+                <p className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-6 text-center font-body text-silver/60 backdrop-blur-md">
+                  Нямаш добавени услуги още.
+                </p>
+              )}
+              <AddServiceForm vehicleId={vehicle.id} />
+            </section>
+          </>
+        )}
       </div>
     </main>
   );
