@@ -38,7 +38,7 @@ export function VehicleCard({ bodyType, alt }: { bodyType: BodyType; alt: string
         <VehiclePlaceholder />
       ) : (
         <img
-          src={`/cars/${bodyType}.png`}
+          src={`/cars/${bodyType}.webp`}
           alt={alt}
           draggable={false}
           onError={() => setFailed(true)}

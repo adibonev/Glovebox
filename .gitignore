@@ -25,3 +25,6 @@ pnpm-debug.log*
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Car silhouette review artifacts (polish-cars.py writes _preview/_chk previews)
+apps/web/public/cars/_*.png

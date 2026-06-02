@@ -49,15 +49,22 @@ def polish(src: Path, dst: Path, max_w: int) -> Image.Image:
     rgb = np.where(partial[..., None], recovered, rgb)
 
     value = rgb.max(axis=2)
+    sat = value - rgb.min(axis=2)
+    rows = np.arange(h)[:, None]
 
-    # 2) Drop the baked ground shadow: find the lowest tyre-contact pixel (dark + solid)
-    #    and clear everything below it. The ground is flat, so a single cut line is clean.
-    dark = (a > 0.6) & (value < 85.0)
-    dark_ys = np.where(dark)[0]
-    if dark_ys.size:
-        ground = int(np.quantile(dark_ys, 0.9995))
-        rows = np.arange(h)[:, None]
-        a = np.where(rows > ground, 0.0, a)
+    # 2) Drop the baked ground shadow. The ground is flat, so the cut is one horizontal line.
+    #    Find the lowest solid-black tyre pixel, then cut a few px ABOVE it: that also removes
+    #    the dark contact-shadow core (which is the same near-black as a tyre and can't be told
+    #    apart by colour), at the cost of an invisible ~5px flat on the very bottom of the tyres.
+    tyre_ys = np.where((a > 0.85) & (value < 60.0))[0]
+    if tyre_ys.size:
+        cut_y = int(np.quantile(tyre_ys, 0.999)) - 5
+        a = np.where(rows > cut_y, 0.0, a)
+        # Above the cut, wipe the lighter grey penumbra wisps without touching the black tyres
+        # (value<60, kept) or the bright-white body (value>215, kept).
+        band = (rows <= cut_y) & (rows > cut_y - 22)
+        greyish = (sat < 30.0) & (value >= 80.0) & (value <= 215.0)
+        a = np.where(band & greyish, 0.0, a)
 
     out = np.dstack([rgb, a * 255.0]).astype(np.uint8)
     img = Image.fromarray(out, "RGBA")
@@ -77,7 +84,7 @@ def polish(src: Path, dst: Path, max_w: int) -> Image.Image:
         img = img.resize((max_w, new_h), Image.LANCZOS)
 
     dst.parent.mkdir(parents=True, exist_ok=True)
-    img.save(dst, optimize=True)
+    img.save(dst, "WEBP", quality=88, method=6)  # alpha-aware, ~1/4 the size of PNG at equal quality
     kb = dst.stat().st_size // 1024
     print(f"  {src.name:14s} -> public/cars/{dst.name:14s} {img.size[0]}x{img.size[1]}  {kb} KB")
     return img
@@ -113,7 +120,10 @@ def main() -> int:
         if src is None:
             print(f"  {name:14s} -- missing in raw/, skipped")
             continue
-        cars[name] = polish(src, CARS / f"{name}.png", max_w)
+        cars[name] = polish(src, CARS / f"{name}.webp", max_w)
+        stale_png = CARS / f"{name}.png"  # retire the old PNG output, if any
+        if stale_png.exists():
+            stale_png.unlink()
 
     if cars:
         build_preview(cars)
