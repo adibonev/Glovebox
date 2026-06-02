@@ -13,11 +13,33 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   maintenance: "Поддръжка",
 };
 
+/** Short mono code chips per Service Type. */
+export const SERVICE_TYPE_CODES: Record<string, string> = {
+  civil_liability: "ГО",
+  casco: "КС",
+  vignette: "ВН",
+  inspection: "ТП",
+  tax: "ДН",
+  fire_extinguisher: "ПГ",
+  maintenance: "ПД",
+};
+
+/** A small icon per Service Type for the picker cards. */
+export const SERVICE_TYPE_ICONS: Record<string, string> = {
+  civil_liability: "🛡️",
+  casco: "💎",
+  vignette: "🛣️",
+  inspection: "🔧",
+  tax: "💰",
+  fire_extinguisher: "🧯",
+  maintenance: "🛢️",
+};
+
 /** Bulgarian labels for the Expiry Status. */
 export const STATUS_LABELS: Record<ExpiryStatus, string> = {
-  Valid: "Валидно",
+  Valid: "В сила",
   ExpiringSoon: "Изтича",
-  Expired: "Изтекло",
+  Expired: "Изтекъл",
 };
 
 /** Functional status colors from the shared design tokens. */
@@ -37,23 +59,18 @@ export function formatDaysRemaining(daysUntil: number): string {
   return overdue === 1 ? "изтекло преди 1 ден" : `изтекло преди ${overdue} дни`;
 }
 
-const dateFormatter = new Intl.DateTimeFormat("bg-BG", {
+const longDateFormatter = new Intl.DateTimeFormat("bg-BG", {
   day: "numeric",
   month: "long",
   year: "numeric",
 });
 
 export function formatDate(date: Date): string {
-  return dateFormatter.format(date);
+  return longDateFormatter.format(date);
 }
 
-/** A small icon per Service Type for the picker cards. */
-export const SERVICE_TYPE_ICONS: Record<string, string> = {
-  civil_liability: "🛡️",
-  casco: "💎",
-  vignette: "🛣️",
-  inspection: "🔧",
-  tax: "💰",
-  fire_extinguisher: "🧯",
-  maintenance: "🛢️",
-};
+/** Compact "dd.mm.yyyy" for the service rows. */
+export function formatDateShort(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+}

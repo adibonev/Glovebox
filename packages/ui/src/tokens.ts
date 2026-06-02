@@ -4,13 +4,19 @@
  * later, mobile (NativeWind). Keep hex/font values here, never hard-coded in apps.
  */
 
-/** Brand palette. */
+/** Brand palette + the dark "scene" surfaces it sits on. */
 export const colors = {
   ink: "#07100C",
+  ink2: "#0A140F",
+  panel: "#0C1813",
+  panel2: "#0E1A14",
+  glow: "#102017",
   emerald: "#14503A",
   copper: "#C4954C",
   silver: "#CFD2CB",
   ivory: "#F4F1EA",
+  muted: "#9AA79C",
+  dim: "#69736A",
 } as const;
 
 /** Functional Expiry Status colors (separate from the brand palette). */
