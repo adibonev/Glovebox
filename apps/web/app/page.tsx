@@ -14,9 +14,9 @@ import { getDashboardData } from "./_lib/dashboard";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string }>;
+  searchParams: Promise<{ v?: string; upgraded?: string }>;
 }) {
-  const { v } = await searchParams;
+  const { v, upgraded } = await searchParams;
   const data = await getDashboardData(v);
   if (!data) return <Landing />;
 
@@ -24,6 +24,16 @@ export default async function DashboardPage({
 
   return (
     <Shell email={userEmail}>
+      {upgraded === "1" && (
+        <div className="anim-up mb-4 flex items-center gap-3 rounded-2xl border border-copper/40 bg-gradient-to-r from-copper/[0.12] to-transparent px-5 py-3.5">
+          <span aria-hidden className="text-lg">🎉</span>
+          <p className="font-body text-sm text-ivory">
+            <span className="font-semibold text-copper">Добре дошъл в Pro!</span> Вече имаш
+            неограничено автомобили, услуги и push напомняния.
+          </p>
+        </div>
+      )}
+
       {!vehicle ? (
         <EmptyHero />
       ) : (

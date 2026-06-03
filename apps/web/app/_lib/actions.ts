@@ -251,6 +251,34 @@ export async function startProCheckout(formData: FormData): Promise<void> {
   redirect(session.url);
 }
 
+export async function openBillingPortal(): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const customer = sub?.stripe_customer_id;
+  const secret = process.env.STRIPE_SECRET_KEY;
+  if (!customer || !secret) redirect("/account?error=portal");
+
+  const h = await headers();
+  const origin = h.get("origin") ?? `http://${h.get("host") ?? "localhost:3000"}`;
+  const body = new URLSearchParams({ customer, return_url: `${origin}/account` });
+
+  const res = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const session = (await res.json()) as { url?: string };
+  if (!res.ok || !session.url) redirect("/account?error=portal");
+  redirect(session.url);
+}
+
 export async function saveReminderSettings(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const userId = await resolveUserId(supabase);
