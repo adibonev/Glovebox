@@ -21,10 +21,14 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   const from = process.env.REMINDER_FROM || "Glovebox <onboarding@resend.dev>";
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY is not set" };
 
+  // Testing without a verified domain: Resend only delivers to the account owner, so
+  // REMINDER_TEST_TO (when set) redirects every email there. Leave it unset in production.
+  const to = process.env.REMINDER_TEST_TO || message.to;
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: message.to, subject: message.subject, html: message.html }),
+    body: JSON.stringify({ from, to, subject: message.subject, html: message.html }),
   });
 
   if (!res.ok) return { ok: false, error: `Resend ${res.status}: ${await res.text()}` };
