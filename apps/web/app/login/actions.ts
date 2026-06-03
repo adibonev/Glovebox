@@ -1,10 +1,25 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { error?: string; message?: string };
+
+/** Start the Google OAuth flow; Supabase returns the consent URL to redirect to. */
+export async function signInWithGoogle(): Promise<void> {
+  const supabase = await createClient();
+  const h = await headers();
+  const origin = h.get("origin") ?? `http://${h.get("host") ?? "localhost:3000"}`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${origin}/auth/callback` },
+  });
+  if (error || !data.url) redirect("/login?error=google");
+  redirect(data.url);
+}
 
 /** Email/password sign-in or sign-up, chosen by the form's `intent` button. */
 export async function authenticate(

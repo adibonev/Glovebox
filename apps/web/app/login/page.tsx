@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import { authenticate, type AuthState } from "./actions";
+import { authenticate, signInWithGoogle, type AuthState } from "./actions";
 
 const initialState: AuthState = {};
 
@@ -22,12 +22,14 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [state, formAction, pending] = useActionState(authenticate, initialState);
   const isSignup = mode === "signup";
+  const [googleError, setGoogleError] = useState(false);
 
-  // Open the right tab when arriving from the landing CTA (/login?mode=signup).
+  // Open the right tab when arriving from the landing CTA (/login?mode=signup),
+  // and surface a failed Google round-trip (/login?error=google).
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
-      setMode("signup");
-    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "signup") setMode("signup");
+    if (params.get("error") === "google") setGoogleError(true);
   }, []);
 
   return (
@@ -108,6 +110,28 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-dim">или</span>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
+
+        {googleError && (
+          <p className="text-center font-body text-sm text-status-expired">
+            Входът с Google не успя. Опитай отново.
+          </p>
+        )}
+
+        <form action={signInWithGoogle}>
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:border-white/25 hover:bg-white/[0.07]"
+          >
+            <GoogleG />
+            Продължи с Google
+          </button>
+        </form>
+
         <p className="text-center font-body text-sm text-silver/55">
           {isSignup ? "Вече имаш акаунт? " : "Нямаш акаунт? "}
           <button
@@ -120,5 +144,16 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+function GoogleG() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden>
+      <path fill="#4285F4" d="M23.04 12.26c0-.82-.07-1.6-.21-2.36H12v4.46h6.2a5.3 5.3 0 0 1-2.3 3.48v2.9h3.72c2.18-2 3.42-4.96 3.42-8.48z" />
+      <path fill="#34A853" d="M12 24c3.1 0 5.7-1.03 7.6-2.8l-3.72-2.9c-1.03.7-2.36 1.1-3.88 1.1-2.98 0-5.5-2.01-6.4-4.72H1.74v2.99A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.6 14.28a7.2 7.2 0 0 1 0-4.56V6.73H1.74a12 12 0 0 0 0 10.54l3.86-2.99z" />
+      <path fill="#EA4335" d="M12 4.74c1.68 0 3.2.58 4.4 1.72l3.3-3.3C17.7 1.2 15.1 0 12 0A12 12 0 0 0 1.74 6.73l3.86 3a7.15 7.15 0 0 1 6.4-4.99z" />
+    </svg>
   );
 }
