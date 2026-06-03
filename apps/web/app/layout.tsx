@@ -20,9 +20,33 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
+
+const title = "Glovebox — следи сроковете на колата си";
+const description =
+  "Гражданска отговорност, Каско, винетка, технически преглед, данък и още — на едно място, с напомняния преди да изтекат.";
+
 export const metadata: Metadata = {
-  title: "Glovebox — Табло на автомобила",
-  description: "Следете документите и сроковете на автомобила си.",
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  applicationName: "Glovebox",
+  openGraph: {
+    title,
+    description,
+    siteName: "Glovebox",
+    type: "website",
+    locale: "bg_BG",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
