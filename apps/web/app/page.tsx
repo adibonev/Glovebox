@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { GaugePanel } from "@/components/GaugePanel";
+import { Landing } from "@/components/Landing";
 import { PlateBadge } from "@/components/PlateBadge";
 import { Shell } from "@/components/Shell";
 import { VehicleCard } from "@/components/VehicleCard";
@@ -18,7 +18,7 @@ export default async function DashboardPage({
 }) {
   const { v } = await searchParams;
   const data = await getDashboardData(v);
-  if (!data) redirect("/login");
+  if (!data) return <Landing />;
 
   const { userEmail, vehicle, vehicles, urgent, counts, items } = data;
 

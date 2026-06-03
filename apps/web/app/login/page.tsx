@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 import { authenticate, type AuthState } from "./actions";
 
@@ -22,6 +22,13 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [state, formAction, pending] = useActionState(authenticate, initialState);
   const isSignup = mode === "signup";
+
+  // Open the right tab when arriving from the landing CTA (/login?mode=signup).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      setMode("signup");
+    }
+  }, []);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-12">
