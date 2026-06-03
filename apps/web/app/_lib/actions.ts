@@ -227,6 +227,32 @@ export async function addService(formData: FormData): Promise<void> {
   redirect("/");
 }
 
+export async function updateService(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const serviceId = Number(formData.get("serviceId"));
+  const serviceType = String(formData.get("serviceType") ?? "");
+  const expiryDate = String(formData.get("expiryDate") ?? "");
+  const notes = String(formData.get("notes") ?? "").trim();
+  if (!serviceId || !serviceType || !expiryDate) return;
+
+  // RLS ("update services for own cars") scopes the update to the owner. Editing the
+  // Expiry Date (a renewal) keeps the Service Record's Documents and re-derives reminders.
+  await supabase
+    .from("services")
+    .update({ service_type: serviceType, expiry_date: expiryDate, notes: notes || null })
+    .eq("id", serviceId);
+
+  revalidatePath("/");
+  revalidatePath("/documents");
+  revalidatePath("/reminders");
+  redirect("/");
+}
+
 export async function deleteService(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const serviceId = Number(formData.get("serviceId"));

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 import type { ExpiryStatus } from "@glovebox/core";
 
@@ -77,6 +78,15 @@ function Row({ item, index }: { item: ServiceItem; index: number }) {
           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
           {item.statusLabel}
         </span>
+
+        <Link
+          href={`/services/${item.id}/edit`}
+          aria-label="Редакция"
+          title="Редакция / подновяване"
+          className="text-base leading-none text-dim transition hover:text-copper"
+        >
+          ✎
+        </Link>
 
         <form action={deleteService}>
           <input type="hidden" name="serviceId" value={item.id} />
