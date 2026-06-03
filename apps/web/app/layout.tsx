@@ -38,6 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
+    url: siteUrl,
     siteName: "Glovebox",
     type: "website",
     locale: "bg_BG",
