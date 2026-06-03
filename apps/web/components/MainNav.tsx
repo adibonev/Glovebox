@@ -19,7 +19,9 @@ export function MainNav() {
       <NavLink href="/vehicles" active={isActive("/vehicles")}>
         Автомобили
       </NavLink>
-      <NavLink href="#">Документи</NavLink>
+      <NavLink href="/documents" active={isActive("/documents")}>
+        Документи
+      </NavLink>
       <NavLink href="/reminders" active={isActive("/reminders")}>
         Напомняния
       </NavLink>

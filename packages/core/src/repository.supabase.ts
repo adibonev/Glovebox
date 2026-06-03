@@ -1,8 +1,9 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "./database.types";
-import type { ServiceRecord, User, Vehicle } from "./domain";
+import type { Document, ServiceRecord, User, Vehicle } from "./domain";
 import type {
+  DocumentRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
@@ -24,6 +25,7 @@ import type {
 
 type CarRow = Database["public"]["Tables"]["cars"]["Row"];
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
+type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
 
 // --- the single snake_case → camelCase mapping seam ------------------------------
 
@@ -51,6 +53,19 @@ function serviceRecordFromRow(
     vehicleId: String(row.car_id),
     serviceType: row.service_type,
     expiryDate: new Date(row.expiry_date),
+  };
+}
+
+function documentFromRow(
+  row: Pick<DocumentRow, "id" | "service_id" | "path" | "name" | "mime_type" | "created_at">,
+): Document {
+  return {
+    id: String(row.id),
+    serviceRecordId: String(row.service_id),
+    path: row.path,
+    name: row.name,
+    mimeType: row.mime_type,
+    createdAt: row.created_at ? new Date(row.created_at) : null,
   };
 }
 
@@ -97,6 +112,19 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
       .eq("car_id", Number(vehicleId))
       .not("expiry_date", "is", null);
     return rowsOrThrow(result, "services.listByVehicle").map(serviceRecordFromRow);
+  }
+}
+
+export class SupabaseDocumentRepository implements DocumentRepository {
+  constructor(private readonly client: SupabaseClient<Database>) {}
+
+  async listByUser(userId: string): Promise<Document[]> {
+    const result = await this.client
+      .from("documents")
+      .select("id, service_id, path, name, mime_type, created_at")
+      .eq("user_id", Number(userId))
+      .order("created_at", { ascending: false });
+    return rowsOrThrow(result, "documents.listByUser").map(documentFromRow);
   }
 }
 

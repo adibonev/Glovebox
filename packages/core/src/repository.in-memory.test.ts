@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { ServiceRecord, Vehicle } from "./domain";
+import type { Document, ServiceRecord, Vehicle } from "./domain";
 import {
+  InMemoryDocumentRepository,
   InMemoryServiceRecordRepository,
   InMemoryUserRepository,
   InMemoryVehicleRepository,
@@ -44,6 +45,20 @@ describe("InMemoryServiceRecordRepository", () => {
     const records = await repo.listByUser("user-1");
 
     expect(records.map((r) => r.id)).toEqual(["rec-1"]);
+  });
+});
+
+describe("InMemoryDocumentRepository", () => {
+  it("lists the Documents belonging to a given User across their Service Records", async () => {
+    const documents: Document[] = [
+      { id: "doc-1", serviceRecordId: "rec-1", path: "u1/rec-1/a.pdf", name: "a.pdf", mimeType: "application/pdf", createdAt: null },
+      { id: "doc-2", serviceRecordId: "rec-2", path: "u2/rec-2/b.pdf", name: "b.pdf", mimeType: "application/pdf", createdAt: null },
+    ];
+    const repo = new InMemoryDocumentRepository(vehicles, serviceRecords, documents);
+
+    const owned = await repo.listByUser("user-1");
+
+    expect(owned.map((d) => d.id)).toEqual(["doc-1"]);
   });
 });
 

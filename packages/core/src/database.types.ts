@@ -181,6 +181,54 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          created_at: string | null
+          id: number
+          mime_type: string | null
+          name: string
+          path: string
+          service_id: number
+          size_bytes: number | null
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          mime_type?: string | null
+          name: string
+          path: string
+          service_id: number
+          size_bytes?: number | null
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          mime_type?: string | null
+          name?: string
+          path?: string
+          service_id?: number
+          size_bytes?: number | null
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_logs: {
         Row: {
           car_id: number | null

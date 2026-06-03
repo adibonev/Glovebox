@@ -1,5 +1,6 @@
-import type { ServiceRecord, User, Vehicle } from "./domain";
+import type { Document, ServiceRecord, User, Vehicle } from "./domain";
 import type {
+  DocumentRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
@@ -34,6 +35,27 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
     return this.serviceRecords.filter((record) =>
       ownedVehicleIds.has(record.vehicleId),
     );
+  }
+}
+
+/** In-memory DocumentRepository for tests; joins Documents → Service Records → Vehicles by owner. */
+export class InMemoryDocumentRepository implements DocumentRepository {
+  constructor(
+    private readonly vehicles: Vehicle[],
+    private readonly serviceRecords: ServiceRecord[],
+    private readonly documents: Document[],
+  ) {}
+
+  async listByUser(userId: string): Promise<Document[]> {
+    const ownedVehicleIds = new Set(
+      this.vehicles.filter((vehicle) => vehicle.userId === userId).map((vehicle) => vehicle.id),
+    );
+    const ownedServiceIds = new Set(
+      this.serviceRecords
+        .filter((record) => ownedVehicleIds.has(record.vehicleId))
+        .map((record) => record.id),
+    );
+    return this.documents.filter((doc) => ownedServiceIds.has(doc.serviceRecordId));
   }
 }
 

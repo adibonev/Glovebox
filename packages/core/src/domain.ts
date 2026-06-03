@@ -34,6 +34,19 @@ export interface ServiceRecord {
   expiryDate: Date;
 }
 
+/** A user-uploaded file (PDF or image) attached to a Service Record. */
+export interface Document {
+  id: string;
+  /** The Service Record this Document is attached to. */
+  serviceRecordId: string;
+  /** Object path in the private `documents` storage bucket. */
+  path: string;
+  /** Original file name shown to the User. */
+  name: string;
+  mimeType: string | null;
+  createdAt: Date | null;
+}
+
 /** The authenticated person who owns Vehicles; bridges the Supabase Auth Identity. */
 export interface User {
   id: string;

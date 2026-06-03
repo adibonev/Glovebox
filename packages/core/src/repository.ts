@@ -1,4 +1,4 @@
-import type { ServiceRecord, User, Vehicle } from "./domain";
+import type { Document, ServiceRecord, User, Vehicle } from "./domain";
 
 /**
  * Read access to Vehicles (a seam, ARCHITECTURE.md). The production adapter is
@@ -15,6 +15,14 @@ export interface VehicleRepository {
 export interface ServiceRecordRepository {
   listByUser(userId: string): Promise<ServiceRecord[]>;
   listByVehicle(vehicleId: string): Promise<ServiceRecord[]>;
+}
+
+/**
+ * Read access to Documents. `listByUser` returns the Documents across all of the
+ * User's Service Records — a join the Supabase adapter performs via `services`/`cars`.
+ */
+export interface DocumentRepository {
+  listByUser(userId: string): Promise<Document[]>;
 }
 
 /**

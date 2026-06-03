@@ -84,6 +84,74 @@ export async function updateVehicle(formData: FormData): Promise<void> {
   redirect("/vehicles");
 }
 
+export async function uploadDocument(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const serviceId = Number(formData.get("serviceId"));
+  const file = formData.get("file");
+  if (!serviceId || !(file instanceof File) || file.size === 0) return;
+
+  // The Service Record must belong to the User (RLS-select returns null otherwise).
+  const { data: service } = await supabase
+    .from("services")
+    .select("id")
+    .eq("id", serviceId)
+    .maybeSingle();
+  if (!service) return;
+
+  // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
+  const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(-120) || "file";
+  const path = `${authUser.id}/${serviceId}/${crypto.randomUUID()}__${safeName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+  if (uploadError) return;
+
+  await supabase.from("documents").insert({
+    service_id: serviceId,
+    user_id: userId,
+    name: file.name.slice(0, 200),
+    path,
+    mime_type: file.type || null,
+    size_bytes: file.size,
+  });
+
+  revalidatePath("/documents");
+  revalidatePath("/");
+}
+
+export async function deleteDocument(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const id = Number(formData.get("id"));
+  if (!id) return;
+
+  // Look the path up server-side (don't trust the client); RLS scopes to the owner.
+  const { data: doc } = await supabase
+    .from("documents")
+    .select("path")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!doc) return;
+
+  await supabase.storage.from("documents").remove([doc.path]);
+  await supabase.from("documents").delete().eq("id", id).eq("user_id", userId);
+
+  revalidatePath("/documents");
+  revalidatePath("/");
+}
+
 export async function saveReminderSettings(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const userId = await resolveUserId(supabase);
