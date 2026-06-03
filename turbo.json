@@ -1,6 +1,19 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "stream",
+  "globalEnv": [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "RESEND_API_KEY",
+    "REMINDER_FROM",
+    "REMINDER_TEST_TO",
+    "CRON_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_PRICE_PRO_MONTHLY",
+    "STRIPE_PRICE_PRO_ANNUAL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
