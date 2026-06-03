@@ -34,44 +34,61 @@ INK = (7, 16, 12)  # brand ink #07100C — the scene the cars sit on
 DEFAULT_MAX_W = 900
 
 
+def detect_white_halo(rgb: np.ndarray, a: np.ndarray) -> bool:
+    """A halo from a white-matte cut shows as a UNIFORMLY bright anti-aliased edge ring."""
+    partial = (a > 0.0) & (a < 0.98)
+    if partial.sum() < 80:
+        return False
+    brightness = rgb[partial].mean(axis=1)
+    return float(brightness.mean()) > 205.0 and float((brightness > 200).mean()) > 0.6
+
+
+def detect_ground_shadow(rgb: np.ndarray, a: np.ndarray, h: int, w: int) -> bool:
+    """A baked shadow is a wide near-opaque desaturated grey band in the bottom rows."""
+    value = rgb.max(axis=2)
+    sat = value - rgb.min(axis=2)
+    rows = np.arange(h)[:, None]
+    band = rows > h * 0.95
+    grey = (a > 0.7) & (value >= 90.0) & (value <= 200.0) & (sat < 28.0)
+    return int((band & grey).sum()) > int(0.25 * w)
+
+
 def polish(src: Path, dst: Path, max_w: int) -> Image.Image:
     im = Image.open(src).convert("RGBA")
     arr = np.asarray(im).astype(np.float64)
     h, w = arr.shape[:2]
     rgb = arr[..., :3].copy()
     a = arr[..., 3] / 255.0
+    notes = []
 
-    # 1) Defringe the white matte: O = a*C + (1-a)*255  →  recover the true colour C.
-    partial = (a > 0.0) & (a < 1.0)
-    a_safe = np.where(a == 0.0, 1.0, a)
-    inv = (1.0 - a) * 255.0
-    recovered = np.clip((rgb - inv[..., None]) / a_safe[..., None], 0, 255)
-    rgb = np.where(partial[..., None], recovered, rgb)
+    # 1) Defringe — ONLY if the cut left a white-matte halo. A clean cut on transparent
+    #    already has true edge colours, so defringing it would wrongly darken the edges.
+    if detect_white_halo(rgb, a):
+        partial = (a > 0.0) & (a < 1.0)
+        a_safe = np.where(a == 0.0, 1.0, a)
+        inv = (1.0 - a) * 255.0
+        recovered = np.clip((rgb - inv[..., None]) / a_safe[..., None], 0, 255)
+        rgb = np.where(partial[..., None], recovered, rgb)
+        notes.append("defringed")
 
-    value = rgb.max(axis=2)
-    sat = value - rgb.min(axis=2)
-    rows = np.arange(h)[:, None]
-
-    # 2) Drop the baked ground shadow. The ground is flat, so the cut is one horizontal line.
-    #    Find the lowest solid-black tyre pixel, then cut a few px ABOVE it: that also removes
-    #    the dark contact-shadow core (which is the same near-black as a tyre and can't be told
-    #    apart by colour), at the cost of an invisible ~5px flat on the very bottom of the tyres.
-    tyre_ys = np.where((a > 0.85) & (value < 60.0))[0]
-    if tyre_ys.size:
-        cut_y = int(np.quantile(tyre_ys, 0.999)) - 5
-        a = np.where(rows > cut_y, 0.0, a)
-        # Above the cut, wipe the lighter grey penumbra wisps without touching the black tyres
-        # (value<60, kept) or the bright-white body (value>215, kept).
-        band = (rows <= cut_y) & (rows > cut_y - 22)
-        greyish = (sat < 30.0) & (value >= 80.0) & (value <= 215.0)
-        a = np.where(band & greyish, 0.0, a)
+    # 2) Drop a baked ground shadow — ONLY if present. Find the lowest solid-black tyre pixel
+    #    and cut a few px above it (also removes the same-black contact-shadow core), then wipe
+    #    the lighter grey penumbra. Skipped for already-clean sources so tyres stay intact.
+    if detect_ground_shadow(rgb, a, h, w):
+        value = rgb.max(axis=2)
+        sat = value - rgb.min(axis=2)
+        rows = np.arange(h)[:, None]
+        tyre_ys = np.where((a > 0.85) & (value < 60.0))[0]
+        if tyre_ys.size:
+            cut_y = int(np.quantile(tyre_ys, 0.999)) - 5
+            a = np.where(rows > cut_y, 0.0, a)
+            band = (rows <= cut_y) & (rows > cut_y - 22)
+            greyish = (sat < 30.0) & (value >= 80.0) & (value <= 215.0)
+            a = np.where(band & greyish, 0.0, a)
+            notes.append("de-shadowed")
 
     out = np.dstack([rgb, a * 255.0]).astype(np.uint8)
     img = Image.fromarray(out, "RGBA")
-
-    # Feather the freshly cut edge so it reads smooth, not stepped.
-    alpha = img.getchannel("A").filter(ImageFilter.GaussianBlur(0.5))
-    img.putalpha(alpha)
 
     # 3) Trim to the car, then downscale crisply for a smaller, retina-sharp file.
     bbox = img.getchannel("A").getbbox()
@@ -84,9 +101,10 @@ def polish(src: Path, dst: Path, max_w: int) -> Image.Image:
         img = img.resize((max_w, new_h), Image.LANCZOS)
 
     dst.parent.mkdir(parents=True, exist_ok=True)
-    img.save(dst, "WEBP", quality=88, method=6)  # alpha-aware, ~1/4 the size of PNG at equal quality
+    img.save(dst, "WEBP", quality=90, method=6)  # alpha-aware, ~1/4 the size of PNG at equal quality
     kb = dst.stat().st_size // 1024
-    print(f"  {src.name:14s} -> public/cars/{dst.name:14s} {img.size[0]}x{img.size[1]}  {kb} KB")
+    tag = f"  [{', '.join(notes)}]" if notes else "  [clean: scaled only]"
+    print(f"  {src.name:14s} -> public/cars/{dst.name:14s} {img.size[0]}x{img.size[1]}  {kb} KB{tag}")
     return img
 
 
