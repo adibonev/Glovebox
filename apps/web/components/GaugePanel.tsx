@@ -79,7 +79,7 @@ function Gauge({ urgent }: { urgent: GaugeView }) {
         >
           дни
         </span>
-        <span className="mt-1.5 max-w-[160px] truncate px-2 text-center font-body text-[13px] text-muted">
+        <span className="mt-1.5 line-clamp-2 max-w-[150px] px-2 text-center font-body text-[12.5px] leading-tight text-muted">
           {expired ? `${urgent.typeLabel} изтече` : `до ${urgent.typeLabel}`}
         </span>
       </div>
