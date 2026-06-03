@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ServiceTypeIcon } from "@/app/_components/ServiceTypeIcon";
 import { updateService } from "@/app/_lib/actions";
-import { SERVICE_TYPE_ICONS, SERVICE_TYPE_LABELS } from "@/app/_lib/labels";
+import { SERVICE_TYPE_LABELS } from "@/app/_lib/labels";
 
 const TYPES = Object.keys(SERVICE_TYPE_LABELS);
 
@@ -44,7 +45,7 @@ export function EditServiceView({
                     : "border-white/10 bg-white/[0.03] text-silver/70 hover:border-white/25"
                 }`}
               >
-                <span className="text-2xl leading-none">{SERVICE_TYPE_ICONS[code]}</span>
+                <ServiceTypeIcon type={code} className="h-7 w-7" />
                 <span className="font-body text-[13px] leading-tight">
                   {SERVICE_TYPE_LABELS[code]}
                 </span>

@@ -35,17 +35,6 @@ export const SERVICE_TYPE_CODES: Record<string, string> = {
   maintenance: "ПД",
 };
 
-/** A small icon per Service Type for the picker cards. */
-export const SERVICE_TYPE_ICONS: Record<string, string> = {
-  civil_liability: "🛡️",
-  casco: "💎",
-  vignette: "🛣️",
-  inspection: "🔧",
-  tax: "💰",
-  fire_extinguisher: "🧯",
-  maintenance: "🛢️",
-};
-
 /** Bulgarian labels for the Expiry Status. */
 export const STATUS_LABELS: Record<ExpiryStatus, string> = {
   Valid: "В сила",

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Shell } from "@/components/Shell";
 
+import { ServiceTypeIcon } from "../_components/ServiceTypeIcon";
 import { getDocumentsData, type DocView, type ServiceGroup } from "../_lib/documents";
 import { DeleteDocumentButton } from "./_components/DeleteDocumentButton";
 import { UploadButton } from "./_components/UploadButton";
@@ -56,8 +57,8 @@ function ServiceDocuments({ service }: { service: ServiceGroup }) {
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-panel to-ink2 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.05] font-mono text-[12px] font-semibold text-copper">
-            {service.code}
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-copper">
+            <ServiceTypeIcon type={service.serviceType} className="h-5 w-5" />
           </span>
           <div>
             <p className="font-body font-medium text-ivory">{service.typeLabel}</p>

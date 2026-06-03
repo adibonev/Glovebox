@@ -2,12 +2,9 @@ import { redirect } from "next/navigation";
 
 import { Shell } from "@/components/Shell";
 
+import { ServiceTypeIcon } from "../_components/ServiceTypeIcon";
 import { saveReminderSettings } from "../_lib/actions";
-import {
-  SERVICE_TYPE_ICONS,
-  SERVICE_TYPE_LABELS,
-  SERVICE_TYPE_ORDER,
-} from "../_lib/labels";
+import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "../_lib/labels";
 import { getRemindersData, type UpcomingReminder } from "../_lib/reminders";
 import { WINDOW_OPTIONS } from "../_lib/reminderSettings";
 
@@ -54,9 +51,7 @@ export default async function RemindersPage() {
               className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <span className="flex items-center gap-2.5 font-body text-ivory">
-                <span aria-hidden className="text-lg">
-                  {SERVICE_TYPE_ICONS[serviceType]}
-                </span>
+                <ServiceTypeIcon type={serviceType} className="h-5 w-5 text-silver" />
                 {SERVICE_TYPE_LABELS[serviceType]}
               </span>
 

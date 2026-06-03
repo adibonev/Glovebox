@@ -6,9 +6,11 @@ import Link from "next/link";
 import type { ExpiryStatus } from "@glovebox/core";
 
 import { deleteService } from "../_lib/actions";
+import { ServiceTypeIcon } from "./ServiceTypeIcon";
 
 type ServiceItem = {
   id: string;
+  serviceType: string;
   code: string;
   typeLabel: string;
   dateLabel: string;
@@ -47,10 +49,10 @@ function Row({ item, index }: { item: ServiceItem; index: number }) {
       />
 
       <span
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10 font-mono text-[13px] font-semibold tracking-wide text-silver"
-        style={{ backgroundColor: `${item.color}14` }}
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10"
+        style={{ backgroundColor: `${item.color}14`, color: item.color }}
       >
-        {item.code}
+        <ServiceTypeIcon type={item.serviceType} className="h-6 w-6" />
       </span>
 
       <div className="min-w-0 flex-1">

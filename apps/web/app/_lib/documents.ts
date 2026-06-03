@@ -18,6 +18,7 @@ export type DocView = {
 
 export type ServiceGroup = {
   serviceId: string;
+  serviceType: string;
   code: string;
   typeLabel: string;
   expiryLabel: string;
@@ -84,6 +85,7 @@ export async function getDocumentsData(): Promise<DocumentsData | null> {
     const group = servicesByVehicle.get(s.vehicleId) ?? [];
     group.push({
       serviceId: s.id,
+      serviceType: s.serviceType,
       code: SERVICE_TYPE_CODES[s.serviceType] ?? "—",
       typeLabel: SERVICE_TYPE_LABELS[s.serviceType] ?? s.serviceType,
       expiryLabel: formatDateShort(s.expiryDate),

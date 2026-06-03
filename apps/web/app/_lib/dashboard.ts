@@ -31,6 +31,7 @@ export type GaugeView = {
 
 export type ServiceItemView = {
   id: string;
+  serviceType: string;
   code: string;
   typeLabel: string;
   dateLabel: string;
@@ -123,6 +124,7 @@ export async function getDashboardData(
 
   const items: ServiceItemView[] = enriched.map(({ record, status, days }) => ({
     id: record.id,
+    serviceType: record.serviceType,
     code: SERVICE_TYPE_CODES[record.serviceType] ?? "—",
     typeLabel: SERVICE_TYPE_LABELS[record.serviceType] ?? record.serviceType,
     dateLabel: formatDateShort(record.expiryDate),
