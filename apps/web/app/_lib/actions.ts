@@ -7,8 +7,15 @@ import { SupabaseUserRepository } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { BODY_TYPES } from "./bodyType";
 import { SERVICE_TYPE_ORDER } from "./labels";
 import { WINDOW_OPTIONS } from "./reminderSettings";
+
+/** Read a valid body type from the form, defaulting to "sedan". */
+function readBodyType(formData: FormData): string {
+  const value = String(formData.get("bodyType") ?? "");
+  return (BODY_TYPES as string[]).includes(value) ? value : "sedan";
+}
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -45,6 +52,7 @@ export async function addVehicle(formData: FormData): Promise<void> {
       model,
       year: yearRaw ? Number(yearRaw) : null,
       license_plate: plate || null,
+      body_type: readBodyType(formData),
     })
     .select("id")
     .single();
@@ -75,6 +83,7 @@ export async function updateVehicle(formData: FormData): Promise<void> {
       model,
       year: yearRaw ? Number(yearRaw) : null,
       license_plate: plate || null,
+      body_type: readBodyType(formData),
     })
     .eq("id", id)
     .eq("user_id", userId);

@@ -7,9 +7,9 @@ import { dueRemindersForUser } from "./use-cases";
 describe("dueRemindersForUser", () => {
   it("loads a User's Service Records via the repository and returns the due Reminders", async () => {
     const vehicles: Vehicle[] = [
-      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB" },
+      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB", bodyType: "sedan" },
       // another User's Vehicle — must be ignored
-      { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null },
+      { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null, bodyType: null },
     ];
     const serviceRecords: ServiceRecord[] = [
       // user-1, due: 14 days out, window 30

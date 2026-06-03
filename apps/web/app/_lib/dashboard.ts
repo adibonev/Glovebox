@@ -8,7 +8,7 @@ import {
 
 import { createClient } from "@/lib/supabase/server";
 
-import { mapBodyClass, type BodyType } from "./bodyType";
+import { parseBodyType, type BodyType } from "./bodyType";
 import {
   SERVICE_TYPE_CODES,
   SERVICE_TYPE_LABELS,
@@ -151,7 +151,7 @@ export async function getDashboardData(
         name: `${active.brand} ${active.model}`,
         plate: active.plate,
         year: active.year,
-        bodyType: mapBodyClass(null),
+        bodyType: parseBodyType(active.bodyType),
       }
     : null;
 

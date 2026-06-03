@@ -2,6 +2,9 @@ import Link from "next/link";
 
 import { updateVehicle } from "@/app/_lib/actions";
 
+import { BodyTypePicker } from "../../_components/BodyTypePicker";
+import { parseBodyType } from "../../_lib/bodyType";
+
 const fieldClass =
   "rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60";
 
@@ -11,6 +14,7 @@ export type EditableVehicle = {
   model: string;
   year: number | null;
   plate: string | null;
+  bodyType: string | null;
 };
 
 /** Edit a Vehicle's identity (brand / model / year / plate). */
@@ -38,6 +42,7 @@ export function EditVehicleForm({ vehicle }: { vehicle: EditableVehicle }) {
           className={fieldClass}
         />
       </div>
+      <BodyTypePicker value={parseBodyType(vehicle.bodyType)} />
       <div className="flex items-center gap-2">
         <button
           type="submit"

@@ -49,6 +49,7 @@ export default async function EditVehiclePage({
             model: vehicle.model,
             year: vehicle.year,
             plate: vehicle.plate,
+            bodyType: vehicle.bodyType,
           }}
         />
       </section>

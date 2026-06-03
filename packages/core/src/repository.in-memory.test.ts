@@ -9,8 +9,8 @@ import {
 } from "./repository.in-memory";
 
 const vehicles: Vehicle[] = [
-  { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB" },
-  { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null },
+  { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB", bodyType: "sedan" },
+  { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null, bodyType: null },
 ];
 
 const serviceRecords: ServiceRecord[] = [

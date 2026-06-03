@@ -23,6 +23,8 @@ export interface Vehicle {
   year: number | null;
   /** Registration plate, when known (`cars.license_plate`). */
   plate: string | null;
+  /** Body type code driving the silhouette, when set (`cars.body_type`). */
+  bodyType: string | null;
 }
 
 /** A single tracked obligation for a Vehicle, with one Service Type and an Expiry Date. */

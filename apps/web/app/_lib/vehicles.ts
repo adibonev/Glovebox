@@ -8,7 +8,7 @@ import {
 
 import { createClient } from "@/lib/supabase/server";
 
-import { mapBodyClass, type BodyType } from "./bodyType";
+import { parseBodyType, type BodyType } from "./bodyType";
 import { type Counts } from "./dashboard";
 import { SERVICE_TYPE_LABELS, STATUS_COLORS, formatDaysRemaining } from "./labels";
 import { getReminderConfig } from "./reminderSettings";
@@ -90,7 +90,7 @@ export async function getGarage(): Promise<GarageData | null> {
       name: `${v.brand} ${v.model}`,
       plate: v.plate,
       year: v.year,
-      bodyType: mapBodyClass(null),
+      bodyType: parseBodyType(v.bodyType),
       serviceCount: enriched.length,
       counts,
       urgent,

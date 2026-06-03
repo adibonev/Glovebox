@@ -106,6 +106,7 @@ export type Database = {
       }
       cars: {
         Row: {
+          body_type: string | null
           brand: string
           color: string | null
           created_at: string | null
@@ -128,6 +129,7 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          body_type?: string | null
           brand: string
           color?: string | null
           created_at?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          body_type?: string | null
           brand?: string
           color?: string | null
           created_at?: string | null

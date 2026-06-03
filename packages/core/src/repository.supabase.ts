@@ -30,7 +30,10 @@ type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
 // --- the single snake_case → camelCase mapping seam ------------------------------
 
 function vehicleFromRow(
-  row: Pick<CarRow, "id" | "user_id" | "brand" | "model" | "year" | "license_plate">,
+  row: Pick<
+    CarRow,
+    "id" | "user_id" | "brand" | "model" | "year" | "license_plate" | "body_type"
+  >,
 ): Vehicle {
   return {
     id: String(row.id),
@@ -39,6 +42,7 @@ function vehicleFromRow(
     model: row.model,
     year: row.year,
     plate: row.license_plate,
+    bodyType: row.body_type,
   };
 }
 
@@ -86,7 +90,7 @@ export class SupabaseVehicleRepository implements VehicleRepository {
   async listByUser(userId: string): Promise<Vehicle[]> {
     const result = await this.client
       .from("cars")
-      .select("id, user_id, brand, model, year, license_plate")
+      .select("id, user_id, brand, model, year, license_plate, body_type")
       .eq("user_id", Number(userId))
       .order("id");
     return rowsOrThrow(result, "cars.listByUser").map(vehicleFromRow);

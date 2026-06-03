@@ -14,6 +14,21 @@ export const BODY_TYPES: BodyType[] = [
   "pickup",
 ];
 
+/** Bulgarian labels for the body type picker. Centralized / i18n-ready. */
+export const BODY_TYPE_LABELS: Record<BodyType, string> = {
+  hatchback: "Хечбек",
+  sedan: "Седан",
+  wagon: "Комби",
+  suv: "Джип",
+  coupe: "Купе",
+  pickup: "Пикап",
+};
+
+/** Coerce a stored `cars.body_type` value to a known silhouette (default: sedan). */
+export function parseBodyType(value: string | null | undefined): BodyType {
+  return (BODY_TYPES as string[]).includes(value ?? "") ? (value as BodyType) : "sedan";
+}
+
 /** Map an NHTSA "Body Class" string to one of our silhouettes (default: sedan). */
 export function mapBodyClass(nhtsaBodyClass: string | null | undefined): BodyType {
   const value = (nhtsaBodyClass ?? "").toLowerCase();
