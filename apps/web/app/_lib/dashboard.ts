@@ -4,7 +4,6 @@ import {
   SupabaseVehicleRepository,
   expiryStatus,
   type ExpiryStatus,
-  type ReminderWindows,
 } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
@@ -18,19 +17,9 @@ import {
   formatDateShort,
   formatDaysRemaining,
 } from "./labels";
+import { getReminderConfig } from "./reminderSettings";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-// Default Reminder Windows per Service Type (days). TODO: per-user reminder_settings.
-export const DEFAULT_WINDOWS: ReminderWindows = {
-  civil_liability: 30,
-  casco: 30,
-  vignette: 14,
-  inspection: 30,
-  tax: 30,
-  fire_extinguisher: 30,
-  maintenance: 30,
-};
 
 export type GaugeView = {
   days: number;
@@ -113,7 +102,9 @@ export async function getDashboardData(
     : [];
   const today = new Date();
 
-  const window = (serviceType: string) => DEFAULT_WINDOWS[serviceType] ?? 30;
+  // Reminder Windows come from the User's settings (falling back to defaults).
+  const { windows } = await getReminderConfig(supabase, user.id);
+  const window = (serviceType: string) => windows[serviceType] ?? 30;
 
   const enriched = records
     .map((record) => {

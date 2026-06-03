@@ -2,6 +2,17 @@ import type { ExpiryStatus } from "@glovebox/core";
 
 import { statusColors } from "@glovebox/ui";
 
+/** Canonical Service Type order (UBIQUITOUS_LANGUAGE.md) for pickers and settings. */
+export const SERVICE_TYPE_ORDER = [
+  "civil_liability",
+  "casco",
+  "vignette",
+  "inspection",
+  "tax",
+  "fire_extinguisher",
+  "maintenance",
+] as const;
+
 /** Bulgarian labels per Service Type code (UBIQUITOUS_LANGUAGE.md). Centralized / i18n-ready. */
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
   civil_liability: "Гражданска отговорност",

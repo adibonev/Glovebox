@@ -9,8 +9,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 import { mapBodyClass, type BodyType } from "./bodyType";
-import { DEFAULT_WINDOWS, type Counts } from "./dashboard";
+import { type Counts } from "./dashboard";
 import { SERVICE_TYPE_LABELS, STATUS_COLORS, formatDaysRemaining } from "./labels";
+import { getReminderConfig } from "./reminderSettings";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -53,8 +54,9 @@ export async function getGarage(): Promise<GarageData | null> {
 
   const ownedVehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const records = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
+  const { windows } = await getReminderConfig(supabase, user.id);
   const today = new Date();
-  const window = (serviceType: string) => DEFAULT_WINDOWS[serviceType] ?? 30;
+  const window = (serviceType: string) => windows[serviceType] ?? 30;
 
   const vehicles: GarageVehicle[] = ownedVehicles.map((v) => {
     const enriched = records

@@ -20,7 +20,9 @@ export function MainNav() {
         Автомобили
       </NavLink>
       <NavLink href="#">Документи</NavLink>
-      <NavLink href="#">Напомняния</NavLink>
+      <NavLink href="/reminders" active={isActive("/reminders")}>
+        Напомняния
+      </NavLink>
     </nav>
   );
 }

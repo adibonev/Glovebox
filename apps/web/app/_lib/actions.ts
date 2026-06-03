@@ -7,6 +7,9 @@ import { SupabaseUserRepository } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { SERVICE_TYPE_ORDER } from "./labels";
+import { WINDOW_OPTIONS } from "./reminderSettings";
+
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 /** Resolve (and provision) the signed-in user's `users.id`. */
@@ -79,6 +82,33 @@ export async function updateVehicle(formData: FormData): Promise<void> {
   revalidatePath("/");
   revalidatePath("/vehicles");
   redirect("/vehicles");
+}
+
+export async function saveReminderSettings(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  // Build the per-Service-Type Reminder Windows, keeping only valid choices.
+  const allowed = new Set<number>(WINDOW_OPTIONS);
+  const settings: Record<string, number> = {};
+  for (const serviceType of SERVICE_TYPE_ORDER) {
+    const days = Number(formData.get(`window_${serviceType}`));
+    if (allowed.has(days)) settings[serviceType] = days;
+  }
+
+  // An unchecked checkbox is absent from the form data.
+  const enabled = formData.get("reminder_enabled") !== null;
+
+  await supabase
+    .from("users")
+    .update({ reminder_settings: settings, reminder_enabled: enabled })
+    .eq("id", userId);
+
+  revalidatePath("/");
+  revalidatePath("/vehicles");
+  revalidatePath("/reminders");
+  redirect("/reminders");
 }
 
 export async function deleteVehicle(formData: FormData): Promise<void> {
