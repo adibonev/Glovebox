@@ -232,7 +232,7 @@ export async function startProCheckout(formData: FormData): Promise<void> {
     "subscription_data[trial_period_days]": "14",
     client_reference_id: String(userId),
     customer_email: user.email ?? "",
-    success_url: `${origin}/?upgraded=1`,
+    success_url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/paywall`,
   });
 
