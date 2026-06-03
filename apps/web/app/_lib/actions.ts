@@ -4,13 +4,18 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { SupabaseUserRepository, canAddDocument, canAddVehicle } from "@glovebox/core";
+import {
+  SupabaseUserRepository,
+  canAddDocument,
+  canAddService,
+  canAddVehicle,
+} from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
 
 import { BODY_TYPES } from "./bodyType";
 import { SERVICE_TYPE_ORDER } from "./labels";
-import { countDocuments, countVehicles, getPlan } from "./plan";
+import { countDocuments, countServices, countVehicles, getPlan } from "./plan";
 import { WINDOW_OPTIONS } from "./reminderSettings";
 
 /** Read a valid body type from the form, defaulting to "sedan". */
@@ -300,6 +305,12 @@ export async function addService(formData: FormData): Promise<void> {
   const expiryDate = String(formData.get("expiryDate") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
   if (!vehicleId || !serviceType || !expiryDate) return;
+
+  // Quota gate: Free is capped at 2 Service Records per Vehicle → Paywall (ADR-0003).
+  const plan = await getPlan(supabase, userId);
+  if (!canAddService(plan, await countServices(supabase, vehicleId))) {
+    redirect("/paywall?reason=service");
+  }
 
   await supabase.from("services").insert({
     car_id: vehicleId,

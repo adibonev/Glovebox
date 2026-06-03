@@ -62,13 +62,16 @@ export function hasEntitlement(plan: Plan, entitlement: Entitlement): boolean {
 /** Numeric caps a Plan imposes; `null` means unlimited. */
 export interface Quota {
   vehicles: number | null;
+  servicesPerVehicle: number | null;
   documentsPerServiceRecord: number | null;
 }
 
 const PLAN_QUOTAS: Record<Plan, Quota> = {
-  free: { vehicles: 1, documentsPerServiceRecord: 1 },
-  pro: { vehicles: null, documentsPerServiceRecord: null },
-  legacy: { vehicles: null, documentsPerServiceRecord: null },
+  // Free: one Vehicle with up to two Service Records on it; Documents are unlimited. The
+  // Paywall appears on a second Vehicle or a third Service Record.
+  free: { vehicles: 1, servicesPerVehicle: 2, documentsPerServiceRecord: null },
+  pro: { vehicles: null, servicesPerVehicle: null, documentsPerServiceRecord: null },
+  legacy: { vehicles: null, servicesPerVehicle: null, documentsPerServiceRecord: null },
 };
 
 /** The Quotas a Plan imposes. */
@@ -80,6 +83,12 @@ export function quotaFor(plan: Plan): Quota {
 export function canAddVehicle(plan: Plan, currentVehicleCount: number): boolean {
   const cap = PLAN_QUOTAS[plan].vehicles;
   return cap === null || currentVehicleCount < cap;
+}
+
+/** Whether a User may add another Service Record to a Vehicle that already has some. */
+export function canAddService(plan: Plan, currentServiceCount: number): boolean {
+  const cap = PLAN_QUOTAS[plan].servicesPerVehicle;
+  return cap === null || currentServiceCount < cap;
 }
 
 /** Whether a User may attach another Document to a Service Record that already has some. */

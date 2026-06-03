@@ -258,9 +258,9 @@ function Pricing() {
           <p className="mt-1.5 font-body text-[13px] text-dim">завинаги</p>
           <ul className="mt-5 flex flex-1 flex-col gap-2.5">
             <Check>1 автомобил</Check>
-            <Check>Всички видове услуги и статуси</Check>
-            <Check>Имейл напомняния</Check>
-            <Check>1 документ</Check>
+            <Check>До 2 услуги</Check>
+            <Check>Статуси и имейл напомняния</Check>
+            <Check>Документи към услугите</Check>
             <Check>PDF експорт</Check>
           </ul>
           <Link
@@ -290,8 +290,8 @@ function Pricing() {
           </p>
           <ul className="mt-5 flex flex-1 flex-col gap-2.5">
             <Check>Неограничено автомобили</Check>
+            <Check>Неограничено услуги</Check>
             <Check>Push + имейл напомняния</Check>
-            <Check>Неограничено документи</Check>
             <Check>Персонализирани срокове (7–90 дни)</Check>
             <Check>Споделяне със семейството (скоро)</Check>
             <Check>Всичко от Free</Check>

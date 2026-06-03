@@ -26,6 +26,15 @@ export async function countVehicles(supabase: ServerClient, userId: string | num
   return count ?? 0;
 }
 
+/** Count the Service Records on a Vehicle (for the Service Record Quota). */
+export async function countServices(supabase: ServerClient, vehicleId: number): Promise<number> {
+  const { count } = await supabase
+    .from("services")
+    .select("*", { count: "exact", head: true })
+    .eq("car_id", vehicleId);
+  return count ?? 0;
+}
+
 /** Count the Documents already attached to a Service Record (for the Document Quota). */
 export async function countDocuments(supabase: ServerClient, serviceId: number): Promise<number> {
   const { count } = await supabase
