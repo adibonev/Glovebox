@@ -26,5 +26,9 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Claude Code local settings (environment-specific permission grants)
+.claude/settings.json
+.claude/settings.local.json
+
 # Car silhouette review artifacts (polish-cars.py writes _preview/_chk previews)
 apps/web/public/cars/_*.png
