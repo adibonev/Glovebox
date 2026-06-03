@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-import { signOut } from "@/app/login/actions";
-
 import { MainNav } from "./MainNav";
+import { ProfileMenu } from "./ProfileMenu";
 
 function Wheel() {
   return (
@@ -21,10 +20,8 @@ function Wheel() {
   );
 }
 
-/** Topbar: the Glovebox wordmark (steering-wheel "o"), nav, PRO badge, avatar/sign-out. */
+/** Topbar: the Glovebox wordmark (steering-wheel "o"), nav, PRO badge, profile menu. */
 export function Topbar({ email }: { email: string }) {
-  const initial = (email.trim()[0] ?? "Г").toUpperCase();
-
   return (
     <header className="flex items-center gap-4 py-6">
       <Link
@@ -46,16 +43,7 @@ export function Topbar({ email }: { email: string }) {
         PRO
       </span>
 
-      <form action={signOut}>
-        <button
-          type="submit"
-          title="Изход"
-          aria-label="Изход"
-          className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-emerald to-panel2 font-display text-[15px] font-semibold text-ivory transition hover:border-copper/50"
-        >
-          {initial}
-        </button>
-      </form>
+      <ProfileMenu email={email} />
     </header>
   );
 }

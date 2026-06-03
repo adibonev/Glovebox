@@ -161,6 +161,35 @@ export async function deleteDocument(formData: FormData): Promise<void> {
   revalidatePath("/");
 }
 
+export async function updateUserName(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const name = String(formData.get("name") ?? "").trim();
+  await supabase
+    .from("users")
+    .update({ name: name || null })
+    .eq("id", userId);
+
+  revalidatePath("/account");
+  redirect("/account?saved=name");
+}
+
+export async function updatePassword(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 6) redirect("/account?error=password");
+
+  const { error } = await supabase.auth.updateUser({ password });
+  redirect(error ? "/account?error=password" : "/account?saved=password");
+}
+
 export async function saveReminderSettings(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const userId = await resolveUserId(supabase);
