@@ -34,14 +34,68 @@ export async function addVehicle(formData: FormData): Promise<void> {
   const plate = String(formData.get("plate") ?? "").trim();
   if (!brand || !model) return;
 
-  await supabase.from("cars").insert({
-    user_id: userId,
-    brand,
-    model,
-    year: yearRaw ? Number(yearRaw) : null,
-    license_plate: plate || null,
-  });
+  const { data } = await supabase
+    .from("cars")
+    .insert({
+      user_id: userId,
+      brand,
+      model,
+      year: yearRaw ? Number(yearRaw) : null,
+      license_plate: plate || null,
+    })
+    .select("id")
+    .single();
+
   revalidatePath("/");
+  revalidatePath("/vehicles");
+  // Land on the freshly added Vehicle's dashboard.
+  redirect(data ? `/?v=${data.id}` : "/");
+}
+
+export async function updateVehicle(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const id = Number(formData.get("id"));
+  const brand = String(formData.get("brand") ?? "").trim();
+  const model = String(formData.get("model") ?? "").trim();
+  const yearRaw = String(formData.get("year") ?? "").trim();
+  const plate = String(formData.get("plate") ?? "").trim();
+  if (!id || !brand || !model) return;
+
+  // `.eq("user_id")` + RLS ensure a User can only edit their own Vehicle.
+  await supabase
+    .from("cars")
+    .update({
+      brand,
+      model,
+      year: yearRaw ? Number(yearRaw) : null,
+      license_plate: plate || null,
+    })
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  revalidatePath("/");
+  revalidatePath("/vehicles");
+  redirect("/vehicles");
+}
+
+export async function deleteVehicle(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const id = Number(formData.get("id"));
+  if (!id) return;
+
+  // Service Records cascade away with the car (FK ON DELETE CASCADE); RLS +
+  // `.eq("user_id")` scope the delete to the owner.
+  await supabase.from("cars").delete().eq("id", id).eq("user_id", userId);
+
+  revalidatePath("/");
+  revalidatePath("/vehicles");
+  redirect("/vehicles");
 }
 
 export async function addService(formData: FormData): Promise<void> {

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 import { signOut } from "@/app/login/actions";
+
+import { MainNav } from "./MainNav";
 
 function Wheel() {
   return (
@@ -17,29 +18,6 @@ function Wheel() {
       <path d="M16 41 L26.5 35" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
       <path d="M48 41 L37.5 35" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
     </svg>
-  );
-}
-
-function NavLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-lg px-3.5 py-2 font-body text-sm font-medium transition ${
-        active
-          ? "bg-white/[0.06] text-ivory"
-          : "text-muted hover:bg-white/[0.04] hover:text-ivory"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }
 
@@ -60,14 +38,7 @@ export function Topbar({ email }: { email: string }) {
         </span>
       </Link>
 
-      <nav className="ml-3 hidden items-center gap-1 md:flex">
-        <NavLink href="/" active>
-          Табло
-        </NavLink>
-        <NavLink href="#">Автомобили</NavLink>
-        <NavLink href="#">Документи</NavLink>
-        <NavLink href="#">Напомняния</NavLink>
-      </nav>
+      <MainNav />
 
       <div className="flex-1" />
 

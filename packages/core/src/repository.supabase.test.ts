@@ -65,7 +65,14 @@ describe.skipIf(!hasEnv)("Supabase repositories (integration)", () => {
     const vehicles = await new SupabaseVehicleRepository(admin).listByUser(
       String(userId),
     );
-    expect(vehicles).toContainEqual({ id: String(carId), userId: String(userId) });
+    expect(vehicles).toContainEqual({
+      id: String(carId),
+      userId: String(userId),
+      brand: "Toyota",
+      model: "Corolla",
+      year: null,
+      plate: null,
+    });
   });
 
   it("SupabaseServiceRecordRepository.listByUser maps services → ServiceRecord", async () => {

@@ -27,10 +27,16 @@ type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 
 // --- the single snake_case → camelCase mapping seam ------------------------------
 
-function vehicleFromRow(row: Pick<CarRow, "id" | "user_id">): Vehicle {
+function vehicleFromRow(
+  row: Pick<CarRow, "id" | "user_id" | "brand" | "model" | "year" | "license_plate">,
+): Vehicle {
   return {
     id: String(row.id),
     userId: String(row.user_id),
+    brand: row.brand,
+    model: row.model,
+    year: row.year,
+    plate: row.license_plate,
   };
 }
 
@@ -65,8 +71,9 @@ export class SupabaseVehicleRepository implements VehicleRepository {
   async listByUser(userId: string): Promise<Vehicle[]> {
     const result = await this.client
       .from("cars")
-      .select("id, user_id")
-      .eq("user_id", Number(userId));
+      .select("id, user_id, brand, model, year, license_plate")
+      .eq("user_id", Number(userId))
+      .order("id");
     return rowsOrThrow(result, "cars.listByUser").map(vehicleFromRow);
   }
 }

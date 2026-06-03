@@ -15,6 +15,14 @@ export interface Vehicle {
   id: string;
   /** The User who owns this Vehicle (`cars.user_id` in the schema). */
   userId: string;
+  /** Make, e.g. "BMW" (`cars.brand`). */
+  brand: string;
+  /** Model, e.g. "320d" (`cars.model`). */
+  model: string;
+  /** Model year, when known (`cars.year`). */
+  year: number | null;
+  /** Registration plate, when known (`cars.license_plate`). */
+  plate: string | null;
 }
 
 /** A single tracked obligation for a Vehicle, with one Service Type and an Expiry Date. */

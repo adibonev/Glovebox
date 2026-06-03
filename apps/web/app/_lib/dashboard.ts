@@ -1,6 +1,7 @@
 import {
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
+  SupabaseVehicleRepository,
   expiryStatus,
   type ExpiryStatus,
   type ReminderWindows,
@@ -21,7 +22,7 @@ import {
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // Default Reminder Windows per Service Type (days). TODO: per-user reminder_settings.
-const DEFAULT_WINDOWS: ReminderWindows = {
+export const DEFAULT_WINDOWS: ReminderWindows = {
   civil_liability: 30,
   casco: 30,
   vignette: 14,
@@ -61,15 +62,27 @@ export type Vehicle = {
   bodyType: BodyType;
 };
 
+/** Lightweight entry for the vehicle switcher (one per owned Vehicle). */
+export type VehicleSummary = {
+  id: string;
+  name: string;
+  plate: string | null;
+};
+
 export type DashboardData = {
   userEmail: string;
+  /** The Vehicle currently shown (selected via `?v=`, else the first). */
   vehicle: Vehicle | null;
+  /** All the User's Vehicles, for the switcher. */
+  vehicles: VehicleSummary[];
   urgent: GaugeView | null;
   counts: Counts;
   items: ServiceItemView[];
 };
 
-export async function getDashboardData(): Promise<DashboardData | null> {
+export async function getDashboardData(
+  selectedVehicleId?: string,
+): Promise<DashboardData | null> {
   const supabase = await createClient();
   const {
     data: { user: authUser },
@@ -81,17 +94,23 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   const user =
     (await userRepo.findByAuthId(authUser.id)) ??
     (await userRepo.create({ authUserId: authUser.id, email: authUser.email ?? "" }));
-  const userId = Number(user.id);
 
-  const { data: car } = await supabase
-    .from("cars")
-    .select("id, brand, model, year, license_plate")
-    .eq("user_id", userId)
-    .order("id")
-    .limit(1)
-    .maybeSingle();
+  // All Vehicles (through the repository seam — one mapping place). The dashboard
+  // shows exactly one: the `?v=` selection if it's owned, otherwise the first.
+  const ownedVehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
+  const active =
+    ownedVehicles.find((v) => v.id === selectedVehicleId) ?? ownedVehicles[0] ?? null;
 
-  const records = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
+  const vehicles: VehicleSummary[] = ownedVehicles.map((v) => ({
+    id: v.id,
+    name: `${v.brand} ${v.model}`,
+    plate: v.plate,
+  }));
+
+  // Service Records are scoped to the shown Vehicle (gauge / counts / list).
+  const records = active
+    ? await new SupabaseServiceRecordRepository(supabase).listByVehicle(active.id)
+    : [];
   const today = new Date();
 
   const window = (serviceType: string) => DEFAULT_WINDOWS[serviceType] ?? 30;
@@ -135,15 +154,15 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       }
     : null;
 
-  const vehicle: Vehicle | null = car
+  const vehicle: Vehicle | null = active
     ? {
-        id: String(car.id),
-        name: `${car.brand} ${car.model}`,
-        plate: car.license_plate,
-        year: car.year,
+        id: active.id,
+        name: `${active.brand} ${active.model}`,
+        plate: active.plate,
+        year: active.year,
         bodyType: mapBodyClass(null),
       }
     : null;
 
-  return { userEmail: authUser.email ?? "", vehicle, urgent, counts, items };
+  return { userEmail: authUser.email ?? "", vehicle, vehicles, urgent, counts, items };
 }
