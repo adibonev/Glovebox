@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import type { BodyType } from "@/app/_lib/bodyType";
 
+import { Wheel } from "./Wheel";
+
 /**
  * The vehicle silhouette floating directly on the dark scene — a soft emerald halo
  * and a ground shadow, no panel, no border. The PNG (public/cars/<bodyType>.png) is
@@ -53,18 +55,7 @@ export function VehicleCard({ bodyType, alt }: { bodyType: BodyType; alt: string
 function VehiclePlaceholder() {
   return (
     <div className="relative z-[1] flex flex-col items-center gap-3 py-12 text-center">
-      <svg
-        viewBox="0 0 64 64"
-        className="h-16 w-16 animate-[spin_9s_linear_infinite] text-silver/25"
-        fill="none"
-        aria-hidden
-      >
-        <circle cx="32" cy="32" r="26" stroke="currentColor" strokeWidth="4" />
-        <circle cx="32" cy="32" r="6" fill="currentColor" />
-        <path d="M32 8 L32 24" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-        <path d="M11 44 L25 36" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-        <path d="M53 44 L39 36" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-      </svg>
+      <Wheel className="h-16 w-16 animate-[spin_9s_linear_infinite] text-silver/25" />
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-dim">Силует на колата</p>
     </div>
   );
