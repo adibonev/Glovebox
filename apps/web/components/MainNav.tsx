@@ -12,7 +12,7 @@ export function MainNav() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <nav className="ml-3 hidden items-center gap-1 md:flex">
+    <nav className="ml-2 hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.025] p-1 md:flex">
       <NavLink href="/" active={isActive("/")}>
         Табло
       </NavLink>
@@ -41,10 +41,11 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`rounded-lg px-3.5 py-2 font-body text-sm font-medium transition ${
+      aria-current={active ? "page" : undefined}
+      className={`rounded-xl px-3.5 py-2 font-body text-[14px] font-semibold transition ${
         active
-          ? "bg-white/[0.06] text-ivory"
-          : "text-muted hover:bg-white/[0.04] hover:text-ivory"
+          ? "bg-copper/[0.16] text-copper shadow-[inset_0_0_0_1px_rgba(196,149,76,0.35)]"
+          : "text-silver/80 hover:bg-white/[0.07] hover:text-ivory"
       }`}
     >
       {children}

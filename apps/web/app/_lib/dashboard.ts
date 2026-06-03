@@ -134,12 +134,14 @@ export async function getDashboardData(
   }));
 
   // Most urgent obligation drives the gauge (first after sorting: overdue → soonest).
+  // Within a few days of expiry (or already expired) the gauge turns red — critical.
+  const CRITICAL_DAYS = 3;
   const head = enriched[0];
   const urgent: GaugeView | null = head
     ? {
         days: head.days,
         fraction: head.days / window(head.record.serviceType),
-        color: STATUS_COLORS[head.status],
+        color: head.days <= CRITICAL_DAYS ? STATUS_COLORS.Expired : STATUS_COLORS[head.status],
         typeLabel: SERVICE_TYPE_LABELS[head.record.serviceType] ?? head.record.serviceType,
         dateLabel: formatDateShort(head.record.expiryDate),
       }

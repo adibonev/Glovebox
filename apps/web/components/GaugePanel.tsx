@@ -30,6 +30,8 @@ export function GaugePanel({ urgent, counts }: { urgent: GaugeView | null; count
 function Gauge({ urgent }: { urgent: GaugeView }) {
   const frac = Math.max(0, Math.min(1, urgent.fraction));
   const expired = urgent.days < 0;
+  // Overdue → show a full (alarming) ring rather than an empty one.
+  const displayFrac = expired ? 1 : frac;
 
   return (
     <div className="relative mx-auto my-3 h-[212px] w-[212px]">
@@ -56,14 +58,15 @@ function Gauge({ urgent }: { urgent: GaugeView }) {
           strokeDasharray={`${ARC} ${C}`}
           transform="rotate(135 100 100)"
           initial={{ strokeDashoffset: ARC }}
-          animate={{ strokeDashoffset: ARC * (1 - frac) }}
+          animate={{ strokeDashoffset: ARC * (1 - displayFrac) }}
           transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
           style={{ filter: `drop-shadow(0 0 8px ${urgent.color}73)` }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
-          className="font-display text-[62px] font-semibold leading-none text-ivory"
+          className="font-display text-[62px] font-semibold leading-none"
+          style={{ color: urgent.color }}
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.45 }}

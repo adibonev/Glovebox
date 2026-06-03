@@ -1,4 +1,4 @@
-/** A Bulgarian/EU registration plate badge. */
+/** A Bulgarian registration plate badge with the national tricolour. */
 export function PlateBadge({ plate, size = "md" }: { plate: string; size?: "sm" | "md" }) {
   const sm = size === "sm";
   return (
@@ -7,16 +7,23 @@ export function PlateBadge({ plate, size = "md" }: { plate: string; size?: "sm" 
         sm ? "py-1 pl-1 pr-2.5 text-[13px]" : "py-1.5 pl-1.5 pr-3 text-[15px]"
       }`}
     >
-      {/* EU/BG plate emblem — fixed real-world flag colours, not brand tokens. */}
+      {/* Bulgarian flag — fixed real-world colours (white / green / red), not brand tokens. */}
       <span
-        className={`flex flex-col items-center justify-end rounded-[4px] bg-[#0b3a8f] font-bold leading-none text-[#ffcf3a] ${
-          sm ? "h-[22px] w-[18px] pb-0.5 text-[7px]" : "h-[26px] w-[22px] pb-1 text-[8px]"
+        className={`relative flex flex-col overflow-hidden rounded-[4px] ring-1 ring-black/20 ${
+          sm ? "h-[22px] w-[16px]" : "h-[26px] w-[19px]"
         }`}
+        aria-label="BG"
       >
-        <span aria-hidden className="mb-[2px] text-[7px]">
-          ★
+        <span className="flex-1 bg-white" />
+        <span className="flex-1 bg-[#00966E]" />
+        <span className="flex-1 bg-[#D62612]" />
+        <span
+          className={`absolute inset-x-0 bottom-0 text-center font-bold leading-none text-white ${
+            sm ? "pb-[1px] text-[6px]" : "pb-[2px] text-[7px]"
+          }`}
+        >
+          BG
         </span>
-        BG
       </span>
       {plate}
     </span>
