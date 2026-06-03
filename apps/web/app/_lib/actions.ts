@@ -1,14 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { SupabaseUserRepository } from "@glovebox/core";
+import { SupabaseUserRepository, canAddDocument, canAddVehicle } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
 
 import { BODY_TYPES } from "./bodyType";
 import { SERVICE_TYPE_ORDER } from "./labels";
+import { countDocuments, countVehicles, getPlan } from "./plan";
 import { WINDOW_OPTIONS } from "./reminderSettings";
 
 /** Read a valid body type from the form, defaulting to "sedan". */
@@ -43,6 +45,12 @@ export async function addVehicle(formData: FormData): Promise<void> {
   const yearRaw = String(formData.get("year") ?? "").trim();
   const plate = String(formData.get("plate") ?? "").trim();
   if (!brand || !model) return;
+
+  // Quota gate: Free is capped at 1 Vehicle → Paywall (ADR-0003).
+  const plan = await getPlan(supabase, userId);
+  if (!canAddVehicle(plan, await countVehicles(supabase, userId))) {
+    redirect("/paywall?reason=vehicle");
+  }
 
   const { data } = await supabase
     .from("cars")
@@ -114,6 +122,12 @@ export async function uploadDocument(formData: FormData): Promise<void> {
     .eq("id", serviceId)
     .maybeSingle();
   if (!service) return;
+
+  // Quota gate: Free is capped at 1 Document per Service Record → Paywall (ADR-0003).
+  const plan = await getPlan(supabase, userId);
+  if (!canAddDocument(plan, await countDocuments(supabase, serviceId))) {
+    redirect("/paywall?reason=document");
+  }
 
   // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
   const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(-120) || "file";
@@ -188,6 +202,48 @@ export async function updatePassword(formData: FormData): Promise<void> {
 
   const { error } = await supabase.auth.updateUser({ password });
   redirect(error ? "/account?error=password" : "/account?saved=password");
+}
+
+export async function startProCheckout(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const period = formData.get("period") === "annual" ? "annual" : "monthly";
+  const secret = process.env.STRIPE_SECRET_KEY;
+  const price =
+    period === "annual"
+      ? process.env.STRIPE_PRICE_PRO_ANNUAL
+      : process.env.STRIPE_PRICE_PRO_MONTHLY;
+  if (!secret || !price) redirect("/paywall?error=soon"); // Stripe not configured yet
+
+  const h = await headers();
+  const origin = h.get("origin") ?? `http://${h.get("host") ?? "localhost:3000"}`;
+
+  // Hosted Stripe Checkout (REST — no SDK). The webhook flips the Plan to Pro on success.
+  const body = new URLSearchParams({
+    mode: "subscription",
+    "line_items[0][price]": price,
+    "line_items[0][quantity]": "1",
+    "subscription_data[trial_period_days]": "14",
+    client_reference_id: String(userId),
+    customer_email: user.email ?? "",
+    success_url: `${origin}/?upgraded=1`,
+    cancel_url: `${origin}/paywall`,
+  });
+
+  const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const session = (await res.json()) as { url?: string };
+  if (!res.ok || !session.url) redirect("/paywall?error=checkout");
+  redirect(session.url);
 }
 
 export async function saveReminderSettings(formData: FormData): Promise<void> {

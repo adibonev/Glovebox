@@ -1,9 +1,25 @@
 import type { ReactNode } from "react";
 
+import { SupabaseUserRepository, type Plan } from "@glovebox/core";
+
+import { getPlan } from "@/app/_lib/plan";
+import { createClient } from "@/lib/supabase/server";
+
 import { Topbar } from "./Topbar";
 
 /** Shared page chrome: the cinematic scene glows, centered container and Topbar. */
-export function Shell({ email, children }: { email: string; children: ReactNode }) {
+export async function Shell({ email, children }: { email: string; children: ReactNode }) {
+  // Resolve the Plan once here for the Topbar badge (Free → upsell, Pro/Legacy → PRO).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let plan: Plan = "free";
+  if (user) {
+    const profile = await new SupabaseUserRepository(supabase).findByAuthId(user.id);
+    if (profile) plan = await getPlan(supabase, profile.id);
+  }
+
   return (
     <main className="relative min-h-screen">
       <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -12,7 +28,7 @@ export function Shell({ email, children }: { email: string; children: ReactNode 
       </div>
 
       <div className="relative z-[1] mx-auto w-full max-w-[1180px] px-5 pb-20 sm:px-6">
-        <Topbar email={email} />
+        <Topbar email={email} plan={plan} />
         {children}
       </div>
     </main>

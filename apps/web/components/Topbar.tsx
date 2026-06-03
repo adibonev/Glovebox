@@ -1,11 +1,13 @@
 import Link from "next/link";
 
+import type { Plan } from "@glovebox/core";
+
 import { MainNav } from "./MainNav";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wheel } from "./Wheel";
 
-/** Topbar: the Glovebox wordmark (steering-wheel "o"), nav, PRO badge, profile menu. */
-export function Topbar({ email }: { email: string }) {
+/** Topbar: the Glovebox wordmark (steering-wheel "o"), nav, plan badge, profile menu. */
+export function Topbar({ email, plan = "free" }: { email: string; plan?: Plan }) {
   return (
     <header className="flex items-center gap-4 py-6">
       <Link
@@ -24,9 +26,18 @@ export function Topbar({ email }: { email: string }) {
 
       <div className="flex-1" />
 
-      <span className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper">
-        PRO
-      </span>
+      {plan === "free" ? (
+        <Link
+          href="/paywall"
+          className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper transition hover:bg-copper/15"
+        >
+          НАДГРАДИ
+        </Link>
+      ) : (
+        <span className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper">
+          PRO
+        </span>
+      )}
 
       <ProfileMenu email={email} />
     </header>
