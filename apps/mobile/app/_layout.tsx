@@ -3,12 +3,16 @@ import "../global.css";
 import { colors } from "@glovebox/ui";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
+
+// Paint the native root view dark so there's no white flash before React mounts.
+void SystemUI.setBackgroundColorAsync(colors.ink);
 
 export default function RootLayout() {
   return (

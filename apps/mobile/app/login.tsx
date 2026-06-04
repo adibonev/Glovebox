@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Wordmark } from "@/components/Wordmark";
 import { supabase } from "@/lib/supabase";
 
 type Mode = "signin" | "signup";
@@ -53,10 +54,9 @@ export default function LoginScreen() {
       >
         <View className="flex-1 justify-center px-6">
           {/* Wordmark */}
-          <Text className="mb-2 text-center text-4xl font-semibold">
-            <Text className="text-ivory">Glove</Text>
-            <Text className="text-copper">box</Text>
-          </Text>
+          <View className="mb-2 items-center">
+            <Wordmark size={40} />
+          </View>
           <Text className="mb-10 text-center text-base text-muted">
             Следи сроковете на колата си.
           </Text>

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CarImage } from "@/components/CarImage";
 import { GaugePanel } from "@/components/GaugePanel";
+import { Wordmark } from "@/components/Wordmark";
 import {
   SERVICE_TYPE_LABELS,
   STATUS_COLORS,
@@ -23,10 +24,7 @@ export default function DashboardTab() {
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
       <View className="px-5 pb-3 pt-2">
-        <Text className="text-2xl font-semibold">
-          <Text className="text-ivory">Glove</Text>
-          <Text className="text-copper">box</Text>
-        </Text>
+        <Wordmark size={24} />
       </View>
 
       {loading ? (
