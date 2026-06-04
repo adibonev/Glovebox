@@ -8,6 +8,7 @@ import {
 import type { ReactNode } from "react";
 
 import { CookieConsent } from "@/components/CookieConsent";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 import "./globals.css";
 
@@ -59,8 +60,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${fraunces.variable} ${hanken.variable} ${manrope.variable} ${jetbrains.variable}`}
     >
       <body className="bg-ink font-body text-ivory antialiased">
-        {children}
-        <CookieConsent />
+        <PostHogProvider>
+          {children}
+          <CookieConsent />
+        </PostHogProvider>
       </body>
     </html>
   );

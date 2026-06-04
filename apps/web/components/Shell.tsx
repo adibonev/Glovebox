@@ -5,6 +5,7 @@ import { SupabaseUserRepository, type Plan } from "@glovebox/core";
 import { getPlan } from "@/app/_lib/plan";
 import { createClient } from "@/lib/supabase/server";
 
+import { PostHogIdentify } from "./PostHogIdentify";
 import { Topbar } from "./Topbar";
 
 /** Shared page chrome: the cinematic scene glows, centered container and Topbar. */
@@ -28,6 +29,9 @@ export async function Shell({ email, children }: { email: string; children: Reac
       </div>
 
       <div className="relative z-[1] mx-auto w-full max-w-[1180px] px-5 pb-20 sm:px-6">
+        {process.env.NEXT_PUBLIC_POSTHOG_KEY && user && (
+          <PostHogIdentify id={user.id} email={email} />
+        )}
         <Topbar email={email} plan={plan} />
         {children}
       </div>
