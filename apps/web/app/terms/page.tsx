@@ -2,8 +2,8 @@ import { LegalPage } from "@/components/LegalPage";
 
 export const metadata = { title: "Glovebox — Общи условия" };
 
-const OPERATOR = "[Име Фамилия]";
-const CONTACT_EMAIL = "[контакт@имейл]";
+const OPERATOR = "Adalbert Bonev";
+const CONTACT_EMAIL = "bonev112@gmail.com";
 
 export default function TermsPage() {
   return (

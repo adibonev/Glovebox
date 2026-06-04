@@ -3,8 +3,8 @@ import { LegalPage } from "@/components/LegalPage";
 export const metadata = { title: "Glovebox — Политика за поверителност" };
 
 // Попълни тези — операторът е физическо лице:
-const OPERATOR = "[Име Фамилия]";
-const CONTACT_EMAIL = "[контакт@имейл]";
+const OPERATOR = "Adalbert Bonev";
+const CONTACT_EMAIL = "bonev112@gmail.com";
 
 export default function PrivacyPage() {
   return (
