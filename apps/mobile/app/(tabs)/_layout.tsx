@@ -32,6 +32,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="documents"
+        options={{
+          title: "Документи",
+          tabBarIcon: ({ color, size }) => <Ionicons name="document-text-outline" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="reminders"
         options={{
           title: "Напомняния",

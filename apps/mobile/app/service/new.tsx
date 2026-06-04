@@ -4,14 +4,17 @@ import {
   canAddService,
   isExpiringServiceType,
 } from "@glovebox/core";
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from "@glovebox/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Text } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { ChipPicker, DateField, Field, PrimaryButton } from "@/components/forms";
 import { Screen } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
+import { pickDocument, uploadDocument, type PickedFile } from "@/lib/documents";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { supabase } from "@/lib/supabase";
@@ -34,6 +37,7 @@ export default function NewServiceScreen() {
   const [serviceType, setServiceType] = useState<string | null>(null);
   const [expiryDate, setExpiryDate] = useState<Date>(oneYearOut);
   const [cost, setCost] = useState("");
+  const [doc, setDoc] = useState<PickedFile | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,13 +61,18 @@ export default function NewServiceScreen() {
         return;
       }
 
-      await serviceRepo.create({
+      const created = await serviceRepo.create({
         vehicleId,
         userId: user.id,
         serviceType,
         expiryDate,
         cost: parseCost(cost),
       });
+
+      // Attach the picked Document to the new Service Record (visible in „Документи").
+      if (doc) {
+        await uploadDocument(session.user.id, user.id, created.id, doc);
+      }
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Грешка при запис.");
@@ -82,6 +91,23 @@ export default function NewServiceScreen() {
         placeholder="напр. 120"
         keyboardType="decimal-pad"
       />
+
+      <View className="mb-4">
+        <Text className="mb-1.5 text-sm text-muted">Документ · по избор</Text>
+        <Pressable
+          onPress={async () => {
+            const file = await pickDocument();
+            if (file) setDoc(file);
+          }}
+          className="flex-row items-center gap-2 rounded-xl border border-white/10 bg-panel px-4 py-3.5"
+        >
+          <Ionicons name="attach" size={18} color={colors.copper} />
+          <Text className="flex-1 text-base text-ivory" numberOfLines={1}>
+            {doc ? doc.name : "Прикачи файл (PDF/снимка)"}
+          </Text>
+        </Pressable>
+      </View>
+
       {error && <Text className="mb-2 text-sm text-status-expired">{error}</Text>}
       <PrimaryButton label="Запази" onPress={submit} loading={saving} disabled={!serviceType} />
     </Screen>

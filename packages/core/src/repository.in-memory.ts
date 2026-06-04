@@ -1,5 +1,6 @@
 import type {
   Document,
+  NewDocument,
   NewServiceRecord,
   NewVehicle,
   ServiceRecord,
@@ -119,6 +120,8 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
 
 /** In-memory DocumentRepository for tests; joins Documents → Service Records → Vehicles by owner. */
 export class InMemoryDocumentRepository implements DocumentRepository {
+  private seq = 0;
+
   constructor(
     private readonly vehicles: Vehicle[],
     private readonly serviceRecords: ServiceRecord[],
@@ -135,6 +138,29 @@ export class InMemoryDocumentRepository implements DocumentRepository {
         .map((record) => record.id),
     );
     return this.documents.filter((doc) => ownedServiceIds.has(doc.serviceRecordId));
+  }
+
+  async listByServiceRecord(serviceRecordId: string): Promise<Document[]> {
+    return this.documents.filter((doc) => doc.serviceRecordId === serviceRecordId);
+  }
+
+  async create(input: NewDocument): Promise<Document> {
+    // userId / sizeBytes are DB-only (the domain Document doesn't carry them).
+    const document: Document = {
+      id: `mem-d-${++this.seq}`,
+      serviceRecordId: input.serviceRecordId,
+      path: input.path,
+      name: input.name,
+      mimeType: input.mimeType ?? null,
+      createdAt: new Date(),
+    };
+    this.documents.push(document);
+    return document;
+  }
+
+  async delete(id: string): Promise<void> {
+    const index = this.documents.findIndex((doc) => doc.id === id);
+    if (index >= 0) this.documents.splice(index, 1);
   }
 }
 

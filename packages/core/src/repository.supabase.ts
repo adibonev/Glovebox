@@ -3,6 +3,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import type {
   Document,
+  NewDocument,
   NewServiceRecord,
   NewVehicle,
   ServiceRecord,
@@ -241,16 +242,50 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
   }
 }
 
+const DOCUMENT_COLUMNS = "id, service_id, path, name, mime_type, created_at";
+
 export class SupabaseDocumentRepository implements DocumentRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   async listByUser(userId: string): Promise<Document[]> {
     const result = await this.client
       .from("documents")
-      .select("id, service_id, path, name, mime_type, created_at")
+      .select(DOCUMENT_COLUMNS)
       .eq("user_id", Number(userId))
       .order("created_at", { ascending: false });
     return rowsOrThrow(result, "documents.listByUser").map(documentFromRow);
+  }
+
+  async listByServiceRecord(serviceRecordId: string): Promise<Document[]> {
+    const result = await this.client
+      .from("documents")
+      .select(DOCUMENT_COLUMNS)
+      .eq("service_id", Number(serviceRecordId))
+      .order("created_at", { ascending: false });
+    return rowsOrThrow(result, "documents.listByServiceRecord").map(documentFromRow);
+  }
+
+  async create(input: NewDocument): Promise<Document> {
+    const { data, error } = await this.client
+      .from("documents")
+      .insert({
+        service_id: Number(input.serviceRecordId),
+        user_id: Number(input.userId),
+        path: input.path,
+        name: input.name,
+        mime_type: input.mimeType ?? null,
+        size_bytes: input.sizeBytes ?? null,
+      })
+      .select(DOCUMENT_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase documents.create failed: ${error.message}`);
+    return documentFromRow(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    // Removes the table row only; the Storage object is removed by the caller.
+    const { error } = await this.client.from("documents").delete().eq("id", Number(id));
+    if (error) throw new Error(`Supabase documents.delete failed: ${error.message}`);
   }
 }
 

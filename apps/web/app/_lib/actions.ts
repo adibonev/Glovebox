@@ -32,6 +32,33 @@ function readCost(formData: FormData): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
+/** Upload a file to the private `documents` bucket and record it on a Service Record. */
+async function storeDocument(
+  supabase: ServerClient,
+  authUserId: string,
+  userId: number,
+  serviceId: number,
+  file: File,
+): Promise<void> {
+  // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
+  const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(-120) || "file";
+  const path = `${authUserId}/${serviceId}/${crypto.randomUUID()}__${safeName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+  if (uploadError) return;
+
+  await supabase.from("documents").insert({
+    service_id: serviceId,
+    user_id: userId,
+    name: file.name.slice(0, 200),
+    path,
+    mime_type: file.type || null,
+    size_bytes: file.size,
+  });
+}
+
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 /** Resolve (and provision) the signed-in user's `users.id`. */
@@ -142,23 +169,7 @@ export async function uploadDocument(formData: FormData): Promise<void> {
     redirect("/paywall?reason=document");
   }
 
-  // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
-  const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(-120) || "file";
-  const path = `${authUser.id}/${serviceId}/${crypto.randomUUID()}__${safeName}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("documents")
-    .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
-  if (uploadError) return;
-
-  await supabase.from("documents").insert({
-    service_id: serviceId,
-    user_id: userId,
-    name: file.name.slice(0, 200),
-    path,
-    mime_type: file.type || null,
-    size_bytes: file.size,
-  });
+  await storeDocument(supabase, authUser.id, userId, serviceId, file);
 
   revalidatePath("/documents");
   revalidatePath("/");
@@ -333,6 +344,10 @@ export async function deleteVehicle(formData: FormData): Promise<void> {
 
 export async function addService(formData: FormData): Promise<void> {
   const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
   const userId = await resolveUserId(supabase);
   if (!userId) redirect("/login");
 
@@ -348,15 +363,27 @@ export async function addService(formData: FormData): Promise<void> {
     redirect("/paywall?reason=service");
   }
 
-  await supabase.from("services").insert({
-    car_id: vehicleId,
-    user_id: userId,
-    service_type: serviceType,
-    expiry_date: expiryDate,
-    notes: notes || null,
-    cost: readCost(formData),
-  });
+  const { data: created } = await supabase
+    .from("services")
+    .insert({
+      car_id: vehicleId,
+      user_id: userId,
+      service_type: serviceType,
+      expiry_date: expiryDate,
+      notes: notes || null,
+      cost: readCost(formData),
+    })
+    .select("id")
+    .single();
+
+  // Optionally attach a Document supplied with the form (visible in /documents).
+  const file = formData.get("document");
+  if (created && file instanceof File && file.size > 0) {
+    await storeDocument(supabase, authUser.id, userId, created.id, file);
+  }
+
   revalidatePath("/");
+  revalidatePath("/documents");
   redirect("/");
 }
 

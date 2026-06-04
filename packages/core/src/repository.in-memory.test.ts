@@ -118,6 +118,26 @@ describe("InMemoryDocumentRepository", () => {
   });
 });
 
+describe("InMemoryDocumentRepository writes", () => {
+  it("creates, lists by Service Record and deletes a Document", async () => {
+    const repo = new InMemoryDocumentRepository(vehicles, serviceRecords, []);
+
+    const created = await repo.create({
+      serviceRecordId: "rec-1",
+      userId: "user-1",
+      path: "u1/rec-1/x.pdf",
+      name: "x.pdf",
+      mimeType: "application/pdf",
+    });
+    expect(created).toMatchObject({ serviceRecordId: "rec-1", name: "x.pdf" });
+    expect((await repo.listByServiceRecord("rec-1")).map((d) => d.id)).toEqual([created.id]);
+    expect((await repo.listByUser("user-1")).map((d) => d.id)).toEqual([created.id]);
+
+    await repo.delete(created.id);
+    expect(await repo.listByServiceRecord("rec-1")).toEqual([]);
+  });
+});
+
 describe("InMemoryUserRepository", () => {
   it("creates a User and finds it by Auth Identity", async () => {
     const repo = new InMemoryUserRepository();

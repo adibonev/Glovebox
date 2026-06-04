@@ -1,5 +1,6 @@
 import type {
   Document,
+  NewDocument,
   NewServiceRecord,
   NewVehicle,
   ServiceRecord,
@@ -37,11 +38,15 @@ export interface ServiceRecordRepository {
 }
 
 /**
- * Read access to Documents. `listByUser` returns the Documents across all of the
- * User's Service Records — a join the Supabase adapter performs via `services`/`cars`.
+ * Access to Documents. `listByUser` returns the Documents across all of the User's
+ * Service Records — a join the Supabase adapter performs via `services`/`cars`. The file
+ * bytes live in Storage; this seam owns the `documents` table rows (RLS-scoped on writes).
  */
 export interface DocumentRepository {
   listByUser(userId: string): Promise<Document[]>;
+  listByServiceRecord(serviceRecordId: string): Promise<Document[]>;
+  create(input: NewDocument): Promise<Document>;
+  delete(id: string): Promise<void>;
 }
 
 /**

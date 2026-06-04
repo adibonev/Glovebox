@@ -105,3 +105,17 @@ export interface ServiceRecordChanges {
   expiryDate?: Date;
   cost?: number | null;
 }
+
+/**
+ * Fields to record a Document. The file bytes live in Supabase Storage (the `documents`
+ * bucket) under `path`; this records the row. `userId` is the denormalised owner
+ * (`documents.user_id`).
+ */
+export interface NewDocument {
+  serviceRecordId: string;
+  userId: string;
+  path: string;
+  name: string;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+}

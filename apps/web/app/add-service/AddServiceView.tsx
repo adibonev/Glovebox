@@ -78,6 +78,18 @@ export function AddServiceView({ vehicleId }: { vehicleId: string }) {
 
       <label className="flex flex-col gap-2">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
+          Документ · по избор
+        </span>
+        <input
+          type="file"
+          name="document"
+          accept="application/pdf,image/*"
+          className="block w-full cursor-pointer rounded-xl border border-white/10 bg-ink/60 py-2 pl-2 pr-4 font-body text-sm text-muted outline-none transition file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-emerald file:px-4 file:py-2 file:font-body file:text-sm file:font-semibold file:text-ivory hover:file:bg-emerald/90 focus:border-copper/60"
+        />
+      </label>
+
+      <label className="flex flex-col gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
           Бележка · по избор
         </span>
         <textarea
