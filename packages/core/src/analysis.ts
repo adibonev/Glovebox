@@ -1,47 +1,67 @@
 /**
- * Spend analysis — pure aggregation over Service Records' costs (EUR). Powers the
- * "Анализ" pie chart: where the money goes, by Service Type. No I/O.
+ * Spend analysis — pure aggregation over recorded costs (EUR). Powers the "Анализ"
+ * pie + line charts. No I/O. The caller keys items however it wants (by Service Type,
+ * by Vehicle, …) so the same maths drives every breakdown.
  */
 
-/** A Service Type's slice of the total spend. */
-export interface SpendByType {
-  serviceType: string;
+/** One group's slice of the total spend. */
+export interface SpendSlice {
+  key: string;
   total: number;
   /** Fraction of the overall total (0..1). */
   share: number;
 }
 
-export interface SpendAnalysis {
-  /** Sum of all recorded costs (EUR). */
+export interface SpendBreakdown {
+  /** Sum of all costs (EUR). */
   total: number;
-  /** Spend per Service Type, largest first; only types with a positive cost. */
-  byType: SpendByType[];
-  /** Number of Service Records that contributed a cost. */
+  /** Number of items that contributed a cost. */
   count: number;
+  /** Spend per key, largest first; only keys with a positive cost. */
+  slices: SpendSlice[];
 }
 
-/** Aggregate the recorded costs of Service Records into a spend breakdown by Service Type. */
-export function spendAnalysis(
-  records: readonly { serviceType: string; cost: number | null }[],
-): SpendAnalysis {
+/** Group recorded costs by an arbitrary key (Service Type, Vehicle, …) into shares. */
+export function spendShares(
+  items: readonly { key: string; cost: number | null }[],
+): SpendBreakdown {
   const totals = new Map<string, number>();
   let total = 0;
   let count = 0;
 
-  for (const record of records) {
-    if (record.cost == null || record.cost <= 0) continue;
-    total += record.cost;
+  for (const item of items) {
+    if (item.cost == null || item.cost <= 0) continue;
+    total += item.cost;
     count += 1;
-    totals.set(record.serviceType, (totals.get(record.serviceType) ?? 0) + record.cost);
+    totals.set(item.key, (totals.get(item.key) ?? 0) + item.cost);
   }
 
-  const byType: SpendByType[] = [...totals.entries()]
-    .map(([serviceType, sum]) => ({
-      serviceType,
-      total: sum,
-      share: total > 0 ? sum / total : 0,
-    }))
+  const slices: SpendSlice[] = [...totals.entries()]
+    .map(([key, sum]) => ({ key, total: sum, share: total > 0 ? sum / total : 0 }))
     .sort((a, b) => b.total - a.total);
 
-  return { total, byType, count };
+  return { total, count, slices };
+}
+
+/** Spend in a calendar month (`"YYYY-MM"`). */
+export interface PeriodSpend {
+  period: string;
+  total: number;
+}
+
+/** Sum recorded costs into monthly buckets, oldest first (for the spend-over-time line). */
+export function spendByMonth(
+  items: readonly { date: Date; cost: number | null }[],
+): PeriodSpend[] {
+  const totals = new Map<string, number>();
+
+  for (const item of items) {
+    if (item.cost == null || item.cost <= 0) continue;
+    const period = `${item.date.getFullYear()}-${String(item.date.getMonth() + 1).padStart(2, "0")}`;
+    totals.set(period, (totals.get(period) ?? 0) + item.cost);
+  }
+
+  return [...totals.entries()]
+    .map(([period, total]) => ({ period, total }))
+    .sort((a, b) => a.period.localeCompare(b.period));
 }

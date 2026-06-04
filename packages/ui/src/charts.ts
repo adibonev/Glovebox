@@ -33,3 +33,36 @@ export function donutSlices(values: readonly number[], opts: DonutOptions): stri
     );
   });
 }
+
+export interface LineOptions {
+  width: number;
+  height: number;
+  /** The value mapped to the top of the chart (usually the max across all series). */
+  max: number;
+  /** Inset from the edges, in the same units as width/height. */
+  pad?: number;
+}
+
+/** Evenly-spaced (x, y) points for a series of values. */
+export function linePoints(
+  values: readonly number[],
+  opts: LineOptions,
+): { x: number; y: number }[] {
+  const pad = opts.pad ?? 0;
+  const n = values.length;
+  if (n === 0 || opts.max <= 0) return [];
+
+  const innerW = opts.width - pad * 2;
+  const innerH = opts.height - pad * 2;
+  return values.map((v, i) => ({
+    x: pad + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW),
+    y: pad + innerH - (Math.max(0, v) / opts.max) * innerH,
+  }));
+}
+
+/** SVG `d` for a polyline of evenly-spaced values (one point per value). */
+export function linePath(values: readonly number[], opts: LineOptions): string {
+  return linePoints(values, opts)
+    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`)
+    .join(" ");
+}

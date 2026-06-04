@@ -1,7 +1,10 @@
 import type { Plan } from "@glovebox/core";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Field, PrimaryButton } from "@/components/forms";
+import { getName, updateName, updatePassword } from "@/lib/account";
 import { signOut, useAuth } from "@/lib/auth";
 import { useGarage } from "@/lib/useGarage";
 
@@ -11,6 +14,53 @@ export default function ProfileTab() {
   const { session } = useAuth();
   const { data } = useGarage();
   const plan = data?.plan ?? "free";
+  const userId = data?.userId;
+
+  const [name, setName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [password, setPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    getName(userId)
+      .then((n) => active && setName(n))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const saveName = async () => {
+    if (!userId) return;
+    setSavingName(true);
+    try {
+      await updateName(userId, name);
+      Alert.alert("Запазено", "Името е обновено.");
+    } catch (e) {
+      Alert.alert("Грешка", e instanceof Error ? e.message : "Неуспешен запис.");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const savePassword = async () => {
+    if (password.length < 6) {
+      Alert.alert("Кратка парола", "Паролата трябва да е поне 6 символа.");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await updatePassword(password);
+      setPassword("");
+      Alert.alert("Запазено", "Паролата е сменена.");
+    } catch (e) {
+      Alert.alert("Грешка", e instanceof Error ? e.message : "Неуспешна смяна.");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
@@ -18,7 +68,7 @@ export default function ProfileTab() {
         <Text className="text-2xl font-semibold text-ivory">Профил</Text>
       </View>
 
-      <ScrollView contentContainerClassName="px-5 pb-8">
+      <ScrollView contentContainerClassName="px-5 pb-10" keyboardShouldPersistTaps="handled">
         <View className="rounded-2xl border border-white/10 bg-panel p-4">
           <Text className="text-xs uppercase tracking-wider text-dim">Имейл</Text>
           <Text className="mt-1 text-base text-ivory">{session?.user.email ?? "—"}</Text>
@@ -33,6 +83,30 @@ export default function ProfileTab() {
           </View>
         </View>
 
+        {/* Name */}
+        <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
+          <Field label="Име" value={name} onChangeText={setName} placeholder="Твоето име" />
+          <PrimaryButton label="Запази името" onPress={saveName} loading={savingName} />
+        </View>
+
+        {/* Password */}
+        <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
+          <Field
+            label="Нова парола"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="поне 6 символа"
+            secureTextEntry
+            autoCapitalize="none"
+          />
+          <PrimaryButton
+            label="Смени паролата"
+            onPress={savePassword}
+            loading={savingPassword}
+            disabled={password.length < 6}
+          />
+        </View>
+
         {plan === "free" && (
           <View className="mt-4 rounded-2xl border border-copper/40 bg-panel p-4">
             <Text className="text-base font-semibold text-ivory">Надгради до Pro</Text>
@@ -43,10 +117,7 @@ export default function ProfileTab() {
           </View>
         )}
 
-        <Pressable
-          onPress={signOut}
-          className="mt-6 items-center rounded-xl border border-white/10 py-4"
-        >
+        <Pressable onPress={signOut} className="mt-6 items-center rounded-xl border border-white/10 py-4">
           <Text className="text-base font-semibold text-status-expired">Изход</Text>
         </Pressable>
       </ScrollView>

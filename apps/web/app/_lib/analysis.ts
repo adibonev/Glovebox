@@ -2,40 +2,20 @@ import {
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   SupabaseVehicleRepository,
-  spendAnalysis,
 } from "@glovebox/core";
-import { chartColors } from "@glovebox/ui";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER, formatCost } from "./labels";
-
-export type SliceView = {
-  serviceType: string;
-  label: string;
-  total: number;
-  totalLabel: string;
-  percent: number;
-  color: string;
-};
-
-export type VehicleSpend = { name: string; totalLabel: string };
+export type AnalysisVehicle = { id: string; name: string };
+export type AnalysisRecord = { vehicleId: string; serviceType: string; cost: number; ts: number };
 
 export type AnalysisData = {
   userEmail: string;
-  total: number;
-  totalLabel: string;
-  hasCosts: boolean;
-  byType: SliceView[];
-  perVehicle: VehicleSpend[];
+  vehicles: AnalysisVehicle[];
+  records: AnalysisRecord[];
 };
 
-/** A stable chart color per Service Type (by its canonical order). */
-function colorFor(serviceType: string): string {
-  const i = SERVICE_TYPE_ORDER.indexOf(serviceType as (typeof SERVICE_TYPE_ORDER)[number]);
-  return chartColors[(i >= 0 ? i : 0) % chartColors.length] ?? chartColors[0];
-}
-
+/** Raw spend data (costed Service Records + Vehicles). The client filters & charts it. */
 export async function getAnalysisData(): Promise<AnalysisData | null> {
   const supabase = await createClient();
   const {
@@ -51,34 +31,18 @@ export async function getAnalysisData(): Promise<AnalysisData | null> {
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const services = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
 
-  const analysis = spendAnalysis(services);
-
-  const byType: SliceView[] = analysis.byType.map((b) => ({
-    serviceType: b.serviceType,
-    label: SERVICE_TYPE_LABELS[b.serviceType] ?? b.serviceType,
-    total: b.total,
-    totalLabel: formatCost(b.total) ?? "",
-    percent: Math.round(b.share * 100),
-    color: colorFor(b.serviceType),
-  }));
-
-  const totalByVehicle = new Map<string, number>();
-  for (const s of services) {
-    if (s.cost == null || s.cost <= 0) continue;
-    totalByVehicle.set(s.vehicleId, (totalByVehicle.get(s.vehicleId) ?? 0) + s.cost);
-  }
-  const perVehicle: VehicleSpend[] = vehicles
-    .map((v) => ({ name: `${v.brand} ${v.model}`, total: totalByVehicle.get(v.id) ?? 0 }))
-    .filter((x) => x.total > 0)
-    .sort((a, b) => b.total - a.total)
-    .map((x) => ({ name: x.name, totalLabel: formatCost(x.total) ?? "" }));
+  const records: AnalysisRecord[] = services
+    .filter((s) => s.cost != null && s.cost > 0)
+    .map((s) => ({
+      vehicleId: s.vehicleId,
+      serviceType: s.serviceType,
+      cost: s.cost as number,
+      ts: s.expiryDate.getTime(),
+    }));
 
   return {
     userEmail: authUser.email ?? "",
-    total: analysis.total,
-    totalLabel: formatCost(analysis.total) ?? "0,00 €",
-    hasCosts: analysis.count > 0,
-    byType,
-    perVehicle,
+    vehicles: vehicles.map((v) => ({ id: v.id, name: `${v.brand} ${v.model}` })),
+    records,
   };
 }
