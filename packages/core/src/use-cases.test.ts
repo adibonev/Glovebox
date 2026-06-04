@@ -13,11 +13,11 @@ describe("dueRemindersForUser", () => {
     ];
     const serviceRecords: ServiceRecord[] = [
       // user-1, due: 14 days out, window 30
-      { id: "go-due", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-06-15") },
+      { id: "go-due", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-06-15"), cost: null },
       // user-1, not due: 60 days out, window 30
-      { id: "go-far", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-07-31") },
+      { id: "go-far", vehicleId: "car-1", serviceType: "civil_liability", expiryDate: new Date("2026-07-31"), cost: null },
       // user-2, within window but belongs to another User — must be ignored
-      { id: "other-due", vehicleId: "car-2", serviceType: "civil_liability", expiryDate: new Date("2026-06-10") },
+      { id: "other-due", vehicleId: "car-2", serviceType: "civil_liability", expiryDate: new Date("2026-06-10"), cost: null },
     ];
     const repository = new InMemoryServiceRecordRepository(vehicles, serviceRecords);
     const windows = { civil_liability: 30 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { isExpiringServiceType } from "@glovebox/core";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -14,13 +15,18 @@ export function EditServiceView({
   serviceType,
   expiryDate,
   notes,
+  cost,
 }: {
   serviceId: string;
   serviceType: string;
   expiryDate: string;
   notes: string;
+  cost: string;
 }) {
-  const [type, setType] = useState(TYPES.includes(serviceType) ? serviceType : TYPES[0]);
+  const [type, setType] = useState(
+    TYPES.includes(serviceType) ? serviceType : (TYPES[0] ?? "civil_liability"),
+  );
+  const expiring = isExpiringServiceType(type);
 
   return (
     <form action={updateService} className="flex flex-col gap-7">
@@ -57,13 +63,29 @@ export function EditServiceView({
 
       <label className="flex flex-col gap-2">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
-          Дата на изтичане
+          {expiring ? "Дата на изтичане" : "Дата на разход"}
         </span>
         <input
           type="date"
           name="expiryDate"
           defaultValue={expiryDate}
           required
+          className="rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60"
+        />
+      </label>
+
+      <label className="flex flex-col gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
+          Цена (€) · по избор
+        </span>
+        <input
+          type="number"
+          name="cost"
+          step="0.01"
+          min="0"
+          inputMode="decimal"
+          defaultValue={cost}
+          placeholder="напр. 120"
           className="rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60"
         />
       </label>

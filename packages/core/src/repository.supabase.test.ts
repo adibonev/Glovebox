@@ -85,6 +85,7 @@ describe.skipIf(!hasEnv)("Supabase repositories (integration)", () => {
       vehicleId: String(carId),
       serviceType: "civil_liability",
       expiryDate: new Date("2026-06-15"),
+      cost: null,
     });
   });
 });

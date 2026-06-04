@@ -19,12 +19,14 @@ const serviceRecords: ServiceRecord[] = [
     vehicleId: "car-1",
     serviceType: "civil_liability",
     expiryDate: new Date("2026-06-15"),
+    cost: null,
   },
   {
     id: "rec-2",
     vehicleId: "car-2",
     serviceType: "vignette",
     expiryDate: new Date("2026-06-11"),
+    cost: null,
   },
 ];
 

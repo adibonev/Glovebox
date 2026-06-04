@@ -64,7 +64,7 @@ function vehicleFromRow(
 }
 
 function serviceRecordFromRow(
-  row: Pick<ServiceRow, "id" | "car_id" | "service_type" | "expiry_date">,
+  row: Pick<ServiceRow, "id" | "car_id" | "service_type" | "expiry_date" | "cost">,
 ): ServiceRecord {
   if (row.expiry_date === null) {
     throw new Error(`service ${row.id} has no expiry_date; not a ServiceRecord`);
@@ -74,6 +74,7 @@ function serviceRecordFromRow(
     vehicleId: String(row.car_id),
     serviceType: row.service_type,
     expiryDate: new Date(row.expiry_date),
+    cost: row.cost,
   };
 }
 
@@ -168,7 +169,7 @@ export class SupabaseVehicleRepository implements VehicleRepository {
   }
 }
 
-const SERVICE_COLUMNS = "id, car_id, service_type, expiry_date";
+const SERVICE_COLUMNS = "id, car_id, service_type, expiry_date, cost";
 
 export class SupabaseServiceRecordRepository implements ServiceRecordRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
@@ -209,6 +210,7 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
         user_id: Number(input.userId),
         service_type: input.serviceType,
         expiry_date: toISODate(input.expiryDate),
+        cost: input.cost ?? null,
       })
       .select(SERVICE_COLUMNS)
       .single();
@@ -220,6 +222,7 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
     const patch: ServiceUpdate = {};
     if (changes.serviceType !== undefined) patch.service_type = changes.serviceType;
     if (changes.expiryDate !== undefined) patch.expiry_date = toISODate(changes.expiryDate);
+    if (changes.cost !== undefined) patch.cost = changes.cost;
 
     // Ownership is enforced by RLS (update services only for the User's own cars).
     const { data, error } = await this.client

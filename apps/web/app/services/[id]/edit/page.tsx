@@ -24,7 +24,7 @@ export default async function EditServicePage({
   // RLS scopes this to the owner; not found / not theirs → back to the dashboard.
   const { data: service } = await supabase
     .from("services")
-    .select("id, car_id, service_type, expiry_date, notes")
+    .select("id, car_id, service_type, expiry_date, notes, cost")
     .eq("id", Number(id))
     .maybeSingle();
   if (!service || !service.expiry_date) redirect("/");
@@ -51,6 +51,7 @@ export default async function EditServicePage({
           serviceType={service.service_type}
           expiryDate={service.expiry_date.slice(0, 10)}
           notes={service.notes ?? ""}
+          cost={service.cost != null ? String(service.cost) : ""}
         />
       </section>
     </Shell>

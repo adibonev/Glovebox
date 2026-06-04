@@ -27,13 +27,22 @@ export interface Vehicle {
   bodyType: string | null;
 }
 
-/** A single tracked obligation for a Vehicle, with one Service Type and an Expiry Date. */
+/**
+ * A single tracked event for a Vehicle with one Service Type and a date.
+ *
+ * Two kinds: an **expiring obligation** (ГО, Каско, … — `expiryDate` is when it lapses)
+ * and a **dated expense** (Repair — `expiryDate` is the day it happened; it never expires,
+ * see {@link NON_EXPIRING_SERVICE_TYPES}). `cost` is the optional amount paid, in EUR.
+ */
 export interface ServiceRecord {
   id: string;
   /** The Vehicle this record belongs to. */
   vehicleId: string;
   serviceType: string;
+  /** Expiry date for obligations; the expense date for non-expiring types. */
   expiryDate: Date;
+  /** Amount paid for this Service Record, in EUR (`services.cost`), when recorded. */
+  cost: number | null;
 }
 
 /** A user-uploaded file (PDF or image) attached to a Service Record. */
@@ -87,10 +96,12 @@ export interface NewServiceRecord {
   userId: string;
   serviceType: string;
   expiryDate: Date;
+  cost?: number | null;
 }
 
 /** Editable Service Record fields; an omitted key is left unchanged. */
 export interface ServiceRecordChanges {
   serviceType?: string;
   expiryDate?: Date;
+  cost?: number | null;
 }

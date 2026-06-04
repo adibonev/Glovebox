@@ -14,6 +14,7 @@ export const SERVICE_TYPE_ORDER = [
   "tax",
   "fire_extinguisher",
   "maintenance",
+  "repair",
 ] as const;
 
 /** Bulgarian labels per Service Type code (UBIQUITOUS_LANGUAGE.md). */
@@ -24,7 +25,8 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   inspection: "Технически преглед",
   tax: "Данък МПС",
   fire_extinguisher: "Пожарогасител",
-  maintenance: "Поддръжка",
+  maintenance: "Обслужване",
+  repair: "Ремонт",
 };
 
 /** Short mono code chips per Service Type. */
@@ -35,8 +37,21 @@ export const SERVICE_TYPE_CODES: Record<string, string> = {
   inspection: "ТП",
   tax: "ДН",
   fire_extinguisher: "ПГ",
-  maintenance: "ПД",
+  maintenance: "ОБ",
+  repair: "РМ",
 };
+
+/** Euro amount formatter for Service Record costs. */
+const eurFormatter = new Intl.NumberFormat("bg-BG", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 2,
+});
+
+/** "120,00 €" for a recorded cost, or null when none. */
+export function formatCost(cost: number | null | undefined): string | null {
+  return cost == null ? null : eurFormatter.format(cost);
+}
 
 /** Bulgarian labels for the Expiry Status. */
 export const STATUS_LABELS: Record<ExpiryStatus, string> = {

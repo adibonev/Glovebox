@@ -1,3 +1,4 @@
+import { isExpiringServiceType } from "@glovebox/core";
 import { redirect } from "next/navigation";
 
 import { Shell } from "@/components/Shell";
@@ -5,6 +6,9 @@ import { Shell } from "@/components/Shell";
 import { ServiceTypeIcon } from "../_components/ServiceTypeIcon";
 import { saveReminderSettings } from "../_lib/actions";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "../_lib/labels";
+
+// Only expiring obligations get reminder windows (Repair is a dated expense).
+const REMINDER_TYPES = SERVICE_TYPE_ORDER.filter(isExpiringServiceType);
 import { getRemindersData, type UpcomingReminder } from "../_lib/reminders";
 import { WINDOW_OPTIONS } from "../_lib/reminderSettings";
 
@@ -45,7 +49,7 @@ export default async function RemindersPage() {
         </label>
 
         <div className="divide-y divide-white/[0.06] border-t border-white/[0.06]">
-          {SERVICE_TYPE_ORDER.map((serviceType) => (
+          {REMINDER_TYPES.map((serviceType) => (
             <div
               key={serviceType}
               className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"

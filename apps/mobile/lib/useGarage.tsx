@@ -3,6 +3,7 @@ import {
   SupabaseUserRepository,
   SupabaseVehicleRepository,
   expiryStatus,
+  isExpiringServiceType,
   type ExpiryStatus,
   type Plan,
   type ServiceRecord,
@@ -26,7 +27,13 @@ const userRepo = new SupabaseUserRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 
-export type EnrichedRecord = { record: ServiceRecord; status: ExpiryStatus; days: number };
+export type EnrichedRecord = {
+  record: ServiceRecord;
+  status: ExpiryStatus;
+  days: number;
+  /** False for dated expenses (Repair) — no status/gauge, shown with its cost. */
+  expiring: boolean;
+};
 export type FlatItem = EnrichedRecord & { vehicle: Vehicle };
 export type VehicleCard = { vehicle: Vehicle; items: EnrichedRecord[] };
 export type Counts = { valid: number; expiring: number; expired: number };
@@ -78,14 +85,24 @@ export function useGarage() {
       for (const vehicle of vehicles) {
         const records = await serviceRepo.listByVehicle(vehicle.id);
         const items = records
-          .map((record) => ({
-            record,
-            status: expiryStatus(record, DEFAULT_WINDOW, today),
-            days: Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY),
-          }))
-          .sort((a, b) => a.days - b.days);
+          .map((record) => {
+            const expiring = isExpiringServiceType(record.serviceType);
+            const status: ExpiryStatus = expiring
+              ? expiryStatus(record, DEFAULT_WINDOW, today)
+              : "Valid";
+            const days = Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
+            return { record, status, days, expiring };
+          })
+          // Obligations first (by urgency), then expenses (newest first).
+          .sort((a, b) => {
+            if (a.expiring !== b.expiring) return a.expiring ? -1 : 1;
+            if (a.expiring) return a.days - b.days;
+            return b.record.expiryDate.getTime() - a.record.expiryDate.getTime();
+          });
 
+        // The gauge / counts / reminders only consider expiring obligations.
         for (const item of items) {
+          if (!item.expiring) continue;
           flat.push({ ...item, vehicle });
           if (item.status === "Valid") counts.valid += 1;
           else if (item.status === "ExpiringSoon") counts.expiring += 1;

@@ -25,7 +25,14 @@
 | **Roadworthiness Inspection** | `inspection` | Технически преглед |
 | **Vehicle Tax** | `tax` | Данък МПС |
 | **Fire Extinguisher** | `fire_extinguisher` | Пожарогасител |
-| **Maintenance** | `maintenance` | Поддръжка |
+| **Maintenance** | `maintenance` | Обслужване |
+| **Repair** | `repair` | Ремонт |
+
+> A Service Record is one of two kinds: an **expiring obligation** (all of the above except
+> Repair — it has an Expiry Date, an Expiry Status and raises Reminders) or a **dated expense**
+> (**Repair** — a one-off cost on a specific date; it never expires, has no Reminder Window or
+> Expiry Status, and only feeds the spend Analysis). Each Service Record may record a **Cost**
+> (`services.cost`, in EUR).
 
 ---
 

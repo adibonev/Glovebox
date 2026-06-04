@@ -1,5 +1,6 @@
 "use client";
 
+import { isExpiringServiceType } from "@glovebox/core";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -12,6 +13,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function AddServiceView({ vehicleId }: { vehicleId: string }) {
   const [type, setType] = useState(TYPES[0] ?? "civil_liability");
+  const expiring = isExpiringServiceType(type);
 
   return (
     <form action={addService} className="flex flex-col gap-7">
@@ -48,13 +50,28 @@ export function AddServiceView({ vehicleId }: { vehicleId: string }) {
 
       <label className="flex flex-col gap-2">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
-          Дата на изтичане
+          {expiring ? "Дата на изтичане" : "Дата на разход"}
         </span>
         <input
           type="date"
           name="expiryDate"
           defaultValue={todayIso()}
           required
+          className="rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60"
+        />
+      </label>
+
+      <label className="flex flex-col gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
+          Цена (€) · по избор
+        </span>
+        <input
+          type="number"
+          name="cost"
+          step="0.01"
+          min="0"
+          inputMode="decimal"
+          placeholder="напр. 120"
           className="rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60"
         />
       </label>

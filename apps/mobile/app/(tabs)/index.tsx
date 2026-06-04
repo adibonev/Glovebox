@@ -10,6 +10,7 @@ import {
   SERVICE_TYPE_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
+  formatCost,
   formatDaysRemaining,
 } from "@/lib/labels";
 import { useGarage } from "@/lib/useGarage";
@@ -65,6 +66,9 @@ export default function DashboardTab() {
                     </Text>
                     <Text className="text-xs text-dim">
                       {item.vehicle.brand} {item.vehicle.model} · {formatDaysRemaining(item.days)}
+                      {formatCost(item.record.cost) ? (
+                        <Text className="text-copper"> · {formatCost(item.record.cost)}</Text>
+                      ) : null}
                     </Text>
                   </View>
                   <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[item.status] }}>

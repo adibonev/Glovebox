@@ -82,6 +82,7 @@ export async function runReminderJob(
       vehicleId: String(s.car_id),
       serviceType: s.service_type,
       expiryDate: new Date(s.expiry_date),
+      cost: null, // not needed for reminders
     });
     recordsByUser.set(s.user_id, list);
   }

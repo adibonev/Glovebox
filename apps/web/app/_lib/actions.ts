@@ -24,6 +24,14 @@ function readBodyType(formData: FormData): string {
   return (BODY_TYPES as string[]).includes(value) ? value : "sedan";
 }
 
+/** Read an optional cost (EUR) from the form; accepts comma or dot decimals. */
+function readCost(formData: FormData): number | null {
+  const raw = String(formData.get("cost") ?? "").trim().replace(",", ".");
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 /** Resolve (and provision) the signed-in user's `users.id`. */
@@ -346,6 +354,7 @@ export async function addService(formData: FormData): Promise<void> {
     service_type: serviceType,
     expiry_date: expiryDate,
     notes: notes || null,
+    cost: readCost(formData),
   });
   revalidatePath("/");
   redirect("/");
@@ -368,7 +377,12 @@ export async function updateService(formData: FormData): Promise<void> {
   // Expiry Date (a renewal) keeps the Service Record's Documents and re-derives reminders.
   await supabase
     .from("services")
-    .update({ service_type: serviceType, expiry_date: expiryDate, notes: notes || null })
+    .update({
+      service_type: serviceType,
+      expiry_date: expiryDate,
+      notes: notes || null,
+      cost: readCost(formData),
+    })
     .eq("id", serviceId);
 
   revalidatePath("/");

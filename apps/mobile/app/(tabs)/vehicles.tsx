@@ -10,6 +10,7 @@ import {
   SERVICE_TYPE_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
+  formatCost,
   formatDateShort,
   formatDaysRemaining,
 } from "@/lib/labels";
@@ -81,26 +82,39 @@ export default function VehiclesTab() {
                 <Text className="mb-3 text-sm text-dim">Няма добавени услуги.</Text>
               ) : (
                 <View className="mb-3 gap-2.5">
-                  {items.map(({ record, status, days }) => (
-                    <Pressable
-                      key={record.id}
-                      onPress={() => router.push(`/service/${record.id}`)}
-                      className="flex-row items-center gap-3"
-                    >
-                      <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[status] }} />
-                      <View className="flex-1">
-                        <Text className="text-sm text-ivory">
-                          {SERVICE_TYPE_LABELS[record.serviceType] ?? record.serviceType}
-                        </Text>
-                        <Text className="text-xs text-dim">
-                          {formatDateShort(record.expiryDate)} · {formatDaysRemaining(days)}
-                        </Text>
-                      </View>
-                      <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[status] }}>
-                        {STATUS_LABELS[status]}
-                      </Text>
-                    </Pressable>
-                  ))}
+                  {items.map(({ record, status, days, expiring }) => {
+                    const cost = formatCost(record.cost);
+                    return (
+                      <Pressable
+                        key={record.id}
+                        onPress={() => router.push(`/service/${record.id}`)}
+                        className="flex-row items-center gap-3"
+                      >
+                        <View
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: expiring ? STATUS_COLORS[status] : colors.muted }}
+                        />
+                        <View className="flex-1">
+                          <Text className="text-sm text-ivory">
+                            {SERVICE_TYPE_LABELS[record.serviceType] ?? record.serviceType}
+                          </Text>
+                          <Text className="text-xs text-dim">
+                            {expiring
+                              ? `${formatDateShort(record.expiryDate)} · ${formatDaysRemaining(days)}`
+                              : formatDateShort(record.expiryDate)}
+                            {cost ? <Text className="text-copper"> · {cost}</Text> : null}
+                          </Text>
+                        </View>
+                        {expiring ? (
+                          <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[status] }}>
+                            {STATUS_LABELS[status]}
+                          </Text>
+                        ) : (
+                          <Text className="text-[11px] uppercase tracking-wider text-dim">Разход</Text>
+                        )}
+                      </Pressable>
+                    );
+                  })}
                 </View>
               )}
 

@@ -2,14 +2,16 @@ import {
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   canAddService,
+  isExpiringServiceType,
 } from "@glovebox/core";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
 
-import { ChipPicker, DateField, PrimaryButton } from "@/components/forms";
+import { ChipPicker, DateField, Field, PrimaryButton } from "@/components/forms";
 import { Screen } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
+import { parseCost } from "@/lib/cost";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { supabase } from "@/lib/supabase";
@@ -31,8 +33,11 @@ export default function NewServiceScreen() {
   const { session } = useAuth();
   const [serviceType, setServiceType] = useState<string | null>(null);
   const [expiryDate, setExpiryDate] = useState<Date>(oneYearOut);
+  const [cost, setCost] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const expiring = serviceType ? isExpiringServiceType(serviceType) : true;
 
   const submit = async () => {
     if (!session || !vehicleId || !serviceType) return;
@@ -52,7 +57,13 @@ export default function NewServiceScreen() {
         return;
       }
 
-      await serviceRepo.create({ vehicleId, userId: user.id, serviceType, expiryDate });
+      await serviceRepo.create({
+        vehicleId,
+        userId: user.id,
+        serviceType,
+        expiryDate,
+        cost: parseCost(cost),
+      });
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Грешка при запис.");
@@ -63,7 +74,14 @@ export default function NewServiceScreen() {
   return (
     <Screen title="Нова услуга">
       <ChipPicker label="Вид услуга" value={serviceType} options={TYPE_OPTIONS} onChange={setServiceType} />
-      <DateField label="Валидна до" value={expiryDate} onChange={setExpiryDate} />
+      <DateField label={expiring ? "Валидна до" : "Дата на разход"} value={expiryDate} onChange={setExpiryDate} />
+      <Field
+        label="Цена (€) · по избор"
+        value={cost}
+        onChangeText={setCost}
+        placeholder="напр. 120"
+        keyboardType="decimal-pad"
+      />
       {error && <Text className="mb-2 text-sm text-status-expired">{error}</Text>}
       <PrimaryButton label="Запази" onPress={submit} loading={saving} disabled={!serviceType} />
     </Screen>

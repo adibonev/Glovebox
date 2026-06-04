@@ -46,12 +46,16 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M9 11H6" />
     </>
   ),
-  // Поддръжка — gear
+  // Обслужване — gear
   maintenance: (
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8M18.7 18.7l-1.8-1.8M7.1 7.1L5.3 5.3" />
     </>
+  ),
+  // Ремонт — wrench (a dated expense, not an obligation)
+  repair: (
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
   ),
 };
 

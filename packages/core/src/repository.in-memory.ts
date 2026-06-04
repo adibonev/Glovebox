@@ -96,6 +96,7 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
       vehicleId: input.vehicleId,
       serviceType: input.serviceType,
       expiryDate: input.expiryDate,
+      cost: input.cost ?? null,
     };
     this.serviceRecords.push(record);
     return record;
@@ -106,6 +107,7 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
     if (!record) throw new Error(`ServiceRecord ${id} not found`);
     if (changes.serviceType !== undefined) record.serviceType = changes.serviceType;
     if (changes.expiryDate !== undefined) record.expiryDate = changes.expiryDate;
+    if (changes.cost !== undefined) record.cost = changes.cost;
     return record;
   }
 

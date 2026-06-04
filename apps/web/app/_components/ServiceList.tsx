@@ -18,6 +18,8 @@ type ServiceItem = {
   statusLabel: string;
   color: string;
   days: number;
+  isExpense: boolean;
+  costLabel: string | null;
 };
 
 /** Service Records list: left status accent, code chip, name + date, days, status badge, delete. */
@@ -57,29 +59,40 @@ function Row({ item, index }: { item: ServiceItem; index: number }) {
 
       <div className="min-w-0 flex-1">
         <div className="truncate font-body text-[15px] text-ivory">{item.typeLabel}</div>
-        <div className="font-mono text-[12px] text-dim">{item.dateLabel}</div>
+        <div className="font-mono text-[12px] text-dim">
+          {item.dateLabel}
+          {item.costLabel && <span className="text-copper"> · {item.costLabel}</span>}
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-        <div className="min-w-[78px] text-right">
-          <div
-            className={`font-display text-[17px] font-semibold leading-none ${
-              item.status === "Valid" ? "text-ivory" : ""
-            }`}
-            style={item.status === "Valid" ? undefined : { color: item.color }}
-          >
-            {Math.abs(item.days)} дни
-          </div>
-          <div className="mt-0.5 font-body text-[11px] text-dim">{note}</div>
-        </div>
+        {item.isExpense ? (
+          <span className="hidden items-center gap-1.5 rounded-md bg-white/[0.06] px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-silver/70 sm:inline-flex">
+            Разход
+          </span>
+        ) : (
+          <>
+            <div className="min-w-[78px] text-right">
+              <div
+                className={`font-display text-[17px] font-semibold leading-none ${
+                  item.status === "Valid" ? "text-ivory" : ""
+                }`}
+                style={item.status === "Valid" ? undefined : { color: item.color }}
+              >
+                {Math.abs(item.days)} дни
+              </div>
+              <div className="mt-0.5 font-body text-[11px] text-dim">{note}</div>
+            </div>
 
-        <span
-          className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] sm:inline-flex"
-          style={{ color: item.color, backgroundColor: `${item.color}1f` }}
-        >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-          {item.statusLabel}
-        </span>
+            <span
+              className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] sm:inline-flex"
+              style={{ color: item.color, backgroundColor: `${item.color}1f` }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+              {item.statusLabel}
+            </span>
+          </>
+        )}
 
         <Link
           href={`/services/${item.id}/edit`}

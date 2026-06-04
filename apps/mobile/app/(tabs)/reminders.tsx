@@ -7,6 +7,7 @@ import {
   SERVICE_TYPE_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
+  formatCost,
   formatDateShort,
   formatDaysRemaining,
 } from "@/lib/labels";
@@ -60,6 +61,9 @@ export default function RemindersTab() {
                   <Text className="text-xs text-dim">
                     {item.vehicle.brand} {item.vehicle.model} · {formatDateShort(item.record.expiryDate)} ·{" "}
                     {formatDaysRemaining(item.days)}
+                    {formatCost(item.record.cost) ? (
+                      <Text className="text-copper"> · {formatCost(item.record.cost)}</Text>
+                    ) : null}
                   </Text>
                 </View>
                 <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[item.status] }}>

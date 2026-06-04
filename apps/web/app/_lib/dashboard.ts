@@ -3,8 +3,10 @@ import {
   SupabaseUserRepository,
   SupabaseVehicleRepository,
   expiryStatus,
+  isExpiringServiceType,
   type ExpiryStatus,
 } from "@glovebox/core";
+import { colors } from "@glovebox/ui";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,6 +16,7 @@ import {
   SERVICE_TYPE_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
+  formatCost,
   formatDateShort,
   formatDaysRemaining,
 } from "./labels";
@@ -40,6 +43,10 @@ export type ServiceItemView = {
   color: string;
   daysText: string;
   days: number;
+  /** True for non-expiring types (Repair) — shown as a dated expense, no status/days. */
+  isExpense: boolean;
+  /** Recorded cost (EUR), formatted (e.g. "120,00 €") or null. */
+  costLabel: string | null;
 };
 
 export type Counts = { valid: number; expiring: number; expired: number };
@@ -109,20 +116,30 @@ export async function getDashboardData(
 
   const enriched = records
     .map((record) => {
-      const status: ExpiryStatus = expiryStatus(record, window(record.serviceType), today);
+      const expiring = isExpiringServiceType(record.serviceType);
+      // Non-expiring types (Repair) have no Expiry Status — placeholder, never shown.
+      const status: ExpiryStatus = expiring
+        ? expiryStatus(record, window(record.serviceType), today)
+        : "Valid";
       const days = Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
-      return { record, status, days };
+      return { record, status, days, expiring };
     })
-    .sort((a, b) => a.days - b.days);
+    // Obligations first (by urgency), then expenses (newest first).
+    .sort((a, b) => {
+      if (a.expiring !== b.expiring) return a.expiring ? -1 : 1;
+      if (a.expiring) return a.days - b.days;
+      return b.record.expiryDate.getTime() - a.record.expiryDate.getTime();
+    });
 
   const counts: Counts = { valid: 0, expiring: 0, expired: 0 };
   for (const e of enriched) {
+    if (!e.expiring) continue; // expenses carry no status
     if (e.status === "Valid") counts.valid += 1;
     else if (e.status === "ExpiringSoon") counts.expiring += 1;
     else counts.expired += 1;
   }
 
-  const items: ServiceItemView[] = enriched.map(({ record, status, days }) => ({
+  const items: ServiceItemView[] = enriched.map(({ record, status, days, expiring }) => ({
     id: record.id,
     serviceType: record.serviceType,
     code: SERVICE_TYPE_CODES[record.serviceType] ?? "—",
@@ -130,15 +147,17 @@ export async function getDashboardData(
     dateLabel: formatDateShort(record.expiryDate),
     status,
     statusLabel: STATUS_LABELS[status],
-    color: STATUS_COLORS[status],
+    color: expiring ? STATUS_COLORS[status] : colors.muted,
     daysText: formatDaysRemaining(days),
     days,
+    isExpense: !expiring,
+    costLabel: formatCost(record.cost),
   }));
 
-  // Most urgent obligation drives the gauge (first after sorting: overdue → soonest).
+  // Most urgent obligation drives the gauge (first EXPIRING after sorting: overdue → soonest).
   // Within a few days of expiry (or already expired) the gauge turns red — critical.
   const CRITICAL_DAYS = 3;
-  const head = enriched[0];
+  const head = enriched.find((e) => e.expiring);
   const urgent: GaugeView | null = head
     ? {
         days: head.days,

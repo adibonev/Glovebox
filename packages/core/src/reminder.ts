@@ -5,6 +5,18 @@
 
 import type { ServiceRecord } from "./domain";
 
+/**
+ * Service Types that are one-off **dated expenses**, not expiring obligations (e.g. Repair).
+ * They have no Reminder Window, no Expiry Status, and never raise a Reminder — they only
+ * carry a date and a cost (for the spend Analysis).
+ */
+export const NON_EXPIRING_SERVICE_TYPES: ReadonlySet<string> = new Set(["repair"]);
+
+/** True for obligations that lapse (ГО, Каско, …); false for dated expenses (Repair). */
+export function isExpiringServiceType(serviceType: string): boolean {
+  return !NON_EXPIRING_SERVICE_TYPES.has(serviceType);
+}
+
 /** Reminder Window (days before Expiry Date) per Service Type. */
 export type ReminderWindows = Record<string, number>;
 
@@ -43,6 +55,9 @@ export function dueReminders(
   const reminders: Reminder[] = [];
 
   for (const record of serviceRecords) {
+    // Dated expenses (Repair) never raise a Reminder.
+    if (NON_EXPIRING_SERVICE_TYPES.has(record.serviceType)) continue;
+
     const windowDays = windows[record.serviceType];
     if (windowDays === undefined) continue;
 

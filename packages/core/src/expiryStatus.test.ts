@@ -9,6 +9,7 @@ describe("expiryStatus", () => {
       vehicleId: "car-1",
       serviceType: "civil_liability",
       expiryDate: new Date("2026-05-22"), // 10 days before today
+      cost: null,
     };
 
     const status = expiryStatus(serviceRecord, 30, new Date("2026-06-01"));
@@ -22,6 +23,7 @@ describe("expiryStatus", () => {
       vehicleId: "car-1",
       serviceType: "civil_liability",
       expiryDate: new Date("2026-06-15"), // 14 days from today, window is 30
+      cost: null,
     };
 
     const status = expiryStatus(serviceRecord, 30, new Date("2026-06-01"));
@@ -35,6 +37,7 @@ describe("expiryStatus", () => {
       vehicleId: "car-1",
       serviceType: "civil_liability",
       expiryDate: new Date("2026-07-31"), // 60 days from today, window is 30
+      cost: null,
     };
 
     const status = expiryStatus(serviceRecord, 30, new Date("2026-06-01"));
