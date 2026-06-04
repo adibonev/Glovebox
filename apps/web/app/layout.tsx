@@ -26,9 +26,9 @@ const siteUrl =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000");
 
-const title = "Glovebox — следи сроковете на колата си";
+const title = "Glovebox — Следи сроковете на колата си";
 const description =
-  "Гражданска отговорност, Каско, винетка, технически преглед, данък и още — на едно място, с напомняния преди да изтекат.";
+  "Гражданска отговорност, Каско, Винетка, Технически преглед, Данък и още — на едно място, с напомняния преди да изтекат.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
