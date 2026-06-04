@@ -181,10 +181,18 @@ export function Landing() {
 
         <Pricing />
 
-        <footer className="flex flex-col items-center gap-1 border-t border-white/[0.06] py-8 text-center">
+        <footer className="flex flex-col items-center gap-3 border-t border-white/[0.06] py-8 text-center">
           <p className="font-body text-[13px] text-dim">
             Glovebox · следи документите и сроковете на автомобила си.
           </p>
+          <div className="flex items-center gap-4 font-body text-[13px] text-dim">
+            <Link href="/privacy" className="transition hover:text-ivory">
+              Поверителност
+            </Link>
+            <Link href="/terms" className="transition hover:text-ivory">
+              Общи условия
+            </Link>
+          </div>
         </footer>
       </div>
     </main>

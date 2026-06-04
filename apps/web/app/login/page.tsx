@@ -142,6 +142,12 @@ export default function LoginPage() {
             {isSignup ? "Влез" : "Регистрирай се"}
           </button>
         </p>
+
+        <p className="text-center font-body text-[12px] leading-relaxed text-dim">
+          С продължаване приемаш{" "}
+          <a href="/terms" className="text-copper hover:underline">Общите условия</a> и{" "}
+          <a href="/privacy" className="text-copper hover:underline">Поверителността</a>.
+        </p>
       </div>
     </main>
   );

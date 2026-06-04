@@ -7,6 +7,8 @@ import {
 } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { CookieConsent } from "@/components/CookieConsent";
+
 import "./globals.css";
 
 // Fraunces — display/numerals/logo; Hanken Grotesk — UI body; JetBrains Mono — labels.
@@ -56,7 +58,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="bg"
       className={`${fraunces.variable} ${hanken.variable} ${manrope.variable} ${jetbrains.variable}`}
     >
-      <body className="bg-ink font-body text-ivory antialiased">{children}</body>
+      <body className="bg-ink font-body text-ivory antialiased">
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }
