@@ -3,19 +3,36 @@
     "name": "Glovebox",
     "slug": "glovebox",
     "scheme": "glovebox",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.glovebox.app"
+      "bundleIdentifier": "com.glovebox.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.glovebox.app"
+      "package": "com.glovebox.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#07100C"
+      }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#07100C"
+        }
+      ]
     ]
   }
 }
