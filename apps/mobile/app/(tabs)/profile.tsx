@@ -1,0 +1,55 @@
+import type { Plan } from "@glovebox/core";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { signOut, useAuth } from "@/lib/auth";
+import { useGarage } from "@/lib/useGarage";
+
+const PLAN_LABELS: Record<Plan, string> = { free: "Free", pro: "Pro", legacy: "Legacy" };
+
+export default function ProfileTab() {
+  const { session } = useAuth();
+  const { data } = useGarage();
+  const plan = data?.plan ?? "free";
+
+  return (
+    <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
+      <View className="px-5 pb-3 pt-2">
+        <Text className="text-2xl font-semibold text-ivory">Профил</Text>
+      </View>
+
+      <ScrollView contentContainerClassName="px-5 pb-8">
+        <View className="rounded-2xl border border-white/10 bg-panel p-4">
+          <Text className="text-xs uppercase tracking-wider text-dim">Имейл</Text>
+          <Text className="mt-1 text-base text-ivory">{session?.user.email ?? "—"}</Text>
+
+          <View className="my-4 h-px bg-white/10" />
+
+          <Text className="text-xs uppercase tracking-wider text-dim">План</Text>
+          <View className="mt-1.5 flex-row items-center gap-2">
+            <View className="rounded-lg border border-copper/40 bg-copper/15 px-2.5 py-1">
+              <Text className="text-sm font-semibold text-copper">{PLAN_LABELS[plan]}</Text>
+            </View>
+          </View>
+        </View>
+
+        {plan === "free" && (
+          <View className="mt-4 rounded-2xl border border-copper/40 bg-panel p-4">
+            <Text className="text-base font-semibold text-ivory">Надгради до Pro</Text>
+            <Text className="mt-1 text-sm text-silver">
+              Неограничено автомобили и услуги, push известия и още. Надграждането става от уеб
+              приложението (плащане в приложението идва скоро).
+            </Text>
+          </View>
+        )}
+
+        <Pressable
+          onPress={signOut}
+          className="mt-6 items-center rounded-xl border border-white/10 py-4"
+        >
+          <Text className="text-base font-semibold text-status-expired">Изход</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
