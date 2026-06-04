@@ -7,6 +7,7 @@
 
 export const CORE_PACKAGE_NAME = "@glovebox/core" as const;
 
+export * from "./analysis";
 export * from "./billing";
 export * from "./domain";
 export * from "./reminder";

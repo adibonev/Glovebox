@@ -26,6 +26,18 @@ export const statusColors = {
   expired: "#E0705C",
 } as const;
 
+/** Distinct, premium category colors for charts (pie/donut) — read on the dark scene. */
+export const chartColors = [
+  "#C4954C", // copper
+  "#5FCF9A", // green
+  "#6FB3C9", // teal
+  "#E3A93A", // amber
+  "#B98BD0", // violet
+  "#E0705C", // coral
+  "#8AA17C", // sage
+  "#CFD2CB", // silver
+] as const;
+
 /** Font families (loaded by each app's platform; names only here). */
 export const fonts = {
   display: "Fraunces",
@@ -36,10 +48,12 @@ export const fonts = {
 export const tokens = {
   colors,
   statusColors,
+  chartColors,
   fonts,
 } as const;
 
 export type Colors = typeof colors;
 export type StatusColors = typeof statusColors;
+export type ChartColors = typeof chartColors;
 export type Fonts = typeof fonts;
 export type Tokens = typeof tokens;

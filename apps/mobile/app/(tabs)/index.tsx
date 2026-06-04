@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
@@ -21,6 +22,9 @@ export default function DashboardTab() {
 
   const attention = (data?.flat ?? []).filter((f) => f.status !== "Valid");
   const top = attention.slice(0, 4);
+  const totalSpend = (data?.cards ?? [])
+    .flatMap((c) => c.items)
+    .reduce((sum, it) => sum + (it.record.cost ?? 0), 0);
 
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
@@ -49,6 +53,21 @@ export default function DashboardTab() {
             urgent={data?.urgent ?? null}
             counts={data?.counts ?? { valid: 0, expiring: 0, expired: 0 }}
           />
+
+          {data && data.cards.length > 0 && (
+            <Pressable
+              onPress={() => router.push("/analysis")}
+              className="mt-4 flex-row items-center justify-between rounded-2xl border border-white/10 bg-panel px-4 py-4"
+            >
+              <View>
+                <Text className="text-sm text-muted">Анализ на разходите</Text>
+                <Text className="text-xl font-semibold text-ivory">
+                  {formatCost(totalSpend) ?? "0,00 €"}
+                </Text>
+              </View>
+              <Ionicons name="pie-chart-outline" size={22} color={colors.copper} />
+            </Pressable>
+          )}
 
           {top.length > 0 && (
             <View className="mt-5">

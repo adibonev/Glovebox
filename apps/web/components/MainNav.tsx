@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "Табло" },
   { href: "/vehicles", label: "Автомобили" },
   { href: "/documents", label: "Документи" },
+  { href: "/analysis", label: "Анализ" },
   { href: "/reminders", label: "Напомняния" },
 ];
 
