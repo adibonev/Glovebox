@@ -1,13 +1,30 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "./database.types";
-import type { Document, ServiceRecord, User, Vehicle } from "./domain";
+import type {
+  Document,
+  NewServiceRecord,
+  NewVehicle,
+  ServiceRecord,
+  ServiceRecordChanges,
+  User,
+  Vehicle,
+  VehicleChanges,
+} from "./domain";
 import type {
   DocumentRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
 } from "./repository";
+
+type CarUpdate = Database["public"]["Tables"]["cars"]["Update"];
+type ServiceUpdate = Database["public"]["Tables"]["services"]["Update"];
+
+/** Postgres `date` columns want a "YYYY-MM-DD" string. */
+function toISODate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
 
 /**
  * Supabase adapters for the repository seam (ARCHITECTURE.md). They implement the
@@ -84,18 +101,74 @@ function rowsOrThrow<Row>(
   return result.data ?? [];
 }
 
+const CAR_COLUMNS = "id, user_id, brand, model, year, license_plate, body_type";
+
 export class SupabaseVehicleRepository implements VehicleRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   async listByUser(userId: string): Promise<Vehicle[]> {
     const result = await this.client
       .from("cars")
-      .select("id, user_id, brand, model, year, license_plate, body_type")
+      .select(CAR_COLUMNS)
       .eq("user_id", Number(userId))
       .order("id");
     return rowsOrThrow(result, "cars.listByUser").map(vehicleFromRow);
   }
+
+  async getById(id: string): Promise<Vehicle | null> {
+    const { data, error } = await this.client
+      .from("cars")
+      .select(CAR_COLUMNS)
+      .eq("id", Number(id))
+      .maybeSingle();
+    if (error) throw new Error(`Supabase cars.getById failed: ${error.message}`);
+    return data ? vehicleFromRow(data) : null;
+  }
+
+  async create(input: NewVehicle): Promise<Vehicle> {
+    const { data, error } = await this.client
+      .from("cars")
+      .insert({
+        user_id: Number(input.userId),
+        brand: input.brand,
+        model: input.model,
+        year: input.year ?? null,
+        license_plate: input.plate ?? null,
+        body_type: input.bodyType ?? null,
+      })
+      .select(CAR_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase cars.create failed: ${error.message}`);
+    return vehicleFromRow(data);
+  }
+
+  async update(id: string, changes: VehicleChanges): Promise<Vehicle> {
+    const patch: CarUpdate = {};
+    if (changes.brand !== undefined) patch.brand = changes.brand;
+    if (changes.model !== undefined) patch.model = changes.model;
+    if (changes.year !== undefined) patch.year = changes.year;
+    if (changes.plate !== undefined) patch.license_plate = changes.plate;
+    if (changes.bodyType !== undefined) patch.body_type = changes.bodyType;
+
+    // Ownership is enforced by RLS (a User can only update their own `cars`).
+    const { data, error } = await this.client
+      .from("cars")
+      .update(patch)
+      .eq("id", Number(id))
+      .select(CAR_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase cars.update failed: ${error.message}`);
+    return vehicleFromRow(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    // Service Records cascade away with the car (FK ON DELETE CASCADE); RLS scopes to owner.
+    const { error } = await this.client.from("cars").delete().eq("id", Number(id));
+    if (error) throw new Error(`Supabase cars.delete failed: ${error.message}`);
+  }
 }
+
+const SERVICE_COLUMNS = "id, car_id, service_type, expiry_date";
 
 export class SupabaseServiceRecordRepository implements ServiceRecordRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
@@ -103,7 +176,7 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
   async listByUser(userId: string): Promise<ServiceRecord[]> {
     const result = await this.client
       .from("services")
-      .select("id, car_id, service_type, expiry_date")
+      .select(SERVICE_COLUMNS)
       .eq("user_id", Number(userId))
       .not("expiry_date", "is", null);
     return rowsOrThrow(result, "services.listByUser").map(serviceRecordFromRow);
@@ -112,10 +185,56 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
   async listByVehicle(vehicleId: string): Promise<ServiceRecord[]> {
     const result = await this.client
       .from("services")
-      .select("id, car_id, service_type, expiry_date")
+      .select(SERVICE_COLUMNS)
       .eq("car_id", Number(vehicleId))
       .not("expiry_date", "is", null);
     return rowsOrThrow(result, "services.listByVehicle").map(serviceRecordFromRow);
+  }
+
+  async getById(id: string): Promise<ServiceRecord | null> {
+    const { data, error } = await this.client
+      .from("services")
+      .select(SERVICE_COLUMNS)
+      .eq("id", Number(id))
+      .maybeSingle();
+    if (error) throw new Error(`Supabase services.getById failed: ${error.message}`);
+    return data && data.expiry_date !== null ? serviceRecordFromRow(data) : null;
+  }
+
+  async create(input: NewServiceRecord): Promise<ServiceRecord> {
+    const { data, error } = await this.client
+      .from("services")
+      .insert({
+        car_id: Number(input.vehicleId),
+        user_id: Number(input.userId),
+        service_type: input.serviceType,
+        expiry_date: toISODate(input.expiryDate),
+      })
+      .select(SERVICE_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase services.create failed: ${error.message}`);
+    return serviceRecordFromRow(data);
+  }
+
+  async update(id: string, changes: ServiceRecordChanges): Promise<ServiceRecord> {
+    const patch: ServiceUpdate = {};
+    if (changes.serviceType !== undefined) patch.service_type = changes.serviceType;
+    if (changes.expiryDate !== undefined) patch.expiry_date = toISODate(changes.expiryDate);
+
+    // Ownership is enforced by RLS (update services only for the User's own cars).
+    const { data, error } = await this.client
+      .from("services")
+      .update(patch)
+      .eq("id", Number(id))
+      .select(SERVICE_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase services.update failed: ${error.message}`);
+    return serviceRecordFromRow(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.client.from("services").delete().eq("id", Number(id));
+    if (error) throw new Error(`Supabase services.delete failed: ${error.message}`);
   }
 }
 

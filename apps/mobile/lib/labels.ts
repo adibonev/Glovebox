@@ -5,6 +5,17 @@ import { statusColors } from "@glovebox/ui";
 // Centralized BG strings (i18n-ready). Mirrors apps/web/app/_lib/labels.ts — a future
 // cleanup could lift these shared presentation strings into a common package.
 
+/** Canonical Service Type order (UBIQUITOUS_LANGUAGE.md) for pickers. */
+export const SERVICE_TYPE_ORDER = [
+  "civil_liability",
+  "casco",
+  "vignette",
+  "inspection",
+  "tax",
+  "fire_extinguisher",
+  "maintenance",
+] as const;
+
 /** Bulgarian labels per Service Type code (UBIQUITOUS_LANGUAGE.md). */
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
   civil_liability: "Гражданска отговорност",

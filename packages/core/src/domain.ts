@@ -56,3 +56,41 @@ export interface User {
   authUserId: string;
   email: string;
 }
+
+// --- Write inputs (used by the repository create/update seam) ---------------------
+
+/** Fields to create a Vehicle (the `id` is assigned by the store). */
+export interface NewVehicle {
+  userId: string;
+  brand: string;
+  model: string;
+  year?: number | null;
+  plate?: string | null;
+  bodyType?: string | null;
+}
+
+/** Editable Vehicle fields; an omitted key is left unchanged. */
+export interface VehicleChanges {
+  brand?: string;
+  model?: string;
+  year?: number | null;
+  plate?: string | null;
+  bodyType?: string | null;
+}
+
+/**
+ * Fields to create a Service Record. `userId` is required because the physical
+ * `services` table denormalises the owner (`services.user_id`) for RLS / queries.
+ */
+export interface NewServiceRecord {
+  vehicleId: string;
+  userId: string;
+  serviceType: string;
+  expiryDate: Date;
+}
+
+/** Editable Service Record fields; an omitted key is left unchanged. */
+export interface ServiceRecordChanges {
+  serviceType?: string;
+  expiryDate?: Date;
+}

@@ -48,6 +48,60 @@ describe("InMemoryServiceRecordRepository", () => {
   });
 });
 
+describe("InMemoryVehicleRepository writes", () => {
+  it("creates, reads back, updates and deletes a Vehicle", async () => {
+    const repo = new InMemoryVehicleRepository([]);
+
+    const created = await repo.create({ userId: "user-1", brand: "Kia", model: "Ceed" });
+    expect(created).toMatchObject({
+      userId: "user-1",
+      brand: "Kia",
+      model: "Ceed",
+      year: null,
+      plate: null,
+      bodyType: null,
+    });
+    expect(await repo.getById(created.id)).toEqual(created);
+    expect((await repo.listByUser("user-1")).map((v) => v.id)).toEqual([created.id]);
+
+    const updated = await repo.update(created.id, { model: "Ceed SW", bodyType: "wagon" });
+    expect(updated).toMatchObject({ brand: "Kia", model: "Ceed SW", bodyType: "wagon" });
+
+    await repo.delete(created.id);
+    expect(await repo.getById(created.id)).toBeNull();
+    expect(await repo.listByUser("user-1")).toEqual([]);
+  });
+});
+
+describe("InMemoryServiceRecordRepository writes", () => {
+  it("creates, updates and deletes a Service Record for a Vehicle", async () => {
+    const cars: Vehicle[] = [
+      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: null, plate: null, bodyType: null },
+    ];
+    const repo = new InMemoryServiceRecordRepository(cars, []);
+
+    const created = await repo.create({
+      vehicleId: "car-1",
+      userId: "user-1",
+      serviceType: "vignette",
+      expiryDate: new Date("2026-07-01"),
+    });
+    expect(created).toMatchObject({ vehicleId: "car-1", serviceType: "vignette" });
+    expect((await repo.listByVehicle("car-1")).map((r) => r.id)).toEqual([created.id]);
+
+    const updated = await repo.update(created.id, {
+      serviceType: "casco",
+      expiryDate: new Date("2026-08-01"),
+    });
+    expect(updated.serviceType).toBe("casco");
+    expect(updated.expiryDate).toEqual(new Date("2026-08-01"));
+
+    await repo.delete(created.id);
+    expect(await repo.getById(created.id)).toBeNull();
+    expect(await repo.listByVehicle("car-1")).toEqual([]);
+  });
+});
+
 describe("InMemoryDocumentRepository", () => {
   it("lists the Documents belonging to a given User across their Service Records", async () => {
     const documents: Document[] = [
