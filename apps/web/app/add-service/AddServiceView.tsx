@@ -1,8 +1,8 @@
 "use client";
 
-import { isExpiringServiceType } from "@glovebox/core";
+import { isExpiringServiceType, type ExtractedServiceInfo } from "@glovebox/core";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { ServiceTypeIcon } from "../_components/ServiceTypeIcon";
 import { addService } from "../_lib/actions";
@@ -13,12 +13,85 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function AddServiceView({ vehicleId }: { vehicleId: string }) {
   const [type, setType] = useState(TYPES[0] ?? "civil_liability");
+  const [expiryDate, setExpiryDate] = useState(todayIso());
+  const [cost, setCost] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiMsg, setAiMsg] = useState<string | null>(null);
+  const docInput = useRef<HTMLInputElement>(null);
   const expiring = isExpiringServiceType(type);
+
+  async function extractFromDocument(file: File) {
+    setAiBusy(true);
+    setAiMsg(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/extract", { method: "POST", body });
+      if (res.status === 503) {
+        setAiMsg("AI разчитането още не е настроено.");
+        return;
+      }
+      if (!res.ok) {
+        setAiMsg("Не успях да разчета документа — попълни ръчно.");
+        return;
+      }
+      const data = (await res.json()) as ExtractedServiceInfo;
+      let filled = 0;
+      if (data.serviceType) {
+        setType(data.serviceType);
+        filled++;
+      }
+      if (data.expiryDate) {
+        setExpiryDate(data.expiryDate);
+        filled++;
+      }
+      if (data.cost != null) {
+        setCost(String(data.cost));
+        filled++;
+      }
+      setAiMsg(
+        filled > 0
+          ? `Попълних ${filled} ${filled === 1 ? "поле" : "полета"} — провери ги, преди да запазиш.`
+          : "Не открих данни в документа — попълни ръчно.",
+      );
+    } catch {
+      setAiMsg("Грешка при разчитането — попълни ръчно.");
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   return (
     <form action={addService} className="flex flex-col gap-7">
       <input type="hidden" name="vehicleId" value={vehicleId} />
       <input type="hidden" name="serviceType" value={type} />
+
+      {/* AI prefill: snap the policy / талон and the dates fill in. */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-copper/30 bg-copper/[0.06] p-4">
+        <input
+          ref={docInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) void extractFromDocument(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => docInput.current?.click()}
+          disabled={aiBusy}
+          className="flex items-center justify-center gap-2 rounded-xl bg-copper/90 px-4 py-2.5 font-body text-sm font-semibold text-ink transition hover:bg-copper disabled:opacity-60"
+        >
+          {aiBusy ? "Разчитам документа…" : "📄 Попълни от снимка на документа"}
+        </button>
+        <p className="font-body text-[12px] text-silver/60">
+          {aiMsg ?? "Снимай ГО полицата / талона — попълваме вида и датата вместо теб (ти потвърждаваш)."}
+        </p>
+      </div>
 
       <div className="flex flex-col gap-3">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">
@@ -55,7 +128,8 @@ export function AddServiceView({ vehicleId }: { vehicleId: string }) {
         <input
           type="date"
           name="expiryDate"
-          defaultValue={todayIso()}
+          value={expiryDate}
+          onChange={(e) => setExpiryDate(e.target.value)}
           required
           className="rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60"
         />
@@ -68,6 +142,8 @@ export function AddServiceView({ vehicleId }: { vehicleId: string }) {
         <input
           type="number"
           name="cost"
+          value={cost}
+          onChange={(e) => setCost(e.target.value)}
           step="0.01"
           min="0"
           inputMode="decimal"
