@@ -171,7 +171,7 @@ export default function AnalysisScreen() {
               </Svg>
               <View className="absolute inset-0 items-center justify-center">
                 <Text className="text-[10px] uppercase tracking-[2px] text-muted">Общо</Text>
-                <Text className="text-2xl font-semibold leading-none text-ivory">{formatCostCompact(total)}</Text>
+                <Text className="font-display text-2xl leading-none text-ivory">{formatCostCompact(total)}</Text>
               </View>
             </View>
           </View>

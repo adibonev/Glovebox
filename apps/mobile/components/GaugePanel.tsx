@@ -61,7 +61,7 @@ function Gauge({ urgent }: { urgent: NonNullable<UrgentView> }) {
           />
         </Svg>
         <View className="absolute inset-0 items-center justify-center">
-          <Text style={{ color: urgent.color }} className="text-6xl font-semibold leading-none">
+          <Text style={{ color: urgent.color }} className="font-display text-6xl leading-none">
             {Math.abs(urgent.days)}
           </Text>
           <Text style={{ color: urgent.color }} className="mt-1.5 text-xs uppercase tracking-[3px]">
@@ -95,7 +95,7 @@ function AllClear() {
 function Stat({ n, label, color, dot }: { n: number; label: string; color: string; dot: string }) {
   return (
     <View className="flex-1 items-center">
-      <Text style={{ color }} className="text-2xl font-semibold leading-none">
+      <Text style={{ color }} className="font-display text-2xl leading-none">
         {n}
       </Text>
       <View className="mt-1.5 flex-row items-center gap-1.5">

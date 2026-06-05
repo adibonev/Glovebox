@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ReminderSettings } from "@/components/ReminderSettings";
 import {
   SERVICE_TYPE_LABELS,
   STATUS_COLORS,
@@ -35,11 +36,7 @@ export default function RemindersTab() {
           contentContainerClassName="px-5 pb-8"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.copper} />}
         >
-          <View className="mb-4 rounded-2xl border border-white/10 bg-panel p-4">
-            <Text className="text-sm text-silver">
-              Изпращаме имейл напомняния преди да изтече всеки срок. Push известия идват с Pro.
-            </Text>
-          </View>
+          {data?.userId && <ReminderSettings userId={data.userId} onSaved={onRefresh} />}
 
           {due.length === 0 ? (
             <View className="mt-12 items-center">

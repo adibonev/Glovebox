@@ -1,7 +1,9 @@
 import "../global.css";
 
+import { Fraunces_600SemiBold, useFonts } from "@expo-google-fonts/fraunces";
 import { colors } from "@glovebox/ui";
 import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
@@ -13,8 +15,18 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 
 // Paint the native root view dark so there's no white flash before React mounts.
 void SystemUI.setBackgroundColorAsync(colors.ink);
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // Fraunces (display serif) for the wordmark + numerals; UI body stays system (Cyrillic-safe).
+  const [fontsLoaded] = useFonts({ Fraunces_600SemiBold });
+
+  useEffect(() => {
+    if (fontsLoaded) void SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null; // keep the splash up until the font is ready
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.ink }}>
       <SafeAreaProvider>

@@ -16,10 +16,9 @@ import { useAuth } from "./auth";
 import { parseBodyType, type BodyType } from "./bodyType";
 import { SERVICE_TYPE_LABELS, STATUS_COLORS } from "./labels";
 import { getPlan } from "./plan";
+import { DEFAULT_WINDOW, loadReminderConfig } from "./reminderSettings";
 import { supabase } from "./supabase";
 
-// Default Reminder Window for the status/gauge until per-Service-Type settings land on mobile.
-const DEFAULT_WINDOW = 30;
 const CRITICAL_DAYS = 3;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -75,6 +74,8 @@ export function useGarage() {
         (await userRepo.create({ authUserId: session.user.id, email: session.user.email ?? "" }));
 
       const plan = await getPlan(user.id);
+      const { windows } = await loadReminderConfig(user.id);
+      const windowFor = (serviceType: string) => windows[serviceType] ?? DEFAULT_WINDOW;
       const vehicles = await vehicleRepo.listByUser(user.id);
       const today = new Date();
 
@@ -88,7 +89,7 @@ export function useGarage() {
           .map((record) => {
             const expiring = isExpiringServiceType(record.serviceType);
             const status: ExpiryStatus = expiring
-              ? expiryStatus(record, DEFAULT_WINDOW, today)
+              ? expiryStatus(record, windowFor(record.serviceType), today)
               : "Valid";
             const days = Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
             return { record, status, days, expiring };
@@ -116,7 +117,7 @@ export function useGarage() {
       const urgent: UrgentView = head
         ? {
             days: head.days,
-            fraction: head.days / DEFAULT_WINDOW,
+            fraction: head.days / windowFor(head.record.serviceType),
             color: head.days <= CRITICAL_DAYS ? STATUS_COLORS.Expired : STATUS_COLORS[head.status],
             typeLabel: SERVICE_TYPE_LABELS[head.record.serviceType] ?? head.record.serviceType,
             vehicleName: `${head.vehicle.brand} ${head.vehicle.model}`,

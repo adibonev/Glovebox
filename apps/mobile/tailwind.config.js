@@ -22,6 +22,11 @@ module.exports = {
         dim: colors.dim,
         status: statusColors,
       },
+      fontFamily: {
+        // Fraunces (loaded in app/_layout) for the wordmark + numerals. Latin-only — never
+        // apply to Bulgarian text (it would tofu); UI body stays the system font.
+        display: ["Fraunces_600SemiBold"],
+      },
     },
   },
   plugins: [],

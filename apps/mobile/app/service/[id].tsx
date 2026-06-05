@@ -3,7 +3,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Text, View } from "react-native";
 
-import { ChipPicker, DangerButton, DateField, Field, PrimaryButton } from "@/components/forms";
+import {
+  ChipPicker,
+  DangerButton,
+  DateField,
+  Field,
+  PrimaryButton,
+  VignettePresets,
+} from "@/components/forms";
 import { Screen } from "@/components/Screen";
 import { parseCost } from "@/lib/cost";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "@/lib/labels";
@@ -85,6 +92,7 @@ export default function EditServiceScreen() {
     <Screen title="Редакция на услуга">
       <ChipPicker label="Вид услуга" value={serviceType} options={TYPE_OPTIONS} onChange={setServiceType} />
       <DateField label={expiring ? "Валидна до" : "Дата на разход"} value={expiryDate} onChange={setExpiryDate} />
+      {serviceType === "vignette" && <VignettePresets onPick={setExpiryDate} />}
       <Field
         label="Цена (€) · по избор"
         value={cost}

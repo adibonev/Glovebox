@@ -16,19 +16,19 @@ export function Wheel({ size = 20, color = colors.copper }: { size?: number; col
 
 /** "Glovebox" with the steering-wheel as the "o" in "box" (brand wordmark). */
 export function Wordmark({ size = 24 }: { size?: number }) {
-  const text = { fontSize: size, fontWeight: "600" as const };
+  const text = { fontSize: size };
   return (
     <View className="flex-row items-center">
-      <Text style={text} className="text-ivory">
+      <Text style={text} className="font-display text-ivory">
         Glove
       </Text>
-      <Text style={text} className="text-copper">
+      <Text style={text} className="font-display text-copper">
         b
       </Text>
       <View style={{ marginHorizontal: size * 0.02 }}>
         <Wheel size={size * 0.86} />
       </View>
-      <Text style={text} className="text-copper">
+      <Text style={text} className="font-display text-copper">
         x
       </Text>
     </View>

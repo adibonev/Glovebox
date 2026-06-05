@@ -157,6 +157,38 @@ export function PrimaryButton({
   );
 }
 
+/** Quick "valid until" presets for a Vignette (BG durations) — sets Expiry from today. */
+const VIGNETTE_PRESETS: { label: string; days: number }[] = [
+  { label: "Уикенд", days: 3 },
+  { label: "Седмица", days: 7 },
+  { label: "Месец", days: 30 },
+  { label: "Тримесечие", days: 90 },
+  { label: "Година", days: 365 },
+];
+
+export function VignettePresets({ onPick }: { onPick: (date: Date) => void }) {
+  return (
+    <View className="mb-4">
+      <Text className="mb-1.5 text-sm text-muted">Бърз избор (винетка)</Text>
+      <View className="flex-row flex-wrap gap-2">
+        {VIGNETTE_PRESETS.map((p) => (
+          <Pressable
+            key={p.label}
+            onPress={() => {
+              const d = new Date();
+              d.setDate(d.getDate() + p.days);
+              onPick(d);
+            }}
+            className="rounded-lg border border-white/10 bg-panel px-3 py-2"
+          >
+            <Text className="text-[13px] text-copper">{p.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** Destructive text button (delete). */
 export function DangerButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
