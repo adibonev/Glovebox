@@ -1,6 +1,6 @@
 "use client";
 
-import { isExpiringServiceType, type ExtractedServiceInfo } from "@glovebox/core";
+import { isExpiringServiceType, type CheckResult, type ExtractedServiceInfo } from "@glovebox/core";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
@@ -13,9 +13,11 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function AddServiceView({
   vehicleId,
+  plate = null,
   aiEnabled = false,
 }: {
   vehicleId: string;
+  plate?: string | null;
   aiEnabled?: boolean;
 }) {
   const [type, setType] = useState(TYPES[0] ?? "civil_liability");
@@ -23,8 +25,40 @@ export function AddServiceView({
   const [cost, setCost] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiMsg, setAiMsg] = useState<string | null>(null);
+  const [regBusy, setRegBusy] = useState(false);
+  const [regMsg, setRegMsg] = useState<string | null>(null);
   const docInput = useRef<HTMLInputElement>(null);
   const expiring = isExpiringServiceType(type);
+
+  // Registry Check (ГТП): ask the registry by plate and PREFILL the date — the User confirms by
+  // saving (same confirm pattern as the AI prefill; never an automatic write).
+  async function checkInspection() {
+    if (!plate) return;
+    setRegBusy(true);
+    setRegMsg(null);
+    try {
+      const res = await fetch("/api/registry-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plate, serviceType: "inspection" }),
+      });
+      if (!res.ok) {
+        setRegMsg("Проверката не успя — попълни ръчно.");
+        return;
+      }
+      const data = (await res.json()) as CheckResult;
+      if (data.expiryDate) {
+        setExpiryDate(data.expiryDate);
+        setRegMsg(`Регистърът сочи валидност до ${data.expiryDate} — провери и потвърди.`);
+      } else {
+        setRegMsg("Регистърът още не върна дата — попълни ръчно.");
+      }
+    } catch {
+      setRegMsg("Грешка при проверката — попълни ръчно.");
+    } finally {
+      setRegBusy(false);
+    }
+  }
 
   async function extractFromDocument(file: File) {
     setAiBusy(true);
@@ -146,6 +180,23 @@ export function AddServiceView({
           })}
         </div>
       </div>
+
+      {/* Registry Check (ГТП) — auto-check validity by plate and prefill the date (confirm pattern). */}
+      {type === "inspection" && plate && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-copper/30 bg-copper/[0.06] p-4">
+          <button
+            type="button"
+            onClick={checkInspection}
+            disabled={regBusy}
+            className="flex items-center justify-center gap-2 rounded-xl border border-copper/50 px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:bg-copper/10 disabled:opacity-60"
+          >
+            {regBusy ? "Проверявам в регистъра…" : "🛡️ Провери ГТП по рег. номер"}
+          </button>
+          <p className="font-body text-[12px] text-silver/60">
+            {regMsg ?? `Проверка в Автомобилна администрация по ${plate} — попълваме датата, ти потвърждаваш.`}
+          </p>
+        </div>
+      )}
 
       <label className="flex flex-col gap-2">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-silver/55">

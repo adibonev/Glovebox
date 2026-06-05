@@ -11,6 +11,7 @@ export * from "./analysis";
 export * from "./billing";
 export * from "./domain";
 export * from "./extraction";
+export * from "./registryCheck";
 export * from "./reminder";
 export * from "./repository";
 export * from "./repository.in-memory";

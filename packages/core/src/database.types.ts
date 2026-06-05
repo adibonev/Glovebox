@@ -324,6 +324,9 @@ export type Database = {
           file_url: string | null
           fuel_type: string | null
           id: number
+          last_check_source: string | null
+          last_check_status: string | null
+          last_checked_at: string | null
           liters: number | null
           mileage: number | null
           notes: string | null
@@ -341,6 +344,9 @@ export type Database = {
           file_url?: string | null
           fuel_type?: string | null
           id?: number
+          last_check_source?: string | null
+          last_check_status?: string | null
+          last_checked_at?: string | null
           liters?: number | null
           mileage?: number | null
           notes?: string | null
@@ -358,6 +364,9 @@ export type Database = {
           file_url?: string | null
           fuel_type?: string | null
           id?: number
+          last_check_source?: string | null
+          last_check_status?: string | null
+          last_checked_at?: string | null
           liters?: number | null
           mileage?: number | null
           notes?: string | null

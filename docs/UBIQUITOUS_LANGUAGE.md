@@ -49,6 +49,16 @@
 
 ---
 
+## Registry Checks
+
+| Term | Definition | Aliases to avoid |
+| ---- | ---------- | ---------------- |
+| **Registry Check** | A lookup against an official government registry that returns the Expiry Status and/or Expiry Date for one Service Type of one Vehicle (first source: Roadworthiness Inspection via rta.government.bg) | Scrape, lookup, sync |
+| **Registry Checker** | A port (interface) that performs a Registry Check by registration plate | Provider, client, fetcher |
+| **Check Result** | The outcome of a Registry Check: `{ serviceType, expiryDate: ISO\|null, status: "valid"\|"expiring"\|"expired"\|"unknown", checkedAt, source }` | Response, payload |
+
+---
+
 ## Documents & Media
 
 | Term | Definition | Aliases to avoid |

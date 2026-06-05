@@ -15,7 +15,7 @@ export default async function AddServicePage() {
   // RLS scopes `cars` to the signed-in user.
   const { data: car } = await supabase
     .from("cars")
-    .select("id, brand, model")
+    .select("id, brand, model, license_plate")
     .order("id")
     .limit(1)
     .maybeSingle();
@@ -43,7 +43,11 @@ export default async function AddServicePage() {
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-md">
           {/* The AI prefill goes live automatically once OPENAI_API_KEY is set (server-only). */}
-          <AddServiceView vehicleId={String(car.id)} aiEnabled={!!process.env.OPENAI_API_KEY} />
+          <AddServiceView
+            vehicleId={String(car.id)}
+            plate={car.license_plate}
+            aiEnabled={!!process.env.OPENAI_API_KEY}
+          />
         </div>
       </div>
     </main>
