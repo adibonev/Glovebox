@@ -2,6 +2,7 @@
   "expo": {
     "name": "Glovebox",
     "slug": "glovebox",
+    "owner": "adibonev",
     "scheme": "glovebox",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,6 +10,11 @@
     "backgroundColor": "#07100C",
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
+    "extra": {
+      "eas": {
+        "projectId": "896086ca-35e4-4932-97b4-53e57c8c9da6"
+      }
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.glovebox.app",
