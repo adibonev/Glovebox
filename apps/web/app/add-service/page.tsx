@@ -42,7 +42,8 @@ export default async function AddServicePage() {
         </header>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-md">
-          <AddServiceView vehicleId={String(car.id)} />
+          {/* The AI prefill goes live automatically once OPENAI_API_KEY is set (server-only). */}
+          <AddServiceView vehicleId={String(car.id)} aiEnabled={!!process.env.OPENAI_API_KEY} />
         </div>
       </div>
     </main>
