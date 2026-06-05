@@ -1,8 +1,12 @@
 "use client";
 
-import { isExpiringServiceType, type CheckResult, type ExtractedServiceInfo } from "@glovebox/core";
+import { isExpiringServiceType, type ExtractedServiceInfo } from "@glovebox/core";
 import Link from "next/link";
 import { useRef, useState } from "react";
+
+// rta.government.bg gates the ГТП check behind a captcha, so we can't auto-fetch it (and shouldn't —
+// ToS). The button opens the official check; the User reads the date there and confirms it here.
+const RTA_INSPECTION_URL = "https://rta.government.bg/services/check-inspection/index.html";
 
 import { ServiceTypeIcon } from "../_components/ServiceTypeIcon";
 import { addService } from "../_lib/actions";
@@ -25,40 +29,8 @@ export function AddServiceView({
   const [cost, setCost] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiMsg, setAiMsg] = useState<string | null>(null);
-  const [regBusy, setRegBusy] = useState(false);
-  const [regMsg, setRegMsg] = useState<string | null>(null);
   const docInput = useRef<HTMLInputElement>(null);
   const expiring = isExpiringServiceType(type);
-
-  // Registry Check (ГТП): ask the registry by plate and PREFILL the date — the User confirms by
-  // saving (same confirm pattern as the AI prefill; never an automatic write).
-  async function checkInspection() {
-    if (!plate) return;
-    setRegBusy(true);
-    setRegMsg(null);
-    try {
-      const res = await fetch("/api/registry-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plate, serviceType: "inspection" }),
-      });
-      if (!res.ok) {
-        setRegMsg("Проверката не успя — попълни ръчно.");
-        return;
-      }
-      const data = (await res.json()) as CheckResult;
-      if (data.expiryDate) {
-        setExpiryDate(data.expiryDate);
-        setRegMsg(`Регистърът сочи валидност до ${data.expiryDate} — провери и потвърди.`);
-      } else {
-        setRegMsg("Регистърът още не върна дата — попълни ръчно.");
-      }
-    } catch {
-      setRegMsg("Грешка при проверката — попълни ръчно.");
-    } finally {
-      setRegBusy(false);
-    }
-  }
 
   async function extractFromDocument(file: File) {
     setAiBusy(true);
@@ -181,19 +153,21 @@ export function AddServiceView({
         </div>
       </div>
 
-      {/* Registry Check (ГТП) — auto-check validity by plate and prefill the date (confirm pattern). */}
+      {/* Registry Check (ГТП): the official source has a captcha, so we link out — the User checks
+          there and confirms the date here (no auto-write). */}
       {type === "inspection" && plate && (
         <div className="flex flex-col gap-2 rounded-2xl border border-copper/30 bg-copper/[0.06] p-4">
-          <button
-            type="button"
-            onClick={checkInspection}
-            disabled={regBusy}
-            className="flex items-center justify-center gap-2 rounded-xl border border-copper/50 px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:bg-copper/10 disabled:opacity-60"
+          <a
+            href={RTA_INSPECTION_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl border border-copper/50 px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:bg-copper/10"
           >
-            {regBusy ? "Проверявам в регистъра…" : "🛡️ Провери ГТП по рег. номер"}
-          </button>
+            🛡️ Провери ГТП в официалния регистър ↗
+          </a>
           <p className="font-body text-[12px] text-silver/60">
-            {regMsg ?? `Проверка в Автомобилна администрация по ${plate} — попълваме датата, ти потвърждаваш.`}
+            Въведи <span className="font-mono text-silver">{plate}</span> + кода от картинката в
+            Автомобилна администрация, виж датата „валиден до" и я попълни тук.
           </p>
         </div>
       )}

@@ -38,22 +38,12 @@ export async function POST(req: Request) {
   if (!plate) return NextResponse.json({ error: "missing_plate" }, { status: 400 });
 
   // -----------------------------------------------------------------------------------------------
-  // TODO(adi): map real rta.government.bg request/response here — query with `plate`.
-  // The public "Проверка на технически преглед" page (rta.government.bg/.../check-inspection) is
-  // almost certainly backed by a JSON endpoint — capture the exact request from the Network tab and
-  // POST/GET it with `plate`. Keep concurrency to a single request and respect the site's ToS /
-  // robots. Then hand the parsed JSON straight to normalizeInspectionResult (below) unchanged.
-  //
-  //   const res = await fetch("https://rta.government.bg/api/<...>", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ registrationNumber: plate }),
-  //   });
-  //   if (!res.ok) return NextResponse.json({ error: "registry_failed" }, { status: 502 });
-  //   const raw: unknown = await res.json();
-  //
-  // Until that's wired, `raw` stays null → normalizeInspectionResult returns status "unknown",
-  // so the endpoint is already callable end-to-end.
+  // NOTE: the official ГТП source (POST rta.government.bg/services/check-inspection/checkinsp.php)
+  // is gated by a per-session CAPTCHA, so it can't (and shouldn't, per ToS) be auto-fetched from a
+  // server — the add-service UI links out to the official check instead. This route stays as the
+  // RegistryChecker seam for a future CAPTCHA-FREE source (an official API, or an insurance /
+  // vignette partner adapter behind the same port). Until such a source exists, `raw` is null →
+  // normalizeInspectionResult returns status "unknown".
   const raw: unknown = null;
   // -----------------------------------------------------------------------------------------------
 
