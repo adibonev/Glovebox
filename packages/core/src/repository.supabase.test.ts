@@ -72,6 +72,7 @@ describe.skipIf(!hasEnv)("Supabase repositories (integration)", () => {
       model: "Corolla",
       year: null,
       plate: null,
+      vin: null,
       bodyType: null,
     });
   });

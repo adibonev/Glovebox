@@ -20,6 +20,12 @@ export function AddVehicleForm() {
         <input name="year" type="number" placeholder="Година" className={fieldClass} />
         <input name="plate" placeholder="Рег. номер" className={fieldClass} />
       </div>
+      <input
+        name="vin"
+        maxLength={17}
+        placeholder="VIN / рама (по избор)"
+        className={`${fieldClass} uppercase placeholder:normal-case`}
+      />
       <BodyTypePicker />
       <button
         type="submit"

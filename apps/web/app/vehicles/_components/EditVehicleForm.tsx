@@ -14,6 +14,7 @@ export type EditableVehicle = {
   model: string;
   year: number | null;
   plate: string | null;
+  vin: string | null;
   bodyType: string | null;
 };
 
@@ -42,6 +43,13 @@ export function EditVehicleForm({ vehicle }: { vehicle: EditableVehicle }) {
           className={fieldClass}
         />
       </div>
+      <input
+        name="vin"
+        maxLength={17}
+        defaultValue={vehicle.vin ?? ""}
+        placeholder="VIN / рама (по избор)"
+        className={`${fieldClass} uppercase placeholder:normal-case`}
+      />
       <BodyTypePicker value={parseBodyType(vehicle.bodyType)} />
       <div className="flex items-center gap-2">
         <button

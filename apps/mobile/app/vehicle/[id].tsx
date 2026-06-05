@@ -19,6 +19,7 @@ export default function EditVehicleScreen() {
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [plate, setPlate] = useState("");
+  const [vin, setVin] = useState("");
   const [bodyType, setBodyType] = useState<BodyType>("sedan");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export default function EditVehicleScreen() {
         setModel(v.model);
         setYear(v.year !== null ? String(v.year) : "");
         setPlate(v.plate ?? "");
+        setVin(v.vin ?? "");
         setBodyType(parseBodyType(v.bodyType));
       })
       .finally(() => active && setLoading(false));
@@ -52,6 +54,7 @@ export default function EditVehicleScreen() {
         model: model.trim(),
         year: parsedYear !== null && !Number.isNaN(parsedYear) ? parsedYear : null,
         plate: plate.trim() || null,
+        vin: vin.trim().toUpperCase() || null,
         bodyType,
       });
       router.back();
@@ -95,6 +98,7 @@ export default function EditVehicleScreen() {
       <Field label="Модел" value={model} onChangeText={setModel} />
       <Field label="Година" value={year} onChangeText={setYear} keyboardType="number-pad" maxLength={4} />
       <Field label="Регистрационен номер" value={plate} onChangeText={setPlate} autoCapitalize="characters" />
+      <Field label="VIN / рама (по избор)" value={vin} onChangeText={setVin} autoCapitalize="characters" maxLength={17} />
       <ChipPicker label="Тип каросерия" value={bodyType} options={BODY_OPTIONS} onChange={setBodyType} />
       {error && <Text className="mb-2 text-sm text-status-expired">{error}</Text>}
       <PrimaryButton label="Запази" onPress={save} loading={saving} disabled={!brand.trim() || !model.trim()} />

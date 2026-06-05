@@ -23,6 +23,8 @@ export interface Vehicle {
   year: number | null;
   /** Registration plate, when known (`cars.license_plate`). */
   plate: string | null;
+  /** Vehicle Identification Number, when known (`cars.vin`). */
+  vin: string | null;
   /** Body type code driving the silhouette, when set (`cars.body_type`). */
   bodyType: string | null;
 }
@@ -77,6 +79,7 @@ export interface NewVehicle {
   model: string;
   year?: number | null;
   plate?: string | null;
+  vin?: string | null;
   bodyType?: string | null;
 }
 
@@ -86,6 +89,7 @@ export interface VehicleChanges {
   model?: string;
   year?: number | null;
   plate?: string | null;
+  vin?: string | null;
   bodyType?: string | null;
 }
 

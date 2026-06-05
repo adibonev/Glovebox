@@ -25,6 +25,7 @@ export default function NewVehicleScreen() {
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [plate, setPlate] = useState("");
+  const [vin, setVin] = useState("");
   const [bodyType, setBodyType] = useState<BodyType>("sedan");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export default function NewVehicleScreen() {
         model: model.trim(),
         year: parsedYear !== null && !Number.isNaN(parsedYear) ? parsedYear : null,
         plate: plate.trim() || null,
+        vin: vin.trim().toUpperCase() || null,
         bodyType,
       });
       router.back();
@@ -81,6 +83,14 @@ export default function NewVehicleScreen() {
         onChangeText={setPlate}
         placeholder="напр. CB1234AB"
         autoCapitalize="characters"
+      />
+      <Field
+        label="VIN / рама (по избор)"
+        value={vin}
+        onChangeText={setVin}
+        placeholder="17 знака"
+        autoCapitalize="characters"
+        maxLength={17}
       />
       <ChipPicker label="Тип каросерия" value={bodyType} options={BODY_OPTIONS} onChange={setBodyType} />
       {error && <Text className="mb-2 text-sm text-status-expired">{error}</Text>}

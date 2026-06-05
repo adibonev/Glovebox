@@ -9,8 +9,8 @@ import {
 } from "./repository.in-memory";
 
 const vehicles: Vehicle[] = [
-  { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB", bodyType: "sedan" },
-  { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null, bodyType: null },
+  { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB", vin: null, bodyType: "sedan" },
+  { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null, vin: null, bodyType: null },
 ];
 
 const serviceRecords: ServiceRecord[] = [
@@ -78,7 +78,7 @@ describe("InMemoryVehicleRepository writes", () => {
 describe("InMemoryServiceRecordRepository writes", () => {
   it("creates, updates and deletes a Service Record for a Vehicle", async () => {
     const cars: Vehicle[] = [
-      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: null, plate: null, bodyType: null },
+      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: null, plate: null, vin: null, bodyType: null },
     ];
     const repo = new InMemoryServiceRecordRepository(cars, []);
 

@@ -84,6 +84,7 @@ export async function addVehicle(formData: FormData): Promise<void> {
   const model = String(formData.get("model") ?? "").trim();
   const yearRaw = String(formData.get("year") ?? "").trim();
   const plate = String(formData.get("plate") ?? "").trim();
+  const vin = String(formData.get("vin") ?? "").trim().toUpperCase();
   if (!brand || !model) return;
 
   // Quota gate: Free is capped at 1 Vehicle → Paywall (ADR-0003).
@@ -100,6 +101,7 @@ export async function addVehicle(formData: FormData): Promise<void> {
       model,
       year: yearRaw ? Number(yearRaw) : null,
       license_plate: plate || null,
+      vin: vin || null,
       body_type: readBodyType(formData),
     })
     .select("id")
@@ -121,6 +123,7 @@ export async function updateVehicle(formData: FormData): Promise<void> {
   const model = String(formData.get("model") ?? "").trim();
   const yearRaw = String(formData.get("year") ?? "").trim();
   const plate = String(formData.get("plate") ?? "").trim();
+  const vin = String(formData.get("vin") ?? "").trim().toUpperCase();
   if (!id || !brand || !model) return;
 
   // `.eq("user_id")` + RLS ensure a User can only edit their own Vehicle.
@@ -131,6 +134,7 @@ export async function updateVehicle(formData: FormData): Promise<void> {
       model,
       year: yearRaw ? Number(yearRaw) : null,
       license_plate: plate || null,
+      vin: vin || null,
       body_type: readBodyType(formData),
     })
     .eq("id", id)

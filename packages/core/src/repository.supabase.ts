@@ -50,7 +50,7 @@ type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
 function vehicleFromRow(
   row: Pick<
     CarRow,
-    "id" | "user_id" | "brand" | "model" | "year" | "license_plate" | "body_type"
+    "id" | "user_id" | "brand" | "model" | "year" | "license_plate" | "vin" | "body_type"
   >,
 ): Vehicle {
   return {
@@ -60,6 +60,7 @@ function vehicleFromRow(
     model: row.model,
     year: row.year,
     plate: row.license_plate,
+    vin: row.vin,
     bodyType: row.body_type,
   };
 }
@@ -103,7 +104,7 @@ function rowsOrThrow<Row>(
   return result.data ?? [];
 }
 
-const CAR_COLUMNS = "id, user_id, brand, model, year, license_plate, body_type";
+const CAR_COLUMNS = "id, user_id, brand, model, year, license_plate, vin, body_type";
 
 export class SupabaseVehicleRepository implements VehicleRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
@@ -136,6 +137,7 @@ export class SupabaseVehicleRepository implements VehicleRepository {
         model: input.model,
         year: input.year ?? null,
         license_plate: input.plate ?? null,
+        vin: input.vin ?? null,
         body_type: input.bodyType ?? null,
       })
       .select(CAR_COLUMNS)
@@ -150,6 +152,7 @@ export class SupabaseVehicleRepository implements VehicleRepository {
     if (changes.model !== undefined) patch.model = changes.model;
     if (changes.year !== undefined) patch.year = changes.year;
     if (changes.plate !== undefined) patch.license_plate = changes.plate;
+    if (changes.vin !== undefined) patch.vin = changes.vin;
     if (changes.bodyType !== undefined) patch.body_type = changes.bodyType;
 
     // Ownership is enforced by RLS (a User can only update their own `cars`).

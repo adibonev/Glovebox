@@ -38,6 +38,7 @@ export class InMemoryVehicleRepository implements VehicleRepository {
       model: input.model,
       year: input.year ?? null,
       plate: input.plate ?? null,
+      vin: input.vin ?? null,
       bodyType: input.bodyType ?? null,
     };
     this.vehicles.push(vehicle);
@@ -51,6 +52,7 @@ export class InMemoryVehicleRepository implements VehicleRepository {
     if (changes.model !== undefined) vehicle.model = changes.model;
     if (changes.year !== undefined) vehicle.year = changes.year;
     if (changes.plate !== undefined) vehicle.plate = changes.plate;
+    if (changes.vin !== undefined) vehicle.vin = changes.vin;
     if (changes.bodyType !== undefined) vehicle.bodyType = changes.bodyType;
     return vehicle;
   }
