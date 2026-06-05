@@ -1,29 +1,32 @@
 "use client";
 
-import { chartColors, donutSlices, linePath, linePoints } from "@glovebox/ui";
+import { cumulativeAt, cumulativePoints, type CumulativePoint } from "@glovebox/core";
+import { chartColors, donutSlices } from "@glovebox/ui";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type { AnalysisRecord, AnalysisVehicle } from "../_lib/analysis";
-import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER, formatCost } from "../_lib/labels";
+import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER, formatCost, formatCostCompact } from "../_lib/labels";
 
 type Props = { vehicles: AnalysisVehicle[]; records: AnalysisRecord[] };
 
-const periodOf = (ts: number) => {
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
-const monthLabel = (period: string) => {
-  const [y = "", m = ""] = period.split("-");
-  return `${m}.${y.slice(2)}`;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const fmtDate = (ms: number) => {
+  const d = new Date(ms);
+  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${String(d.getFullYear()).slice(2)}`;
 };
 
 export function AnalysisView({ vehicles, records }: Props) {
   const [car, setCar] = useState("all");
   const [category, setCategory] = useState("all");
+  const [year, setYear] = useState("all");
 
   const categories = useMemo(
     () => SERVICE_TYPE_ORDER.filter((t) => records.some((r) => r.serviceType === t)),
+    [records],
+  );
+  const years = useMemo(
+    () => [...new Set(records.map((r) => new Date(r.ts).getFullYear()))].sort((a, b) => b - a),
     [records],
   );
 
@@ -42,9 +45,10 @@ export function AnalysisView({ vehicles, records }: Props) {
       records.filter(
         (r) =>
           (car === "all" || r.vehicleId === car) &&
-          (category === "all" || r.serviceType === category),
+          (category === "all" || r.serviceType === category) &&
+          (year === "all" || new Date(r.ts).getFullYear() === Number(year)),
       ),
-    [records, car, category],
+    [records, car, category, year],
   );
 
   if (records.length === 0) return <EmptyState />;
@@ -52,7 +56,6 @@ export function AnalysisView({ vehicles, records }: Props) {
   const total = filtered.reduce((sum, r) => sum + r.cost, 0);
   const groupByCar = category !== "all";
 
-  // Pie — by Service Type, or by car when a category is selected.
   const pieTotals = new Map<string, number>();
   for (const r of filtered) {
     const key = groupByCar ? r.vehicleId : r.serviceType;
@@ -73,31 +76,23 @@ export function AnalysisView({ vehicles, records }: Props) {
     { cx: 100, cy: 100, rOuter: 92, rInner: 60 },
   );
 
-  // Line — monthly spend, one series per car (or the selected car).
+  // Timeline: cumulative spend per car (or the selected car).
   const lineCarIds =
     car === "all"
       ? vehicles.filter((v) => filtered.some((r) => r.vehicleId === v.id)).map((v) => v.id)
       : [car];
-  const periodSet = new Set<string>();
-  const perCar = new Map<string, Map<string, number>>();
-  for (const id of lineCarIds) {
-    const m = new Map<string, number>();
-    for (const r of filtered) {
-      if (r.vehicleId !== id) continue;
-      const p = periodOf(r.ts);
-      m.set(p, (m.get(p) ?? 0) + r.cost);
-      periodSet.add(p);
-    }
-    perCar.set(id, m);
-  }
-  const periods = [...periodSet].sort();
-  const lineSeries = lineCarIds.map((id) => ({
+  const series = lineCarIds.map((id) => ({
     id,
     name: vehicleName(id),
     color: carColor(id),
-    values: periods.map((p) => perCar.get(id)?.get(p) ?? 0),
+    points: cumulativePoints(
+      filtered.filter((r) => r.vehicleId === id).map((r) => ({ t: r.ts, cost: r.cost })),
+    ),
   }));
-  const maxY = Math.max(1, ...lineSeries.flatMap((s) => s.values));
+  const allTs = filtered.map((r) => r.ts);
+  const minT = allTs.length ? Math.min(...allTs) : 0;
+  const maxT = allTs.length ? Math.max(...allTs) : 1;
+  const maxY = Math.max(1, ...series.map((s) => s.points.at(-1)?.cumulative ?? 0));
 
   return (
     <div className="anim-up anim-d2">
@@ -119,6 +114,14 @@ export function AnalysisView({ vehicles, records }: Props) {
             ]}
           />
         )}
+        {years.length > 1 && (
+          <FilterRow
+            label="Период"
+            value={year}
+            onChange={setYear}
+            options={[{ value: "all", label: "Всички" }, ...years.map((y) => ({ value: String(y), label: String(y) }))]}
+          />
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -129,7 +132,7 @@ export function AnalysisView({ vehicles, records }: Props) {
         <>
           <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="flex items-center justify-center rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
-              <div className="relative h-[220px] w-[220px]">
+              <div className="relative h-[210px] w-[210px]">
                 <svg viewBox="0 0 200 200" className="h-full w-full">
                   {pie.map((s, i) => (
                     <path key={s.key} d={pieD[i]} fill={s.color} />
@@ -137,8 +140,8 @@ export function AnalysisView({ vehicles, records }: Props) {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">Общо</span>
-                  <span className="font-display text-[28px] font-semibold leading-none text-ivory">
-                    {formatCost(total)}
+                  <span className="font-display text-[24px] font-semibold leading-none tracking-tight text-ivory">
+                    {formatCostCompact(total)}
                   </span>
                 </div>
               </div>
@@ -169,21 +172,8 @@ export function AnalysisView({ vehicles, records }: Props) {
           </section>
 
           <section className="mt-6 rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-[18px] font-semibold text-ivory">Разход във времето</h2>
-              <span className="font-mono text-[11px] text-dim">макс {formatCost(maxY)}</span>
-            </div>
-            <LineChart series={lineSeries} periods={periods} maxY={maxY} />
-            {lineSeries.length > 1 && (
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-                {lineSeries.map((s) => (
-                  <span key={s.id} className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                    <span className="font-body text-[12px] text-muted">{s.name}</span>
-                  </span>
-                ))}
-              </div>
-            )}
+            <h2 className="mb-1 font-display text-[18px] font-semibold text-ivory">Натрупан разход във времето</h2>
+            <SpendTimeline series={series} minT={minT} maxT={maxT} maxY={maxY} />
           </section>
         </>
       )}
@@ -191,45 +181,122 @@ export function AnalysisView({ vehicles, records }: Props) {
   );
 }
 
-function LineChart({
+function SpendTimeline({
   series,
-  periods,
+  minT,
+  maxT,
   maxY,
 }: {
-  series: { id: string; color: string; values: number[] }[];
-  periods: string[];
+  series: { id: string; name: string; color: string; points: CumulativePoint[] }[];
+  minT: number;
+  maxT: number;
   maxY: number;
 }) {
   const W = 600;
-  const H = 180;
-  const PAD = 16;
+  const H = 190;
+  const PAD = 18;
+  const [hoverT, setHoverT] = useState<number | null>(null);
+  const ref = useRef<SVGSVGElement>(null);
+
+  const span = Math.max(1, maxT - minT);
+  const x = (t: number) => PAD + ((t - minT) / span) * (W - PAD * 2);
+  const y = (v: number) => PAD + (H - PAD * 2) - (v / Math.max(1, maxY)) * (H - PAD * 2);
+
+  const move = (clientX: number) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    setHoverT(minT + ((frac * W - PAD) / (W - PAD * 2)) * span);
+  };
+
+  const stepPath = (points: CumulativePoint[]) => {
+    const pts: [number, number][] = [[x(minT), y(0)]];
+    let prev = 0;
+    for (const p of points) {
+      pts.push([x(p.t), y(prev)]);
+      pts.push([x(p.t), y(p.cumulative)]);
+      prev = p.cumulative;
+    }
+    pts.push([x(maxT), y(prev)]);
+    return pts.map(([cx, cy], i) => `${i === 0 ? "M" : "L"}${cx},${cy}`).join(" ");
+  };
+
+  const ticks = [0, 0.5, 1].map((f) => minT + f * span);
+  const hx = hoverT == null ? 0 : Math.max(minT, Math.min(maxT, hoverT));
+
   return (
-    <div className="w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-[180px] w-full" preserveAspectRatio="none">
-        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.08)" />
-        {series.map((s) => {
-          const opts = { width: W, height: H, max: maxY, pad: PAD };
-          return (
-            <g key={s.id}>
-              <path
-                d={linePath(s.values, opts)}
-                fill="none"
-                stroke={s.color}
-                strokeWidth={2.5}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-              {linePoints(s.values, opts).map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r={3} fill={s.color} />
-              ))}
-            </g>
-          );
-        })}
-      </svg>
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-dim">
-        <span>{periods[0] ? monthLabel(periods[0]) : ""}</span>
-        <span>{periods.length > 1 ? monthLabel(periods[periods.length - 1] ?? "") : ""}</span>
+    <div>
+      <div className="mb-2 min-h-[22px] font-body text-[13px]">
+        {hoverT == null ? (
+          <span className="text-dim">Плъзни по графиката, за да видиш сумата към дата.</span>
+        ) : (
+          <span className="text-muted">
+            <span className="text-ivory">{fmtDate(hx)}</span>
+            {series.map((s) => (
+              <span key={s.id}>
+                {"  ·  "}
+                <span style={{ color: s.color }}>●</span> {s.name}:{" "}
+                <span className="text-ivory">{formatCost(cumulativeAt(s.points, hx))}</span>
+              </span>
+            ))}
+          </span>
+        )}
       </div>
+
+      <svg
+        ref={ref}
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-[190px] w-full touch-none"
+        preserveAspectRatio="none"
+        onMouseMove={(e) => move(e.clientX)}
+        onMouseLeave={() => setHoverT(null)}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (t) move(t.clientX);
+        }}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (t) move(t.clientX);
+        }}
+        onTouchEnd={() => setHoverT(null)}
+      >
+        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.08)" />
+        {series.map((s) => (
+          <path
+            key={s.id}
+            d={stepPath(s.points)}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+          />
+        ))}
+        {hoverT != null && (
+          <>
+            <line x1={x(hx)} y1={PAD} x2={x(hx)} y2={H - PAD} stroke="rgba(196,149,76,0.5)" strokeWidth={1} />
+            {series.map((s) => (
+              <circle key={s.id} cx={x(hx)} cy={y(cumulativeAt(s.points, hx))} r={4} fill={s.color} />
+            ))}
+          </>
+        )}
+      </svg>
+
+      <div className="mt-1 flex justify-between font-mono text-[10px] text-dim">
+        {ticks.map((t, i) => (
+          <span key={i}>{fmtDate(t)}</span>
+        ))}
+      </div>
+
+      {series.length > 1 && (
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          {series.map((s) => (
+            <span key={s.id} className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+              <span className="font-body text-[12px] text-muted">{s.name}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

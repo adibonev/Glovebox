@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { spendByMonth, spendShares } from "./analysis";
+import { cumulativeAt, cumulativePoints, spendByMonth, spendShares } from "./analysis";
 
 describe("spendShares", () => {
   it("sums costs and breaks spend down by key, largest first", () => {
@@ -38,6 +38,28 @@ describe("spendShares", () => {
       count: 0,
       slices: [],
     });
+  });
+});
+
+describe("cumulativePoints / cumulativeAt", () => {
+  it("builds a running total sorted by date and reads the value as of a date", () => {
+    const points = cumulativePoints([
+      { t: 300, cost: 25 },
+      { t: 100, cost: 50 },
+      { t: 200, cost: null }, // ignored
+      { t: 250, cost: 100 },
+    ]);
+
+    expect(points).toEqual([
+      { t: 100, cumulative: 50 },
+      { t: 250, cumulative: 150 },
+      { t: 300, cumulative: 175 },
+    ]);
+
+    expect(cumulativeAt(points, 50)).toBe(0); // before the first event
+    expect(cumulativeAt(points, 100)).toBe(50); // exactly on an event
+    expect(cumulativeAt(points, 260)).toBe(150); // between events
+    expect(cumulativeAt(points, 9999)).toBe(175); // after the last
   });
 });
 

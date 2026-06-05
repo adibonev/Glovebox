@@ -50,6 +50,16 @@ export function formatCost(cost: number | null | undefined): string | null {
   return cost == null ? null : eurFormatter.format(cost);
 }
 
+/** Whole-euro amount for tight spots (e.g. the donut centre): "5670 €". */
+const eurCompactFormatter = new Intl.NumberFormat("bg-BG", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+export function formatCostCompact(cost: number | null | undefined): string {
+  return cost == null ? "0 €" : eurCompactFormatter.format(cost);
+}
+
 /** Bulgarian labels for the Expiry Status. */
 export const STATUS_LABELS: Record<ExpiryStatus, string> = {
   Valid: "В сила",

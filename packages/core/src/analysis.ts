@@ -65,3 +65,34 @@ export function spendByMonth(
     .map(([period, total]) => ({ period, total }))
     .sort((a, b) => a.period.localeCompare(b.period));
 }
+
+/** A running spend total at a point in time (`t` = ms epoch). */
+export interface CumulativePoint {
+  t: number;
+  cumulative: number;
+}
+
+/** Running total of spend over time — events sorted by date, each point the sum so far. */
+export function cumulativePoints(
+  events: readonly { t: number; cost: number | null }[],
+): CumulativePoint[] {
+  const sorted = events
+    .filter((e): e is { t: number; cost: number } => e.cost != null && e.cost > 0)
+    .sort((a, b) => a.t - b.t);
+
+  let sum = 0;
+  return sorted.map((e) => {
+    sum += e.cost;
+    return { t: e.t, cumulative: sum };
+  });
+}
+
+/** The cumulative total as of time `t` (0 before the first event). Points must be sorted. */
+export function cumulativeAt(points: readonly CumulativePoint[], t: number): number {
+  let value = 0;
+  for (const p of points) {
+    if (p.t <= t) value = p.cumulative;
+    else break;
+  }
+  return value;
+}
