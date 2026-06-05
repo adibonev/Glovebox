@@ -1,5 +1,6 @@
 "use client";
 
+import { BILLING_ENABLED } from "@glovebox/core";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -115,7 +116,9 @@ export function Landing() {
             </motion.div>
 
             <motion.p variants={rise} className="mt-4 font-body text-[13px] text-dim">
-              Безплатно за първата кола · имейл напомняния · без карта
+              {BILLING_ENABLED
+                ? "Безплатно за първата кола · имейл напомняния · без карта"
+                : "Напълно безплатно · имейл напомняния · без карта"}
             </motion.p>
           </motion.div>
 
@@ -179,7 +182,7 @@ export function Landing() {
           </Feature>
         </motion.section>
 
-        <Pricing />
+        {BILLING_ENABLED && <Pricing />}
 
         <footer className="flex flex-col items-center gap-3 border-t border-white/[0.06] py-8 text-center">
           <p className="font-body text-[13px] text-dim">

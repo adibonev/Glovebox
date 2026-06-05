@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { BILLING_ENABLED } from "@glovebox/core";
+
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,6 +27,7 @@ export default async function PaywallPage({
 }: {
   searchParams: Promise<{ reason?: string; error?: string }>;
 }) {
+  if (!BILLING_ENABLED) redirect("/"); // billing off → no Paywall
   const { reason, error } = await searchParams;
   const supabase = await createClient();
   const {

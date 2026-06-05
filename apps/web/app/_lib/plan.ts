@@ -1,4 +1,4 @@
-import type { Plan } from "@glovebox/core";
+import { BILLING_ENABLED, type Plan } from "@glovebox/core";
 
 import type { createClient } from "@/lib/supabase/server";
 
@@ -8,6 +8,8 @@ const PLANS = new Set<Plan>(["free", "pro", "legacy"]);
 
 /** Resolve the User's active Plan (subscriptions.plan; no row → Free). RLS scopes to owner. */
 export async function getPlan(supabase: ServerClient, userId: string | number): Promise<Plan> {
+  // Billing off → everyone is unlimited (Legacy). No Quota/Paywall can trigger anywhere.
+  if (!BILLING_ENABLED) return "legacy";
   const { data } = await supabase
     .from("subscriptions")
     .select("plan")

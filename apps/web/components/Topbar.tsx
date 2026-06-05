@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { Plan } from "@glovebox/core";
+import { BILLING_ENABLED, type Plan } from "@glovebox/core";
 
 import { MainNav } from "./MainNav";
 import { ProfileMenu } from "./ProfileMenu";
@@ -34,18 +34,19 @@ export function Topbar({
 
       <div className="flex-1" />
 
-      {plan === "free" ? (
-        <Link
-          href="/paywall"
-          className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper transition hover:bg-copper/15"
-        >
-          НАДГРАДИ
-        </Link>
-      ) : (
-        <span className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper">
-          PRO
-        </span>
-      )}
+      {BILLING_ENABLED &&
+        (plan === "free" ? (
+          <Link
+            href="/paywall"
+            className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper transition hover:bg-copper/15"
+          >
+            НАДГРАДИ
+          </Link>
+        ) : (
+          <span className="rounded-lg border border-copper/40 bg-copper/[0.07] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.12em] text-copper">
+            PRO
+          </span>
+        ))}
 
       <ProfileMenu email={email} isAdmin={isAdmin} />
     </header>

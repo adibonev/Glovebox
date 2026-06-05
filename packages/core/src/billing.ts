@@ -7,6 +7,17 @@
  * or price string.
  */
 
+/**
+ * Master switch for monetization. While `false` the product is **fully free**: the Plan
+ * resolvers hand back an unlimited Plan (so no Quota or Paywall can ever trigger) and the apps
+ * hide every upgrade / pricing surface. Flip to `true` — and wire live Stripe / RevenueCat keys —
+ * to turn billing on. Pure functions below stay plan-based (unchanged) so the switch is the only
+ * thing to move. Kept here in `core` as the single source of truth (web + mobile both read it).
+ */
+// Typed as `boolean` (not the literal `false`) so call sites read it as a real runtime flag —
+// no "condition always false" / unreachable-code analysis, and flipping it is a one-char change.
+export const BILLING_ENABLED: boolean = false;
+
 export type Plan = "free" | "pro" | "legacy";
 
 /** A concrete capability unlocked by the active Plan. */

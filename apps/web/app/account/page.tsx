@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { BILLING_ENABLED } from "@glovebox/core";
+
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,37 +50,39 @@ export default async function AccountPage({
         </h1>
 
         <div className="mt-6 flex flex-col gap-5">
-          <div className={cardClass}>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-dim">План</span>
-                <p className="mt-1 font-display text-xl font-semibold text-ivory">
-                  Glovebox {PLAN_LABEL[plan] ?? "Безплатен"}
-                </p>
+          {BILLING_ENABLED && (
+            <div className={cardClass}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-dim">План</span>
+                  <p className="mt-1 font-display text-xl font-semibold text-ivory">
+                    Glovebox {PLAN_LABEL[plan] ?? "Безплатен"}
+                  </p>
+                </div>
+                {plan === "pro" ? (
+                  <form action={openBillingPortal}>
+                    <button className="rounded-xl border border-white/12 px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:border-copper/50 hover:text-copper">
+                      Управление
+                    </button>
+                  </form>
+                ) : plan === "free" ? (
+                  <Link
+                    href="/paywall"
+                    className="rounded-xl bg-emerald px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:bg-emerald/90"
+                  >
+                    Надгради към Pro
+                  </Link>
+                ) : (
+                  <span className="font-body text-[13px] text-status-valid">Възможности завинаги</span>
+                )}
               </div>
-              {plan === "pro" ? (
-                <form action={openBillingPortal}>
-                  <button className="rounded-xl border border-white/12 px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:border-copper/50 hover:text-copper">
-                    Управление
-                  </button>
-                </form>
-              ) : plan === "free" ? (
-                <Link
-                  href="/paywall"
-                  className="rounded-xl bg-emerald px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:bg-emerald/90"
-                >
-                  Надгради към Pro
-                </Link>
-              ) : (
-                <span className="font-body text-[13px] text-status-valid">Възможности завинаги</span>
+              {error === "portal" && (
+                <p className="font-body text-[13px] text-status-expiring">
+                  Порталът за плащане още не е активиран в Stripe.
+                </p>
               )}
             </div>
-            {error === "portal" && (
-              <p className="font-body text-[13px] text-status-expiring">
-                Порталът за плащане още не е активиран в Stripe.
-              </p>
-            )}
-          </div>
+          )}
 
           <form action={updateUserName} className={cardClass}>
             <Field label="Име">

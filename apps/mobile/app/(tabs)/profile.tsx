@@ -1,4 +1,4 @@
-import type { Plan } from "@glovebox/core";
+import { BILLING_ENABLED, type Plan } from "@glovebox/core";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -74,14 +74,17 @@ export default function ProfileTab() {
           <Text className="text-xs uppercase tracking-wider text-dim">Имейл</Text>
           <Text className="mt-1 text-base text-ivory">{session?.user.email ?? "—"}</Text>
 
-          <View className="my-4 h-px bg-white/10" />
-
-          <Text className="text-xs uppercase tracking-wider text-dim">План</Text>
-          <View className="mt-1.5 flex-row items-center gap-2">
-            <View className="rounded-lg border border-copper/40 bg-copper/15 px-2.5 py-1">
-              <Text className="text-sm font-semibold text-copper">{PLAN_LABELS[plan]}</Text>
-            </View>
-          </View>
+          {BILLING_ENABLED && (
+            <>
+              <View className="my-4 h-px bg-white/10" />
+              <Text className="text-xs uppercase tracking-wider text-dim">План</Text>
+              <View className="mt-1.5 flex-row items-center gap-2">
+                <View className="rounded-lg border border-copper/40 bg-copper/15 px-2.5 py-1">
+                  <Text className="text-sm font-semibold text-copper">{PLAN_LABELS[plan]}</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Name */}
@@ -108,7 +111,7 @@ export default function ProfileTab() {
           />
         </View>
 
-        {plan === "free" && (
+        {BILLING_ENABLED && plan === "free" && (
           <View className="mt-4 rounded-2xl border border-copper/40 bg-panel p-4">
             <Text className="text-base font-semibold text-ivory">Надгради до Pro</Text>
             <Text className="mt-1 text-sm text-silver">
