@@ -7,7 +7,15 @@ import { ProfileMenu } from "./ProfileMenu";
 import { Wheel } from "./Wheel";
 
 /** Topbar: the Glovebox wordmark (steering-wheel "o"), nav, plan badge, profile menu. */
-export function Topbar({ email, plan = "free" }: { email: string; plan?: Plan }) {
+export function Topbar({
+  email,
+  plan = "free",
+  isAdmin = false,
+}: {
+  email: string;
+  plan?: Plan;
+  isAdmin?: boolean;
+}) {
   return (
     <header className="flex items-center gap-4 py-6">
       <Link
@@ -39,7 +47,7 @@ export function Topbar({ email, plan = "free" }: { email: string; plan?: Plan })
         </span>
       )}
 
-      <ProfileMenu email={email} />
+      <ProfileMenu email={email} isAdmin={isAdmin} />
     </header>
   );
 }

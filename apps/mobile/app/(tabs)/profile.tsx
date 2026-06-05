@@ -1,6 +1,6 @@
 import type { Plan } from "@glovebox/core";
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Field, PrimaryButton } from "@/components/forms";
@@ -15,6 +15,7 @@ export default function ProfileTab() {
   const { data } = useGarage();
   const plan = data?.plan ?? "free";
   const userId = data?.userId;
+  const isAdmin = data?.isAdmin ?? false;
 
   const [name, setName] = useState("");
   const [savingName, setSavingName] = useState(false);
@@ -115,6 +116,15 @@ export default function ProfileTab() {
               приложението (плащане в приложението идва скоро).
             </Text>
           </View>
+        )}
+
+        {isAdmin && (
+          <Pressable
+            onPress={() => Linking.openURL("https://www.glovebox.bg/admin")}
+            className="mt-4 flex-row items-center justify-center gap-2 rounded-xl border border-copper/40 bg-copper/10 py-4"
+          >
+            <Text className="text-base font-semibold text-copper">♛ Админ панел</Text>
+          </Pressable>
         )}
 
         <Pressable onPress={signOut} className="mt-6 items-center rounded-xl border border-white/10 py-4">

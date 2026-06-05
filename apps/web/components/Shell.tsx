@@ -16,9 +16,13 @@ export async function Shell({ email, children }: { email: string; children: Reac
     data: { user },
   } = await supabase.auth.getUser();
   let plan: Plan = "free";
+  let isAdmin = false;
   if (user) {
     const profile = await new SupabaseUserRepository(supabase).findByAuthId(user.id);
-    if (profile) plan = await getPlan(supabase, profile.id);
+    if (profile) {
+      isAdmin = profile.isAdmin;
+      plan = await getPlan(supabase, profile.id);
+    }
   }
 
   return (
@@ -32,7 +36,7 @@ export async function Shell({ email, children }: { email: string; children: Reac
         {process.env.NEXT_PUBLIC_POSTHOG_KEY && user && (
           <PostHogIdentify id={user.id} email={email} />
         )}
-        <Topbar email={email} plan={plan} />
+        <Topbar email={email} plan={plan} isAdmin={isAdmin} />
         {children}
       </div>
     </main>

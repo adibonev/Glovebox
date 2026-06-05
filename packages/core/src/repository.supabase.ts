@@ -295,14 +295,14 @@ export class SupabaseUserRepository implements UserRepository {
   async findByAuthId(authUserId: string): Promise<User | null> {
     const { data, error } = await this.client
       .from("users")
-      .select("id, email")
+      .select("id, email, is_admin")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
     if (error) {
       throw new Error(`Supabase users.findByAuthId failed: ${error.message}`);
     }
     if (!data) return null;
-    return { id: String(data.id), authUserId, email: data.email };
+    return { id: String(data.id), authUserId, email: data.email, isAdmin: data.is_admin ?? false };
   }
 
   async create(input: { authUserId: string; email: string }): Promise<User> {
@@ -312,6 +312,7 @@ export class SupabaseUserRepository implements UserRepository {
       .select("id")
       .single();
     if (error) throw new Error(`Supabase users.create failed: ${error.message}`);
-    return { id: String(data.id), authUserId: input.authUserId, email: input.email };
+    // New Users are never Administrators (is_admin defaults to false in the DB).
+    return { id: String(data.id), authUserId: input.authUserId, email: input.email, isAdmin: false };
   }
 }

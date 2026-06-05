@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/app/login/actions";
 
 /** Avatar that opens a small menu (account settings + sign out) instead of signing out on click. */
-export function ProfileMenu({ email }: { email: string }) {
+export function ProfileMenu({ email, isAdmin = false }: { email: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const initial = (email.trim()[0] ?? "Г").toUpperCase();
@@ -56,6 +56,17 @@ export function ProfileMenu({ email }: { email: string }) {
           >
             Настройки на акаунта
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 font-body text-sm text-copper transition hover:bg-copper/10"
+            >
+              <span aria-hidden>♛</span>
+              Админ панел
+            </Link>
+          )}
           <form action={signOut}>
             <button
               type="submit"

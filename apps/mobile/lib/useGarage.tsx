@@ -48,6 +48,7 @@ export type UrgentView = {
 
 export type Garage = {
   userId: string;
+  isAdmin: boolean;
   plan: Plan;
   cards: VehicleCard[];
   /** Every Service Record (with its Vehicle), sorted overdue → soonest. */
@@ -126,7 +127,7 @@ export function useGarage() {
           }
         : null;
 
-      setData({ userId: user.id, plan, cards, flat, urgent, counts });
+      setData({ userId: user.id, isAdmin: user.isAdmin, plan, cards, flat, urgent, counts });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Грешка при зареждане на данните.");
     }

@@ -64,6 +64,8 @@ export interface User {
   /** The Supabase auth identity id (`auth.users.id` = `users.auth_user_id`). */
   authUserId: string;
   email: string;
+  /** An Administrator (`users.is_admin = true`) may view the admin panel. */
+  isAdmin: boolean;
 }
 
 // --- Write inputs (used by the repository create/update seam) ---------------------

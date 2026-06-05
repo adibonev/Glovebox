@@ -177,6 +177,7 @@ export class InMemoryUserRepository implements UserRepository {
       id: String(this.users.length + 1),
       authUserId: input.authUserId,
       email: input.email,
+      isAdmin: false,
     };
     this.users.push(user);
     return user;
