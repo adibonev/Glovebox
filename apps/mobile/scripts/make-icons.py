@@ -52,10 +52,12 @@ def draw_wheel(img: Image.Image, rim_r: float, color=COPPER, hub_color=HUB) -> N
 
     # rim
     d.ellipse([cx - rim_r, cy - rim_r, cx + rim_r, cy + rim_r], outline=rgba, width=round(stroke))
+    # spokes stop at the rim's inner edge so the rounded ends never poke through the rim
+    inner = rim_r - stroke / 2
     # spokes: full horizontal (9+3 o'clock) and a single downward (6 o'clock)
-    d.line([(cx - rim_r, cy), (cx + rim_r, cy)], fill=rgba, width=round(spoke_w))
-    d.line([(cx, cy), (cx, cy + rim_r)], fill=rgba, width=round(spoke_w))
-    for px, py in [(cx - rim_r, cy), (cx + rim_r, cy), (cx, cy + rim_r)]:
+    d.line([(cx - inner, cy), (cx + inner, cy)], fill=rgba, width=round(spoke_w))
+    d.line([(cx, cy), (cx, cy + inner)], fill=rgba, width=round(spoke_w))
+    for px, py in [(cx - inner, cy), (cx + inner, cy), (cx, cy + inner)]:
         d.ellipse([px - cap, py - cap, px + cap, py + cap], fill=rgba)
     # hub
     d.ellipse([cx - hub_r, cy - hub_r, cx + hub_r, cy + hub_r], fill=hub_color + (255,))
