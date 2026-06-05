@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Wordmark } from "@/components/Wordmark";
+import { signInWithProvider } from "@/lib/oauth";
 import { supabase } from "@/lib/supabase";
 
 type Mode = "signin" | "signup";
@@ -41,6 +42,20 @@ export default function LoginScreen() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Възникна грешка. Опитай пак.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const continueWithGoogle = async () => {
+    setError(null);
+    setNotice(null);
+    setLoading(true);
+    try {
+      await signInWithProvider("google");
+      // On success the auth gate routes into the app.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Възникна грешка при входа с Google.");
     } finally {
       setLoading(false);
     }
@@ -123,6 +138,27 @@ export default function LoginScreen() {
                 {mode === "signin" ? "Влез" : "Създай акаунт"}
               </Text>
             )}
+          </Pressable>
+
+          {/* Divider */}
+          <View className="my-6 flex-row items-center gap-3">
+            <View className="h-px flex-1 bg-white/10" />
+            <Text className="text-xs uppercase tracking-wider text-dim">или</Text>
+            <View className="h-px flex-1 bg-white/10" />
+          </View>
+
+          {/* Social sign-in (Apple is added once the Apple Developer account is ready). */}
+          <Pressable
+            onPress={continueWithGoogle}
+            disabled={loading}
+            className={`flex-row items-center justify-center gap-3 rounded-xl border border-white/15 bg-panel py-4 ${
+              loading ? "opacity-50" : ""
+            }`}
+          >
+            <View className="h-5 w-5 items-center justify-center rounded-full bg-ivory">
+              <Text className="text-sm font-bold text-emerald">G</Text>
+            </View>
+            <Text className="text-base font-semibold text-ivory">Продължи с Google</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

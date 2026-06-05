@@ -21,6 +21,9 @@ export const supabase = createClient<Database>(url, anonKey, {
     persistSession: true,
     // No URL-based session detection on native (that's a web/OAuth-redirect concern).
     detectSessionInUrl: false,
+    // PKCE for the OAuth (Google/Apple) deep-link flow: the redirect returns a `code`
+    // we exchange for a session (see lib/oauth.ts).
+    flowType: "pkce",
   },
 });
 
