@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "896086ca-35e4-4932-97b4-53e57c8c9da6"
+      }
+    },
+    "owner": "adibonev",
+    "android": {
+      "package": "com.adibonev.glovebox"
+    }
+  }
+}
