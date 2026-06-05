@@ -3,7 +3,22 @@ import { dueReminders, type ServiceRecord } from "@glovebox/core";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 import { renderReminderEmail, type EmailMessage, type ReminderLine, type SendResult } from "./email";
+import { sendExpoPush } from "./expoPush";
+import { SERVICE_TYPE_LABELS, formatDaysRemaining } from "./labels";
 import { parseWindows } from "./reminderSettings";
+
+/** A short push title + body for a User's due Reminders (the mobile app delivery). */
+function pushContent(lines: ReminderLine[]): { title: string; body: string } {
+  const first = lines[0];
+  if (lines.length === 1 && first) {
+    const label = SERVICE_TYPE_LABELS[first.serviceType] ?? first.serviceType;
+    return {
+      title: "Наближаващ срок",
+      body: `${label} (${first.vehicleName}) — ${formatDaysRemaining(first.daysUntilExpiry)}`,
+    };
+  }
+  return { title: "Наближаващи срокове", body: `Имаш ${lines.length} наближаващи срока за колите си.` };
+}
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 type Mailer = (message: EmailMessage) => Promise<SendResult>;
@@ -11,6 +26,7 @@ type Mailer = (message: EmailMessage) => Promise<SendResult>;
 export type ReminderJobResult = {
   usersProcessed: number;
   emailsSent: number;
+  pushSent: number;
   remindersSent: number;
   skippedAlreadySent: number;
   errors: string[];
@@ -33,12 +49,13 @@ export async function runReminderJob(
   const result: ReminderJobResult = {
     usersProcessed: 0,
     emailsSent: 0,
+    pushSent: 0,
     remindersSent: 0,
     skippedAlreadySent: 0,
     errors: [],
   };
 
-  const [usersRes, carsRes, servicesRes, logsRes] = await Promise.all([
+  const [usersRes, carsRes, servicesRes, logsRes, tokensRes] = await Promise.all([
     admin.from("users").select("id, email, reminder_settings, reminder_enabled"),
     admin.from("cars").select("id, user_id, brand, model"),
     admin
@@ -46,7 +63,17 @@ export async function runReminderJob(
       .select("id, car_id, user_id, service_type, expiry_date")
       .not("expiry_date", "is", null),
     admin.from("service_logs").select("car_id, service_type, expiry_date"),
+    admin.from("push_tokens").select("user_id, token"),
   ]);
+
+  // Expo push tokens grouped per User (push goes to any app device that registered one).
+  const tokensByUser = new Map<number, string[]>();
+  for (const t of tokensRes.data ?? []) {
+    const list = tokensByUser.get(t.user_id) ?? [];
+    list.push(t.token);
+    tokensByUser.set(t.user_id, list);
+  }
+  const pushMessages: { to: string; title: string; body: string }[] = [];
 
   if (usersRes.error || carsRes.error || servicesRes.error) {
     result.errors.push(
@@ -129,7 +156,14 @@ export async function runReminderJob(
     result.emailsSent += 1;
     result.remindersSent += lines.length;
 
-    if (!persist) continue; // dry run: don't record, so it stays repeatable
+    if (!persist) continue; // dry run: don't record/push, so it stays repeatable
+
+    // Push to the User's app devices — same due Reminders as the email (best-effort).
+    const tokens = tokensByUser.get(user.id) ?? [];
+    if (tokens.length > 0) {
+      const { title, body } = pushContent(lines);
+      for (const to of tokens) pushMessages.push({ to, title, body });
+    }
 
     const { error: logError } = await admin
       .from("service_logs")
@@ -138,5 +172,6 @@ export async function runReminderJob(
     else for (const t of toLog) alreadySent.add(key(t.car_id, t.service_type, t.expiry_date));
   }
 
+  result.pushSent = await sendExpoPush(pushMessages);
   return result;
 }

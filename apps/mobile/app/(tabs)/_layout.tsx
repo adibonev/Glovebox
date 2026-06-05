@@ -2,8 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@glovebox/ui";
 import { Tabs } from "expo-router";
 
+import { usePushRegistration } from "@/lib/push";
+
 /** Bottom tab bar — the mobile counterpart of the web's primary nav. */
 export default function TabsLayout() {
+  usePushRegistration();
   return (
     <Tabs
       screenOptions={{
