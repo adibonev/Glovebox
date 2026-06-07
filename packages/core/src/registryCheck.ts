@@ -88,8 +88,8 @@ const DATE_KEYS = [
 
 /**
  * Defensively turn a raw rta.government.bg inspection response into a Check Result. Never trusts
- * the raw shape (mirrors `parseExtractedServiceInfo`): a recognisable date → valid/expiring/expired
- * via the same Reminder Window logic; anything else → `unknown` with a null Expiry Date.
+ * the raw shape: a recognisable date → valid/expiring/expired via the same Reminder Window logic;
+ * anything else → `unknown` with a null Expiry Date.
  */
 export function normalizeInspectionResult(
   raw: unknown,
