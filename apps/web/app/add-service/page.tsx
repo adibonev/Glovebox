@@ -1,25 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { SupabaseVehicleRepository } from "@glovebox/core";
+
+import { currentUser } from "@/app/_lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 import { AddServiceView } from "./AddServiceView";
 
-export default async function AddServicePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default async function AddServicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ v?: string }>;
+}) {
+  const user = await currentUser();
   if (!user) redirect("/login");
 
-  // RLS scopes `cars` to the signed-in user.
-  const { data: car } = await supabase
-    .from("cars")
-    .select("id, brand, model, license_plate")
-    .order("id")
-    .limit(1)
-    .maybeSingle();
-  if (!car) redirect("/");
+  // Scope to the owner explicitly — RLS alone is NOT enough here: an Administrator's policy
+  // grants SELECT on every `cars` row, so a bare select handed them someone else's Vehicle
+  // and the form then tried to write a Service Record the INSERT policy rightly refused.
+  const supabase = await createClient();
+  const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
+
+  // Add to the Vehicle the dashboard was showing (`?v=`), otherwise the first one owned.
+  const { v } = await searchParams;
+  const vehicle = vehicles.find((candidate) => candidate.id === v) ?? vehicles[0];
+  if (!vehicle) redirect("/");
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -36,13 +42,10 @@ export default async function AddServicePage() {
             ← Назад
           </Link>
           <h1 className="font-display text-4xl text-ivory">Нова услуга</h1>
-          <p className="font-mono text-sm text-silver/70">
-            {car.brand} {car.model}
-          </p>
         </header>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-md">
-          <AddServiceView vehicleId={String(car.id)} plate={car.license_plate} />
+          <AddServiceView vehicleId={vehicle.id} plate={vehicle.plate} />
         </div>
       </div>
     </main>

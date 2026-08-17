@@ -8,6 +8,13 @@ const nextConfig = {
     // The whole monorepo is linted from the root flat config via `pnpm lint`.
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // Documents are photos/scans of real paperwork, so a submit that carries one is almost
+    // always over Next's 1 MB default — which rejected the whole Server Action and left the
+    // form looking dead. 4 MB is the most a Vercel Function can accept (4.5 MB platform cap);
+    // anything larger is refused client-side with a message (see `_lib/upload.ts`).
+    serverActions: { bodySizeLimit: "4mb" },
+  },
 };
 
 // Engage Sentry's build plugin only when a DSN is configured, so the live build is

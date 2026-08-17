@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -14,9 +15,11 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 import { BODY_TYPES } from "./bodyType";
+import type { FormState } from "./formState";
 import { SERVICE_TYPE_ORDER } from "./labels";
 import { countDocuments, countServices, countVehicles, getPlan } from "./plan";
 import { WINDOW_OPTIONS } from "./reminderSettings";
+import { documentTooLargeMessage } from "./upload";
 
 /** Read a valid body type from the form, defaulting to "sedan". */
 function readBodyType(formData: FormData): string {
@@ -32,14 +35,17 @@ function readCost(formData: FormData): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
-/** Upload a file to the private `documents` bucket and record it on a Service Record. */
+/**
+ * Upload a file to the private `documents` bucket and record it on a Service Record.
+ * Returns `true` when the Document landed, so the caller can say so when it didn't.
+ */
 async function storeDocument(
   supabase: ServerClient,
   authUserId: string,
   userId: number,
   serviceId: number,
   file: File,
-): Promise<void> {
+): Promise<boolean> {
   // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
   const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(-120) || "file";
   const path = `${authUserId}/${serviceId}/${crypto.randomUUID()}__${safeName}`;
@@ -47,9 +53,12 @@ async function storeDocument(
   const { error: uploadError } = await supabase.storage
     .from("documents")
     .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
-  if (uploadError) return;
+  if (uploadError) {
+    Sentry.captureException(uploadError);
+    return false;
+  }
 
-  await supabase.from("documents").insert({
+  const { error: insertError } = await supabase.from("documents").insert({
     service_id: serviceId,
     user_id: userId,
     name: file.name.slice(0, 200),
@@ -57,6 +66,11 @@ async function storeDocument(
     mime_type: file.type || null,
     size_bytes: file.size,
   });
+  if (insertError) {
+    Sentry.captureException(insertError);
+    return false;
+  }
+  return true;
 }
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -145,7 +159,7 @@ export async function updateVehicle(formData: FormData): Promise<void> {
   redirect("/vehicles");
 }
 
-export async function uploadDocument(formData: FormData): Promise<void> {
+export async function uploadDocument(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
   const {
     data: { user: authUser },
@@ -157,15 +171,21 @@ export async function uploadDocument(formData: FormData): Promise<void> {
 
   const serviceId = Number(formData.get("serviceId"));
   const file = formData.get("file");
-  if (!serviceId || !(file instanceof File) || file.size === 0) return;
+  if (!serviceId || !(file instanceof File) || file.size === 0) return { error: null };
 
-  // The Service Record must belong to the User (RLS-select returns null otherwise).
+  const tooLarge = documentTooLargeMessage(file);
+  if (tooLarge) return { error: tooLarge };
+
+  // The Service Record must belong to the User. Scope by `user_id` rather than trusting the
+  // select: an Administrator's RLS policy can read every row, so a bare lookup would let a
+  // Document be attached to somebody else's Service Record.
   const { data: service } = await supabase
     .from("services")
     .select("id")
     .eq("id", serviceId)
+    .eq("user_id", userId)
     .maybeSingle();
-  if (!service) return;
+  if (!service) return { error: "Услугата не е намерена." };
 
   // Quota gate: Free is capped at 1 Document per Service Record → Paywall (ADR-0003).
   const plan = await getPlan(supabase, userId);
@@ -173,10 +193,11 @@ export async function uploadDocument(formData: FormData): Promise<void> {
     redirect("/paywall?reason=document");
   }
 
-  await storeDocument(supabase, authUser.id, userId, serviceId, file);
+  const stored = await storeDocument(supabase, authUser.id, userId, serviceId, file);
 
   revalidatePath("/documents");
   revalidatePath("/");
+  return stored ? { error: null } : { error: "Документът не се качи. Опитай пак." };
 }
 
 export async function deleteDocument(formData: FormData): Promise<void> {
@@ -346,7 +367,7 @@ export async function deleteVehicle(formData: FormData): Promise<void> {
   redirect("/vehicles");
 }
 
-export async function addService(formData: FormData): Promise<void> {
+export async function addService(_prev: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
   const {
     data: { user: authUser },
@@ -359,7 +380,15 @@ export async function addService(formData: FormData): Promise<void> {
   const serviceType = String(formData.get("serviceType") ?? "");
   const expiryDate = String(formData.get("expiryDate") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
-  if (!vehicleId || !serviceType || !expiryDate) return;
+  if (!vehicleId || !serviceType || !expiryDate) {
+    return { error: "Избери вид услуга и дата." };
+  }
+
+  // Refuse an oversized Document here too — the browser guards it, but a request that
+  // slipped past must not lose the whole Service Record without a word.
+  const file = formData.get("document");
+  const tooLarge = file instanceof File ? documentTooLargeMessage(file) : null;
+  if (tooLarge) return { error: tooLarge };
 
   // Quota gate: Free is capped at 2 Service Records per Vehicle → Paywall (ADR-0003).
   const plan = await getPlan(supabase, userId);
@@ -367,7 +396,7 @@ export async function addService(formData: FormData): Promise<void> {
     redirect("/paywall?reason=service");
   }
 
-  const { data: created } = await supabase
+  const { data: created, error } = await supabase
     .from("services")
     .insert({
       car_id: vehicleId,
@@ -380,9 +409,13 @@ export async function addService(formData: FormData): Promise<void> {
     .select("id")
     .single();
 
+  if (error || !created) {
+    Sentry.captureException(error ?? new Error("addService: insert returned no row"));
+    return { error: "Услугата не беше записана. Провери връзката и опитай пак." };
+  }
+
   // Optionally attach a Document supplied with the form (visible in /documents).
-  const file = formData.get("document");
-  if (created && file instanceof File && file.size > 0) {
+  if (file instanceof File && file.size > 0) {
     await storeDocument(supabase, authUser.id, userId, created.id, file);
   }
 
@@ -393,10 +426,8 @@ export async function addService(formData: FormData): Promise<void> {
 
 export async function updateService(formData: FormData): Promise<void> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
 
   const serviceId = Number(formData.get("serviceId"));
   const serviceType = String(formData.get("serviceType") ?? "");
@@ -404,8 +435,8 @@ export async function updateService(formData: FormData): Promise<void> {
   const notes = String(formData.get("notes") ?? "").trim();
   if (!serviceId || !serviceType || !expiryDate) return;
 
-  // RLS ("update services for own cars") scopes the update to the owner. Editing the
-  // Expiry Date (a renewal) keeps the Service Record's Documents and re-derives reminders.
+  // `.eq("user_id")` + RLS scope the update to the owner. Editing the Expiry Date (a renewal)
+  // keeps the Service Record's Documents and re-derives reminders.
   await supabase
     .from("services")
     .update({
@@ -414,7 +445,8 @@ export async function updateService(formData: FormData): Promise<void> {
       notes: notes || null,
       cost: readCost(formData),
     })
-    .eq("id", serviceId);
+    .eq("id", serviceId)
+    .eq("user_id", userId);
 
   revalidatePath("/");
   revalidatePath("/documents");
@@ -424,10 +456,14 @@ export async function updateService(formData: FormData): Promise<void> {
 
 export async function deleteService(formData: FormData): Promise<void> {
   const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
   const serviceId = Number(formData.get("serviceId"));
   if (!serviceId) return;
 
-  // RLS ("... for own cars") ensures only the user's own records can be deleted.
-  await supabase.from("services").delete().eq("id", serviceId);
+  // `.eq("user_id")` is what actually scopes this — an Administrator's RLS policy allows
+  // deleting *any* Service Record, so RLS alone would let a crafted id remove someone else's.
+  await supabase.from("services").delete().eq("id", serviceId).eq("user_id", userId);
   revalidatePath("/");
 }

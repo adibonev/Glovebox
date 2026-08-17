@@ -68,9 +68,9 @@ export default async function DashboardPage({
               <h2 className="font-display text-[22px] font-semibold tracking-tight text-ivory">
                 Услуги и документи
               </h2>
-              <AddServiceButton />
+              <AddServiceButton vehicleId={vehicle.id} />
             </div>
-            {items.length > 0 ? <ServiceList items={items} /> : <EmptyServices />}
+            {items.length > 0 ? <ServiceList items={items} /> : <EmptyServices vehicleId={vehicle.id} />}
           </section>
         </>
       )}
@@ -78,10 +78,10 @@ export default async function DashboardPage({
   );
 }
 
-function AddServiceButton() {
+function AddServiceButton({ vehicleId }: { vehicleId: string }) {
   return (
     <Link
-      href="/add-service"
+      href={`/add-service?v=${vehicleId}`}
       className="group inline-flex items-center gap-2 rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70 hover:from-copper/20 hover:shadow-[0_10px_30px_-10px_rgba(196,149,76,0.6)]"
     >
       <span className="grid h-4 w-4 place-items-center rounded-full bg-copper/20 text-copper transition group-hover:rotate-90">
@@ -94,12 +94,12 @@ function AddServiceButton() {
   );
 }
 
-function EmptyServices() {
+function EmptyServices({ vehicleId }: { vehicleId: string }) {
   return (
     <div className="rounded-[20px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-12 text-center">
       <p className="font-body text-muted">Още нямаш добавени услуги.</p>
       <div className="mt-4 flex justify-center">
-        <AddServiceButton />
+        <AddServiceButton vehicleId={vehicleId} />
       </div>
     </div>
   );
