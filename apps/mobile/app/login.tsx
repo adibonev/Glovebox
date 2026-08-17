@@ -1,5 +1,6 @@
 import { colors } from "@glovebox/ui";
-import { useState } from "react";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Wordmark } from "@/components/Wordmark";
-import { signInWithProvider } from "@/lib/oauth";
+import { signInWithApple, signInWithProvider } from "@/lib/oauth";
 import { supabase } from "@/lib/supabase";
 
 type Mode = "signin" | "signup";
@@ -24,6 +25,15 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  // Show the Apple button only where the OS supports it (iOS 13+).
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    AppleAuthentication.isAvailableAsync()
+      .then(setAppleAvailable)
+      .catch(() => setAppleAvailable(false));
+  }, []);
 
   const submit = async () => {
     setError(null);
@@ -56,6 +66,20 @@ export default function LoginScreen() {
       // On success the auth gate routes into the app.
     } catch (e) {
       setError(e instanceof Error ? e.message : "Възникна грешка при входа с Google.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const continueWithApple = async () => {
+    setError(null);
+    setNotice(null);
+    setLoading(true);
+    try {
+      await signInWithApple();
+      // On success the auth gate routes into the app.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Възникна грешка при входа с Apple.");
     } finally {
       setLoading(false);
     }
@@ -147,7 +171,18 @@ export default function LoginScreen() {
             <View className="h-px flex-1 bg-white/10" />
           </View>
 
-          {/* Social sign-in (Apple is added once the Apple Developer account is ready). */}
+          {/* Social sign-in. Apple Sign-In is required on iOS when another provider (Google) is
+              offered (App Store Guideline 4.8); it uses Apple's native, auto-localized button. */}
+          {appleAvailable && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+              cornerRadius={12}
+              style={{ height: 56, marginBottom: 12 }}
+              onPress={continueWithApple}
+            />
+          )}
+
           <Pressable
             onPress={continueWithGoogle}
             disabled={loading}
