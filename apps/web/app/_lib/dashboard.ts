@@ -1,6 +1,5 @@
 import {
   SupabaseServiceRecordRepository,
-  SupabaseUserRepository,
   SupabaseVehicleRepository,
   expiryStatus,
   isExpiringServiceType,
@@ -21,6 +20,7 @@ import {
   formatDaysRemaining,
 } from "./labels";
 import { getReminderConfig } from "./reminderSettings";
+import { currentAuthUser, currentUser } from "./session";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -81,20 +81,20 @@ export async function getDashboardData(
   selectedVehicleId?: string,
 ): Promise<DashboardData | null> {
   const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const authUser = await currentAuthUser();
   if (!authUser) return null;
 
-  // Resolve / provision the app User for this Auth Identity.
-  const userRepo = new SupabaseUserRepository(supabase);
-  const user =
-    (await userRepo.findByAuthId(authUser.id)) ??
-    (await userRepo.create({ authUserId: authUser.id, email: authUser.email ?? "" }));
+  // Resolve / provision the app User for this Auth Identity (request-cached).
+  const user = await currentUser();
+  if (!user) return null;
 
-  // All Vehicles (through the repository seam — one mapping place). The dashboard
-  // shows exactly one: the `?v=` selection if it's owned, otherwise the first.
-  const ownedVehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
+  // All Vehicles (through the repository seam — one mapping place) and the User's Reminder
+  // Windows. Neither depends on the other, so they share one round trip's latency. The
+  // dashboard shows exactly one Vehicle: the `?v=` selection if owned, otherwise the first.
+  const [ownedVehicles, { windows }] = await Promise.all([
+    new SupabaseVehicleRepository(supabase).listByUser(user.id),
+    getReminderConfig(supabase, user.id),
+  ]);
   const active =
     ownedVehicles.find((v) => v.id === selectedVehicleId) ?? ownedVehicles[0] ?? null;
 
@@ -111,7 +111,6 @@ export async function getDashboardData(
   const today = new Date();
 
   // Reminder Windows come from the User's settings (falling back to defaults).
-  const { windows } = await getReminderConfig(supabase, user.id);
   const window = (serviceType: string) => windows[serviceType] ?? 30;
 
   const enriched = records

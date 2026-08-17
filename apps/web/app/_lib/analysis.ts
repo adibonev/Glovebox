@@ -1,10 +1,11 @@
 import {
   SupabaseServiceRecordRepository,
-  SupabaseUserRepository,
   SupabaseVehicleRepository,
 } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
+
+import { currentAuthUser, currentUser } from "./session";
 
 export type AnalysisVehicle = { id: string; name: string };
 export type AnalysisRecord = { vehicleId: string; serviceType: string; cost: number; ts: number };
@@ -18,15 +19,12 @@ export type AnalysisData = {
 /** Raw spend data (costed Service Records + Vehicles). The client filters & charts it. */
 export async function getAnalysisData(): Promise<AnalysisData | null> {
   const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  // Request-cached: the page shell asks for the same two rows, and pays for them once.
+  const authUser = await currentAuthUser();
   if (!authUser) return null;
 
-  const userRepo = new SupabaseUserRepository(supabase);
-  const user =
-    (await userRepo.findByAuthId(authUser.id)) ??
-    (await userRepo.create({ authUserId: authUser.id, email: authUser.email ?? "" }));
+  const user = await currentUser();
+  if (!user) return null;
 
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const services = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);

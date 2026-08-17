@@ -1,6 +1,5 @@
 import {
   SupabaseServiceRecordRepository,
-  SupabaseUserRepository,
   SupabaseVehicleRepository,
   expiryStatus,
   type ExpiryStatus,
@@ -10,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { SERVICE_TYPE_LABELS, STATUS_COLORS, formatDateShort } from "./labels";
 import { getReminderConfig, type ReminderConfig } from "./reminderSettings";
+import { currentAuthUser, currentUser } from "./session";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -34,15 +34,12 @@ export type RemindersData = {
 
 export async function getRemindersData(): Promise<RemindersData | null> {
   const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  // Request-cached: the page shell asks for the same two rows, and pays for them once.
+  const authUser = await currentAuthUser();
   if (!authUser) return null;
 
-  const userRepo = new SupabaseUserRepository(supabase);
-  const user =
-    (await userRepo.findByAuthId(authUser.id)) ??
-    (await userRepo.create({ authUserId: authUser.id, email: authUser.email ?? "" }));
+  const user = await currentUser();
+  if (!user) return null;
 
   const config = await getReminderConfig(supabase, user.id);
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);

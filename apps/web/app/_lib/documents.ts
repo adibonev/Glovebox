@@ -1,13 +1,13 @@
 import {
   SupabaseDocumentRepository,
   SupabaseServiceRecordRepository,
-  SupabaseUserRepository,
   SupabaseVehicleRepository,
 } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
 
 import { SERVICE_TYPE_CODES, SERVICE_TYPE_LABELS, formatDateShort } from "./labels";
+import { currentAuthUser, currentUser } from "./session";
 
 export type DocView = {
   id: string;
@@ -40,15 +40,12 @@ export type DocumentsData = {
 
 export async function getDocumentsData(): Promise<DocumentsData | null> {
   const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  // Request-cached: the page shell asks for the same two rows, and pays for them once.
+  const authUser = await currentAuthUser();
   if (!authUser) return null;
 
-  const userRepo = new SupabaseUserRepository(supabase);
-  const user =
-    (await userRepo.findByAuthId(authUser.id)) ??
-    (await userRepo.create({ authUserId: authUser.id, email: authUser.email ?? "" }));
+  const user = await currentUser();
+  if (!user) return null;
 
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const services = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
