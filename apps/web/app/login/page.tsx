@@ -23,13 +23,16 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(authenticate, initialState);
   const isSignup = mode === "signup";
   const [googleError, setGoogleError] = useState(false);
+  const [deleted, setDeleted] = useState(false);
 
   // Open the right tab when arriving from the landing CTA (/login?mode=signup),
-  // and surface a failed Google round-trip (/login?error=google).
+  // surface a failed Google round-trip (/login?error=google), and confirm an account
+  // deletion, which lands here signed out (/login?deleted=1).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("mode") === "signup") setMode("signup");
     if (params.get("error") === "google") setGoogleError(true);
+    if (params.get("deleted") === "1") setDeleted(true);
   }, []);
 
   return (
@@ -119,6 +122,12 @@ export default function LoginPage() {
         {googleError && (
           <p className="text-center font-body text-sm text-status-expired">
             Входът с Google не успя. Опитай отново.
+          </p>
+        )}
+
+        {deleted && (
+          <p className="text-center font-body text-sm text-status-valid">
+            Акаунтът ти е изтрит. Благодарим, че беше с нас.
           </p>
         )}
 

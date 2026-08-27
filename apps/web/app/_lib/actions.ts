@@ -6,12 +6,15 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import {
+  SupabaseAccountPurge,
   SupabaseUserRepository,
   canAddDocument,
   canAddService,
   canAddVehicle,
+  purgeAccount,
 } from "@glovebox/core";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 import { BODY_TYPES } from "./bodyType";
@@ -466,4 +469,37 @@ export async function deleteService(formData: FormData): Promise<void> {
   // deleting *any* Service Record, so RLS alone would let a crafted id remove someone else's.
   await supabase.from("services").delete().eq("id", serviceId).eq("user_id", userId);
   revalidatePath("/");
+}
+
+/** What a User must type to confirm an irreversible account deletion. */
+export const DELETE_ACCOUNT_CONFIRMATION = "ИЗТРИЙ";
+
+/**
+ * Delete the signed-in User's account and every trace of their data (GDPR Art. 17).
+ * Irreversible, so it is gated on typing DELETE_ACCOUNT_CONFIRMATION.
+ *
+ * The ordering rule (Storage objects before the Auth Identity, which cascades the rows)
+ * lives in `@glovebox/core`; the mobile app runs the same purge via /api/account/delete.
+ */
+export async function deleteAccount(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  if (String(formData.get("confirm") ?? "").trim() !== DELETE_ACCOUNT_CONFIRMATION) {
+    redirect("/account?error=confirm");
+  }
+
+  try {
+    await purgeAccount(new SupabaseAccountPurge(createAdminClient()), user.id);
+  } catch (error) {
+    Sentry.captureException(error);
+    redirect("/account?error=delete");
+  }
+
+  // The Auth Identity is gone; drop the stale session cookie before leaving.
+  await supabase.auth.signOut();
+  redirect("/login?deleted=1");
 }

@@ -7,7 +7,13 @@ import { BILLING_ENABLED } from "@glovebox/core";
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
-import { openBillingPortal, updatePassword, updateUserName } from "../_lib/actions";
+import {
+  DELETE_ACCOUNT_CONFIRMATION,
+  deleteAccount,
+  openBillingPortal,
+  updatePassword,
+  updateUserName,
+} from "../_lib/actions";
 import { getPlan } from "../_lib/plan";
 import { signOut } from "../login/actions";
 
@@ -129,6 +135,38 @@ export default async function AccountPage({
               className="rounded-xl border border-white/10 px-5 py-2.5 font-body font-medium text-muted transition hover:border-status-expired/50 hover:text-status-expired"
             >
               Изход от акаунта
+            </button>
+          </form>
+
+          {/* Right to erasure (GDPR Art. 17) — the same purge the mobile app runs. */}
+          <form action={deleteAccount} className={`${cardClass} border-status-expired/25`}>
+            <div>
+              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-status-expired">
+                Изтриване на акаунта
+              </span>
+              <p className="mt-2 font-body text-[13px] leading-relaxed text-muted">
+                Изтриваме профила ти и всичко към него — автомобили, услуги, документи и
+                напомняния. Действието е окончателно и данните не могат да бъдат възстановени.
+              </p>
+            </div>
+            <Field label={`Напиши „${DELETE_ACCOUNT_CONFIRMATION}“, за да потвърдиш`}>
+              <input
+                name="confirm"
+                required
+                autoComplete="off"
+                placeholder={DELETE_ACCOUNT_CONFIRMATION}
+                className={fieldClass}
+              />
+            </Field>
+            {error === "confirm" && (
+              <Note>Напиши „{DELETE_ACCOUNT_CONFIRMATION}“ точно така, за да потвърдиш.</Note>
+            )}
+            {error === "delete" && <Note>Изтриването не успя. Опитай пак след малко.</Note>}
+            <button
+              type="submit"
+              className="self-start rounded-xl border border-status-expired/50 px-5 py-2.5 font-body font-semibold text-status-expired transition hover:bg-status-expired/10"
+            >
+              Изтрий акаунта завинаги
             </button>
           </form>
         </div>

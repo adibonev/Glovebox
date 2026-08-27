@@ -4,8 +4,9 @@ import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Field, PrimaryButton } from "@/components/forms";
-import { getName, updateName, updatePassword } from "@/lib/account";
+import { deleteAccount, getName, updateName, updatePassword } from "@/lib/account";
 import { signOut, useAuth } from "@/lib/auth";
+import { SITE_URL } from "@/lib/config";
 import { useGarage } from "@/lib/useGarage";
 
 const PLAN_LABELS: Record<Plan, string> = { free: "Free", pro: "Pro", legacy: "Legacy" };
@@ -21,6 +22,7 @@ export default function ProfileTab() {
   const [savingName, setSavingName] = useState(false);
   const [password, setPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -61,6 +63,37 @@ export default function ProfileTab() {
     } finally {
       setSavingPassword(false);
     }
+  };
+
+  const removeAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      // The auth listener sees the cleared session and routes back to login.
+    } catch (e) {
+      Alert.alert("Грешка", e instanceof Error ? e.message : "Изтриването не успя.");
+      setDeleting(false);
+    }
+  };
+
+  // Two steps on purpose: this erases everything and cannot be undone.
+  const confirmDelete = () => {
+    Alert.alert(
+      "Изтриване на акаунта",
+      "Профилът ти и всичко към него — автомобили, услуги, документи и напомняния — ще бъдат изтрити завинаги. Данните не могат да бъдат възстановени.",
+      [
+        { text: "Отказ", style: "cancel" },
+        {
+          text: "Продължи",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert("Сигурен ли си?", "Последна възможност да се откажеш.", [
+              { text: "Отказ", style: "cancel" },
+              { text: "Изтрий завинаги", style: "destructive", onPress: removeAccount },
+            ]),
+        },
+      ],
+    );
   };
 
   return (
@@ -123,7 +156,7 @@ export default function ProfileTab() {
 
         {isAdmin && (
           <Pressable
-            onPress={() => Linking.openURL("https://www.glovebox.bg/admin")}
+            onPress={() => Linking.openURL(`${SITE_URL}/admin`)}
             className="mt-4 flex-row items-center justify-center gap-2 rounded-xl border border-copper/40 bg-copper/10 py-4"
           >
             <Text className="text-base font-semibold text-copper">♛ Админ панел</Text>
@@ -133,6 +166,26 @@ export default function ProfileTab() {
         <Pressable onPress={signOut} className="mt-6 items-center rounded-xl border border-white/10 py-4">
           <Text className="text-base font-semibold text-status-expired">Изход</Text>
         </Pressable>
+
+        {/* Right to erasure (GDPR Art. 17) — required in-app by App Store Guideline 5.1.1(v). */}
+        <View className="mt-8 rounded-2xl border border-status-expired/25 bg-panel p-4">
+          <Text className="text-xs uppercase tracking-wider text-status-expired">
+            Изтриване на акаунта
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-silver">
+            Профилът и всичките ти данни — автомобили, услуги, документи и напомняния — се
+            изтриват завинаги. Действието е необратимо.
+          </Text>
+          <Pressable
+            onPress={confirmDelete}
+            disabled={deleting}
+            className="mt-4 items-center rounded-xl border border-status-expired/50 py-3.5"
+          >
+            <Text className="text-base font-semibold text-status-expired">
+              {deleting ? "Изтриване…" : "Изтрий акаунта"}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
