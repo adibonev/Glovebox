@@ -6,7 +6,7 @@
 
 | Поле | Стойност |
 | --- | --- |
-| Bundle ID | `com.glovebox.app` |
+| Bundle ID | `bg.glovebox.app` |
 | SKU | `glovebox-ios` |
 | Primary language | Bulgarian |
 | Primary category | Utilities |

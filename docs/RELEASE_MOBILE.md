@@ -15,7 +15,8 @@ Expo — включително **macOS за iOS**, така че Mac не ти 
 | **Google Play Console** | **25 $ еднократно** | <https://play.google.com/console/signup> |
 | **EAS CLI** | `npm i -g eas-cli` | — |
 
-> Bundle ID-тата вече са зададени: iOS `com.glovebox.app`, Android `com.glovebox.app`.
+> Bundle ID-тата вече са зададени: iOS `bg.glovebox.app`, Android `bg.glovebox.app`.
+> (`com.glovebox.app` е заето от чужд Apple акаунт — bundle ID-тата са глобално уникални.)
 
 ---
 

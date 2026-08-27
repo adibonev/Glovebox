@@ -42,7 +42,7 @@ export async function signInWithProvider(provider: OAuthProvider): Promise<void>
  * directly to Supabase via `signInWithIdToken` — no browser or redirect (unlike Google). Apple
  * requires this whenever another social login is offered on iOS (App Store Guideline 4.8). The
  * Apple provider must be enabled in Supabase → Authentication → Providers with this app's bundle
- * id (`com.glovebox.app`) in the authorized client ids.
+ * id (`bg.glovebox.app`) in the authorized client ids.
  */
 export async function signInWithApple(): Promise<void> {
   let credential: AppleAuthentication.AppleAuthenticationCredential;
