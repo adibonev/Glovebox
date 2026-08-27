@@ -88,7 +88,10 @@ Glovebox е жабката на колата ти, само че в телефо
 | Поле | Стойност |
 | --- | --- |
 | Username | `appreview@glovebox.bg` |
-| Password | `GloveboxDemo2026!` |
+| Password | **не се държи тук** — репото е публично; паролата е в App Store Connect |
+
+> Ако паролата се загуби, ротирай я през Supabase (Authentication → Users → appreview@glovebox.bg
+> → Reset password) и я обнови в App Store Connect. Никога не я записвай в този файл.
 
 **Notes** (ревюърите четат английски):
 ```
