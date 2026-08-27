@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { BODY_TYPES } from "./bodyType";
 import type { FormState } from "./formState";
-import { SERVICE_TYPE_ORDER } from "./labels";
+import { DELETE_ACCOUNT_CONFIRMATION, SERVICE_TYPE_ORDER } from "./labels";
 import { countDocuments, countServices, countVehicles, getPlan } from "./plan";
 import { WINDOW_OPTIONS } from "./reminderSettings";
 import { documentTooLargeMessage } from "./upload";
@@ -470,9 +470,6 @@ export async function deleteService(formData: FormData): Promise<void> {
   await supabase.from("services").delete().eq("id", serviceId).eq("user_id", userId);
   revalidatePath("/");
 }
-
-/** What a User must type to confirm an irreversible account deletion. */
-export const DELETE_ACCOUNT_CONFIRMATION = "ИЗТРИЙ";
 
 /**
  * Delete the signed-in User's account and every trace of their data (GDPR Art. 17).

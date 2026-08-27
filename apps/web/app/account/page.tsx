@@ -7,13 +7,8 @@ import { BILLING_ENABLED } from "@glovebox/core";
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
-import {
-  DELETE_ACCOUNT_CONFIRMATION,
-  deleteAccount,
-  openBillingPortal,
-  updatePassword,
-  updateUserName,
-} from "../_lib/actions";
+import { deleteAccount, openBillingPortal, updatePassword, updateUserName } from "../_lib/actions";
+import { DELETE_ACCOUNT_CONFIRMATION } from "../_lib/labels";
 import { getPlan } from "../_lib/plan";
 import { signOut } from "../login/actions";
 

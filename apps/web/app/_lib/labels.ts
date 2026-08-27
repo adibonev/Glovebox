@@ -99,3 +99,10 @@ export function formatDateShort(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
+
+/**
+ * What a User must type to confirm an irreversible account deletion. Lives here, not in
+ * actions.ts: a "use server" file may only export async functions, so a plain const there
+ * fails the production build (typecheck and lint do not catch it).
+ */
+export const DELETE_ACCOUNT_CONFIRMATION = "ИЗТРИЙ";
