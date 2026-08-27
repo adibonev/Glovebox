@@ -8,11 +8,17 @@
 | --- | --- |
 | Bundle ID | `bg.glovebox.app` |
 | SKU | `glovebox-ios` |
-| Primary language | Bulgarian |
+| Primary language | **English (U.K.)** — виж бележката отдолу |
 | Primary category | Utilities |
 | Secondary category | Productivity |
 | Age rating | 4+ |
 | Price | Free |
+
+> **Защо English (U.K.), а не български:** Apple **не поддържа български** като език за
+> метаданни в App Store — няма го в списъка. Default езикът на българския storefront е
+> **English (U.K.)**, така че точно него избираме, а в полетата пишем българския текст.
+> Така всеки в България вижда описанието на български. Това е обичайната практика за
+> пазари, които Apple не локализира.
 
 ## Име и подзаглавие
 
@@ -100,6 +106,17 @@ document expiry dates: insurance, road tax, vignette, roadworthiness inspection.
 
 The demo account is pre-populated with two vehicles and twelve service records so
 every state is visible: valid (green), expiring soon (amber) and expired (red).
+
+The interface is in Bulgarian only, because Bulgarian is not an App Store metadata
+language and the product serves the Bulgarian market exclusively. A short guide to
+the five tabs at the bottom of the screen, left to right:
+
+1. "Табло" (Dashboard) - every tracked obligation, sorted by urgency. Colour tells
+   the state: green = valid, amber = expiring soon, red = expired.
+2. "Автомобили" (Vehicles) - the two demo cars. Tap one to see its records.
+3. "Документи" (Documents) - files attached to a record (policies, receipts).
+4. "Напомняния" (Reminders) - how many days before expiry to be notified.
+5. "Профил" (Profile) - account settings.
 
 ACCOUNT DELETION (Guideline 5.1.1(v)): open the "Профил" tab (rightmost), scroll to
 the bottom, and tap "Изтрий акаунта" in the red-outlined section. It asks for
