@@ -11,6 +11,7 @@ import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useAuthDeepLink } from "@/lib/authLink";
 import { AuthProvider, useAuth } from "@/lib/auth";
 
 // Paint the native root view dark so there's no white flash before React mounts.
@@ -42,6 +43,8 @@ export default function RootLayout() {
 /** Redirects between the auth screen and the app depending on the session (auth gate). */
 function RootNavigator() {
   const { session, loading } = useAuth();
+  // Confirmation / recovery links land here and become a session.
+  useAuthDeepLink();
   const segments = useSegments();
   const router = useRouter();
 

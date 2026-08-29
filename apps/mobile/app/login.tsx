@@ -1,5 +1,6 @@
 import { colors } from "@glovebox/ui";
 import * as AppleAuthentication from "expo-apple-authentication";
+import * as Linking from "expo-linking";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -45,7 +46,13 @@ export default function LoginScreen() {
         if (err) throw err;
         // On success the auth gate (RootNavigator) redirects to the dashboard.
       } else {
-        const { error: err } = await supabase.auth.signUp({ email, password });
+        // Without emailRedirectTo the confirmation link goes to the Site URL — the
+        // website — which is a dead end for someone who signed up on their phone.
+        const { error: err } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: Linking.createURL("auth-callback") },
+        });
         if (err) throw err;
         setNotice("Изпратихме ти имейл за потвърждение. Потвърди и влез.");
         setMode("signin");
