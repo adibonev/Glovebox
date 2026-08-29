@@ -3,7 +3,7 @@
 > Копирай текста отдолу в **App Store Connect → App Review → Reply**. Не е отказ — искат
 > информация, за да продължат ревюто. Точка 1 (записът на екрана) е твоя; останалото е готово.
 >
-> **Преди да пратиш:** замени `<<МОДЕЛ>>` и `<<iOS ВЕРСИЯ>>` с реалните.
+> Устройството е попълнено: iPhone 14, iOS 26.6.1.
 
 ---
 
@@ -44,7 +44,7 @@ record, attaching a document, the reminder settings, the notification
 permission prompt, and the in-app account deletion flow from start to finish.
 
 2. DEVICES AND OPERATING SYSTEMS TESTED
-iPhone <<МОДЕЛ>> running iOS <<iOS ВЕРСИЯ>>, installed through TestFlight.
+iPhone 14 running iOS 26.6.1, installed through TestFlight.
 
 3. WHAT THE APP DOES, AND FOR WHOM
 Glovebox is a private record-keeping and reminder tool for car owners in

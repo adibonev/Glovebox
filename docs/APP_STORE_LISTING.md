@@ -108,28 +108,59 @@ Glovebox е жабката на колата ти, само че в телефо
 
 **Notes** (ревюърите четат английски):
 ```
-The app is Bulgarian-only (launching in Bulgaria) and helps drivers track vehicle
-document expiry dates: insurance, road tax, vignette, roadworthiness inspection.
+WHAT THE APP IS
+Glovebox is a private record-keeping and reminder tool for car owners in
+Bulgaria. A Bulgarian driver must keep several unrelated obligations valid at
+once - Civil Liability insurance, Casco, the road vignette, the annual
+roadworthiness inspection, vehicle tax and a valid fire extinguisher. Each has
+its own expiry date and its own issuing institution, and letting one lapse is a
+fineable offence. The user records each expiry date once; the app derives a
+status (valid / expiring soon / expired) and notifies them before it lapses.
+Free, no in-app purchases, no subscriptions. Audience: private car owners in
+Bulgaria.
 
-The demo account is pre-populated with two vehicles and twelve service records so
-every state is visible: valid (green), expiring soon (amber) and expired (red).
+TESTED ON
+iPhone 14, iOS 26.6.1, via TestFlight.
 
-The interface is in Bulgarian only, because Bulgarian is not an App Store metadata
-language and the product serves the Bulgarian market exclusively. A short guide to
-the five tabs at the bottom of the screen, left to right:
+HOW TO USE IT
+Sign in with the demo account above; it holds two vehicles and twelve records so
+every state is visible at once. The five tabs, left to right:
+1. "Табло" (Dashboard) - the most urgent deadline, plus counts of valid /
+   expiring / expired.
+2. "Автомобили" (Vehicles) - the demo cars. Tap one for its records, colour
+   coded: green = valid, amber = expiring soon, red = expired.
+3. "Документи" (Documents) - files attached to a record (any PDF or image).
+4. "Напомняния" (Reminders) - days before expiry to be notified, per type.
+5. "Профил" (Profile) - name, password, sign out, account deletion.
 
-1. "Табло" (Dashboard) - every tracked obligation, sorted by urgency. Colour tells
-   the state: green = valid, amber = expiring soon, red = expired.
-2. "Автомобили" (Vehicles) - the two demo cars. Tap one to see its records.
-3. "Документи" (Documents) - files attached to a record (policies, receipts).
-4. "Напомняния" (Reminders) - how many days before expiry to be notified.
-5. "Профил" (Profile) - account settings.
+ACCOUNT DELETION (Guideline 5.1.1(v))
+Open "Профил" (rightmost tab), scroll to the bottom, tap "Изтрий акаунта" in the
+red-outlined section. It confirms twice, then permanently deletes the account,
+all vehicles, records and uploaded files.
 
-ACCOUNT DELETION (Guideline 5.1.1(v)): open the "Профил" tab (rightmost), scroll to
-the bottom, and tap "Изтрий акаунта" in the red-outlined section. It asks for
-confirmation twice, then permanently deletes the account and all of its data.
+EXTERNAL SERVICES
+- Supabase: authentication (e-mail/password, Sign in with Apple, Google), the
+  database, and encrypted storage for uploaded documents. The only third-party
+  SDK in the bundle.
+- Sign in with Apple and Google OAuth, both through Supabase.
+- Expo Push Notification Service: reminder notifications.
+- Resend: reminder e-mails, sent from our server, not from the app.
+- Our own backend at www.glovebox.bg, one endpoint (/api/account/delete) used by
+  the in-app deletion.
+No advertising, analytics, tracking, AI or payment services of any kind.
 
-The app is free with no in-app purchases and no subscriptions in this version.
+REGIONAL DIFFERENCES
+None - identical features and content everywhere, no geo-gating. The interface
+is Bulgarian only and the obligations are specific to Bulgarian law, so it is
+useful mainly in Bulgaria, but it stays available in all territories so
+Bulgarians living abroad can install it.
+
+REGULATED INDUSTRY
+No. Glovebox is not an insurance provider, broker, agent or comparison service.
+It does not sell, quote, arrange, underwrite or process insurance or any other
+financial product, takes no payments, and connects to no insurer, government
+registry or payment system. The user types in dates from documents they already
+hold; the app stores them and reminds them, as a calendar entry would.
 ```
 
 ## App Privacy (въпросникът)
