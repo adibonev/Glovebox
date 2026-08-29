@@ -50,9 +50,11 @@ function RootNavigator() {
 
   useEffect(() => {
     if (loading) return;
-    const onLoginScreen = segments[0] === "login";
-    if (!session && !onLoginScreen) router.replace("/login");
-    else if (session && onLoginScreen) router.replace("/");
+    // auth-callback counts as an auth screen: a confirmation link lands there with no session
+    // yet, and bouncing it to /login would cut the code exchange off mid-flight.
+    const onAuthScreen = segments[0] === "login" || segments[0] === "auth-callback";
+    if (!session && !onAuthScreen) router.replace("/login");
+    else if (session && onAuthScreen) router.replace("/");
   }, [session, loading, segments, router]);
 
   if (loading) {
