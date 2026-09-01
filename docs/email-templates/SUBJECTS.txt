@@ -1,0 +1,32 @@
+Заглавията (Subject) за всеки шаблон в Supabase.
+Тялото е в едноименния .html файл — отваряш го, Ctrl+A, Ctrl+C.
+
+01-confirm-signup.html
+    Потвърди имейла си за Glovebox
+
+02-invite-user.html
+    Покана за Glovebox
+
+03-magic-link.html
+    Вход в Glovebox
+
+04-change-email.html
+    Потвърди новия си имейл за Glovebox
+
+05-reset-password.html
+    Нова парола за Glovebox
+
+06-reauthentication.html
+    Код за потвърждение — Glovebox
+
+07-security-password-changed.html
+    Паролата ти за Glovebox е сменена
+
+08-security-email-changed.html
+    Имейлът за Glovebox е сменен
+
+09-security-signin-linked.html
+    Нов начин за вход в Glovebox
+
+10-security-signin-removed.html
+    Премахнат начин за вход в Glovebox
