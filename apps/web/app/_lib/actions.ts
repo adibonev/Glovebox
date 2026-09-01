@@ -241,6 +241,25 @@ export async function updateUserName(formData: FormData): Promise<void> {
   redirect("/account?saved=name");
 }
 
+/**
+ * Step one of changing a password: Supabase e-mails a six-digit code.
+ *
+ * Changing a password used to need nothing but the new one, so a borrowed logged-in browser
+ * was enough to take the account over. The code proves the person at the keyboard also holds
+ * the mailbox.
+ */
+export async function requestPasswordChange(): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase.auth.reauthenticate();
+  redirect(error ? "/account?error=code" : "/account?sent=code");
+}
+
+/** Step two: the new password, together with the code from the e-mail. */
 export async function updatePassword(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const {
@@ -249,10 +268,12 @@ export async function updatePassword(formData: FormData): Promise<void> {
   if (!user) redirect("/login");
 
   const password = String(formData.get("password") ?? "");
-  if (password.length < 6) redirect("/account?error=password");
+  const code = String(formData.get("code") ?? "").trim();
+  if (password.length < 6) redirect("/account?sent=code&error=password");
+  if (!code) redirect("/account?sent=code&error=code");
 
-  const { error } = await supabase.auth.updateUser({ password });
-  redirect(error ? "/account?error=password" : "/account?saved=password");
+  const { error } = await supabase.auth.updateUser({ password, nonce: code });
+  redirect(error ? "/account?sent=code&error=code" : "/account?saved=password");
 }
 
 export async function startProCheckout(formData: FormData): Promise<void> {

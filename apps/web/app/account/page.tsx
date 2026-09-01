@@ -7,7 +7,13 @@ import { BILLING_ENABLED } from "@glovebox/core";
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
-import { deleteAccount, openBillingPortal, updatePassword, updateUserName } from "../_lib/actions";
+import {
+  deleteAccount,
+  openBillingPortal,
+  requestPasswordChange,
+  updatePassword,
+  updateUserName,
+} from "../_lib/actions";
 import { DELETE_ACCOUNT_CONFIRMATION } from "../_lib/labels";
 import { getPlan } from "../_lib/plan";
 import { signOut } from "../login/actions";
@@ -26,9 +32,9 @@ const saveBtn =
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; sent?: string }>;
 }) {
-  const { saved, error } = await searchParams;
+  const { saved, error, sent } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -100,7 +106,9 @@ export default async function AccountPage({
             </button>
           </form>
 
-          <form action={updatePassword} className={cardClass}>
+          {/* Two steps on purpose: a password change needs a code from the User's mailbox,
+              so a borrowed logged-in browser is not enough to take the account over. */}
+          <form action={sent === "code" ? updatePassword : requestPasswordChange} className={cardClass}>
             <Field label="Имейл">
               <input
                 value={user.email ?? ""}
@@ -117,10 +125,23 @@ export default async function AccountPage({
                 className={fieldClass}
               />
             </Field>
+            {sent === "code" && (
+              <Field label="Код от имейла">
+                <input
+                  name="code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="6 цифри"
+                  className={fieldClass}
+                />
+              </Field>
+            )}
+            {sent === "code" && !error && <Note ok>Изпратихме код на имейла ти.</Note>}
             {saved === "password" && <Note ok>Паролата е сменена.</Note>}
             {error === "password" && <Note>Паролата трябва да е поне 6 символа.</Note>}
+            {error === "code" && <Note>Кодът е грешен или изтекъл. Опитай пак.</Note>}
             <button type="submit" className={saveBtn}>
-              Смени паролата
+              {sent === "code" ? "Потвърди и смени" : "Изпрати код"}
             </button>
           </form>
 

@@ -4,7 +4,13 @@ import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Field, PrimaryButton } from "@/components/forms";
-import { deleteAccount, getName, updateName, updatePassword } from "@/lib/account";
+import {
+  deleteAccount,
+  getName,
+  requestPasswordChange,
+  updateName,
+  updatePassword,
+} from "@/lib/account";
 import { signOut, useAuth } from "@/lib/auth";
 import { SITE_URL } from "@/lib/config";
 import { useGarage } from "@/lib/useGarage";
@@ -22,6 +28,8 @@ export default function ProfileTab() {
   const [savingName, setSavingName] = useState(false);
   const [password, setPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [code, setCode] = useState("");
+  const [awaitingCode, setAwaitingCode] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -48,18 +56,34 @@ export default function ProfileTab() {
     }
   };
 
-  const savePassword = async () => {
+  // Changing a password takes two steps: ask for a code, then send it with the new password.
+  const askForCode = async () => {
     if (password.length < 6) {
       Alert.alert("Кратка парола", "Паролата трябва да е поне 6 символа.");
       return;
     }
     setSavingPassword(true);
     try {
-      await updatePassword(password);
+      await requestPasswordChange();
+      setAwaitingCode(true);
+      Alert.alert("Провери пощата си", "Изпратихме ти код за потвърждение.");
+    } catch (e) {
+      Alert.alert("Грешка", e instanceof Error ? e.message : "Кодът не се изпрати.");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const savePassword = async () => {
+    setSavingPassword(true);
+    try {
+      await updatePassword(password, code);
       setPassword("");
+      setCode("");
+      setAwaitingCode(false);
       Alert.alert("Запазено", "Паролата е сменена.");
     } catch (e) {
-      Alert.alert("Грешка", e instanceof Error ? e.message : "Неуспешна смяна.");
+      Alert.alert("Грешка", e instanceof Error ? e.message : "Кодът е грешен или изтекъл.");
     } finally {
       setSavingPassword(false);
     }
@@ -135,13 +159,36 @@ export default function ProfileTab() {
             placeholder="поне 6 символа"
             secureTextEntry
             autoCapitalize="none"
+            editable={!awaitingCode}
           />
-          <PrimaryButton
-            label="Смени паролата"
-            onPress={savePassword}
-            loading={savingPassword}
-            disabled={password.length < 6}
-          />
+          {awaitingCode ? (
+            <>
+              <Field
+                label="Код от имейла"
+                value={code}
+                onChangeText={setCode}
+                placeholder="6 цифри"
+                keyboardType="number-pad"
+                autoCapitalize="none"
+              />
+              <PrimaryButton
+                label="Потвърди и смени"
+                onPress={savePassword}
+                loading={savingPassword}
+                disabled={code.trim().length < 6}
+              />
+              <Pressable onPress={() => setAwaitingCode(false)} className="items-center py-3">
+                <Text className="text-sm text-dim">Откажи</Text>
+              </Pressable>
+            </>
+          ) : (
+            <PrimaryButton
+              label="Смени паролата"
+              onPress={askForCode}
+              loading={savingPassword}
+              disabled={password.length < 6}
+            />
+          )}
         </View>
 
         {BILLING_ENABLED && plan === "free" && (

@@ -19,8 +19,21 @@ export async function updateName(userId: string, name: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function updatePassword(password: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password });
+/**
+ * Step one of changing a password: Supabase e-mails a six-digit code.
+ *
+ * Changing a password used to need nothing but the new one, so anyone holding an unlocked
+ * phone with the app open could take the account over. The code proves the person at the
+ * keyboard also holds the mailbox.
+ */
+export async function requestPasswordChange(): Promise<void> {
+  const { error } = await supabase.auth.reauthenticate();
+  if (error) throw new Error(error.message);
+}
+
+/** Step two: the new password, together with the code from the e-mail. */
+export async function updatePassword(password: string, code: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password, nonce: code.trim() });
   if (error) throw new Error(error.message);
 }
 
