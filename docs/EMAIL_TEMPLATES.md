@@ -309,6 +309,171 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
 
 ---
 
+# Security известия
+
+Тези са в **Supabase → Authentication → Emails → Security**, отделно от шестте по-горе. Всяко
+има собствен шаблон зад стрелката вдясно от превключвателя.
+
+Това са **известия след факта**, не потвърждения — казват на потребителя, че нещо се е случило,
+и му дават път да реагира, ако не е бил той. Затова нямат бутон за действие и не ползват
+променливи: няма какво да се потвърждава.
+
+„Phone number changed", „MFA method added" и „MFA method removed" ги пропускам — нямаш нито
+телефонен вход, нито MFA, така че няма как да се задействат.
+
+## 1. Password changed — сменена парола
+
+**Subject**
+
+```
+Паролата ти за Glovebox е сменена
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Паролата ти е сменена</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Паролата за профила ти в Glovebox беше променена току-що. Ако си го направил ти, няма нужда от нищо повече.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+
+## 2. Email address changed — сменен имейл
+
+**Subject**
+
+```
+Имейлът за Glovebox е сменен
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Имейлът на профила ти е сменен</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Адресът за вход в Glovebox беше променен. Отсега нататък влизаш с новия имейл.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+
+## 3. Sign-in method linked — добавен начин за вход
+
+**Subject**
+
+```
+Нов начин за вход в Glovebox
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Нов начин за вход</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Към профила ти в Glovebox беше добавен нов начин за вход — например Google или Apple. Оттук нататък можеш да влизаш и с него.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+
+## 4. Sign-in method removed — премахнат начин за вход
+
+**Subject**
+
+```
+Премахнат начин за вход в Glovebox
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Премахнат начин за вход</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Начин за вход беше премахнат от профила ти в Glovebox. Увери се, че ти остава поне един работещ начин да влезеш.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+---
+
 ## Как да ги провериш
 
 Регистрирай се с истински адрес и виж:
