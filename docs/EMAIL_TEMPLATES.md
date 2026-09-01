@@ -11,6 +11,11 @@ Emails → Templates**. Всеки има поле Subject и тяло.
 да са попълнени — ако някой ден включиш magic link или защитена смяна на парола, няма да
 изненадаш потребител с английски имейл от чужда марка.
 
+**Защо логото е и картинка, и текст:** иконата се зарежда от
+`https://www.glovebox.bg/email-logo.png`. Повечето имейл клиенти обаче блокират картинките,
+докато получателят не ги разреши — затова надписът „Glovebox" до нея остава текст. Ако
+картинката не се зареди, марката пак се вижда.
+
 **Защо са таблици и inline стилове:** имейл клиентите не поддържат външен CSS, flexbox или
 grid, а Gmail изрязва `<style>` блоковете. Това е единственият начин оформлението да изглежда
 еднакво навсякъде. По същата причина шрифтът е Georgia — имейлът не зарежда собствени
@@ -33,7 +38,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
   <tr><td align="center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
       <tr><td style="padding:36px 36px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
       </td></tr>
       <tr><td style="padding:28px 36px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Добре дошъл в Glovebox</div>
@@ -78,7 +86,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
   <tr><td align="center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
       <tr><td style="padding:36px 36px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
       </td></tr>
       <tr><td style="padding:28px 36px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Покана за Glovebox</div>
@@ -126,7 +137,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
   <tr><td align="center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
       <tr><td style="padding:36px 36px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
       </td></tr>
       <tr><td style="padding:28px 36px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Вход в Glovebox</div>
@@ -169,7 +183,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
   <tr><td align="center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
       <tr><td style="padding:36px 36px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
       </td></tr>
       <tr><td style="padding:28px 36px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Нов имейл адрес</div>
@@ -214,7 +231,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
   <tr><td align="center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
       <tr><td style="padding:36px 36px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
       </td></tr>
       <tr><td style="padding:28px 36px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Смяна на паролата</div>
@@ -262,7 +282,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
   <tr><td align="center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
       <tr><td style="padding:36px 36px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
       </td></tr>
       <tr><td style="padding:28px 36px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Код за потвърждение</div>
