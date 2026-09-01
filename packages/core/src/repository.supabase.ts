@@ -318,4 +318,34 @@ export class SupabaseUserRepository implements UserRepository {
     // New Users are never Administrators (is_admin defaults to false in the DB).
     return { id: String(data.id), authUserId: input.authUserId, email: input.email, isAdmin: false };
   }
+
+  async findOrCreateByAuthId(input: { authUserId: string; email: string }): Promise<User> {
+    const existing = await this.findByAuthId(input.authUserId);
+    if (existing) return existing;
+
+    const { data, error } = await this.client
+      .from("users")
+      .insert({ auth_user_id: input.authUserId, email: input.email })
+      .select("id")
+      .single();
+
+    if (!error) {
+      return { id: String(data.id), authUserId: input.authUserId, email: input.email, isAdmin: false };
+    }
+
+    // 23505 = unique_violation. Several screens provision on mount, so on a first run they
+    // race each other into this insert; the losers land here and just read what won.
+    if (error.code !== "23505") {
+      throw new Error(`Supabase users.findOrCreateByAuthId failed: ${error.message}`);
+    }
+    const raced = await this.findByAuthId(input.authUserId);
+    if (raced) return raced;
+
+    // The e-mail is taken by a row this User cannot see — RLS scopes users to their own
+    // auth_user_id — so it belongs to an account from before this Auth Identity existed.
+    // Linking the two needs the service role and cannot be done from a client.
+    throw new Error(
+      `Вече съществува профил с този имейл. Влез в него или се свържи с поддръжката.`,
+    );
+  }
 }

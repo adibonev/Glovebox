@@ -56,4 +56,13 @@ export interface DocumentRepository {
 export interface UserRepository {
   findByAuthId(authUserId: string): Promise<User | null>;
   create(input: { authUserId: string; email: string }): Promise<User>;
+  /**
+   * The User for this Auth Identity, provisioning one if this is their first run.
+   *
+   * Prefer this over `findByAuthId() ?? create()` at call sites: several screens mount at
+   * once, all of them find nothing, and all of them then insert — the losers of that race
+   * hit the unique index on e-mail and blow up in the User's face. This absorbs the
+   * conflict and returns whichever row won.
+   */
+  findOrCreateByAuthId(input: { authUserId: string; email: string }): Promise<User>;
 }

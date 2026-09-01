@@ -148,4 +148,33 @@ describe("InMemoryUserRepository", () => {
     expect(created).toMatchObject({ authUserId: "auth-1", email: "a@b.bg" });
     expect(await repo.findByAuthId("auth-1")).toEqual(created);
   });
+
+  it("refuses a second User with the same e-mail", async () => {
+    const repo = new InMemoryUserRepository();
+    await repo.create({ authUserId: "auth-1", email: "a@b.bg" });
+
+    await expect(repo.create({ authUserId: "auth-2", email: "a@b.bg" })).rejects.toThrow();
+  });
+
+  it("provisions a User the first time and returns the same one after that", async () => {
+    const repo = new InMemoryUserRepository();
+
+    const first = await repo.findOrCreateByAuthId({ authUserId: "auth-1", email: "a@b.bg" });
+    const second = await repo.findOrCreateByAuthId({ authUserId: "auth-1", email: "a@b.bg" });
+
+    expect(second).toEqual(first);
+  });
+
+  it("provisions one User when two screens ask for it at the same time", async () => {
+    const repo = new InMemoryUserRepository();
+
+    // Two screens mount together and both find nothing, so both try to provision.
+    const [a, b] = await Promise.all([
+      repo.findOrCreateByAuthId({ authUserId: "auth-1", email: "a@b.bg" }),
+      repo.findOrCreateByAuthId({ authUserId: "auth-1", email: "a@b.bg" }),
+    ]);
+
+    expect(a).toEqual(b);
+    expect(await repo.findByAuthId("auth-1")).toEqual(a);
+  });
 });

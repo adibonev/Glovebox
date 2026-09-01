@@ -54,15 +54,15 @@ export function usePushRegistration() {
     if (!session) return;
     let active = true;
     void (async () => {
-      // Provision the User row if this is their first run, exactly as every other
-      // screen does. Looking it up without creating it silently skipped registration
-      // for a just-registered User — the row is written by whichever screen wins the
-      // race — so they saw no permission prompt and got no push until a later launch.
+      // Provision on first run rather than only looking up: a just-registered User has no
+      // row yet, and giving up here meant no permission prompt and no push until some
+      // later launch.
       const repo = new SupabaseUserRepository(supabase);
-      const user =
-        (await repo.findByAuthId(session.user.id)) ??
-        (await repo.create({ authUserId: session.user.id, email: session.user.email ?? "" }));
-      if (active && user) await registerForPush(user.id);
+      const user = await repo.findOrCreateByAuthId({
+        authUserId: session.user.id,
+        email: session.user.email ?? "",
+      });
+      if (active) await registerForPush(user.id);
     })().catch(() => {
       // best-effort — never block the UI on push registration (e.g. in Expo Go)
     });

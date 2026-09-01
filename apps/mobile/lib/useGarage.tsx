@@ -71,8 +71,7 @@ export function useGarage() {
     setError(null);
     try {
       const user =
-        (await userRepo.findByAuthId(session.user.id)) ??
-        (await userRepo.create({ authUserId: session.user.id, email: session.user.email ?? "" }));
+        await userRepo.findOrCreateByAuthId({ authUserId: session.user.id, email: session.user.email ?? "" });
 
       const plan = await getPlan(user.id);
       const { windows } = await loadReminderConfig(user.id);

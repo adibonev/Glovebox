@@ -175,6 +175,10 @@ export class InMemoryUserRepository implements UserRepository {
   }
 
   async create(input: { authUserId: string; email: string }): Promise<User> {
+    // Mirrors the unique index on users.email, so tests meet the same wall production does.
+    if (this.users.some((user) => user.email === input.email)) {
+      throw new Error('duplicate key value violates unique constraint "users_email_key"');
+    }
     const user: User = {
       id: String(this.users.length + 1),
       authUserId: input.authUserId,
@@ -183,5 +187,18 @@ export class InMemoryUserRepository implements UserRepository {
     };
     this.users.push(user);
     return user;
+  }
+
+  async findOrCreateByAuthId(input: { authUserId: string; email: string }): Promise<User> {
+    const existing = await this.findByAuthId(input.authUserId);
+    if (existing) return existing;
+    try {
+      return await this.create(input);
+    } catch {
+      // Someone else provisioned it between the look-up and the insert.
+      const raced = await this.findByAuthId(input.authUserId);
+      if (raced) return raced;
+      throw new Error(`No User for Auth Identity ${input.authUserId} and the e-mail is taken`);
+    }
   }
 }

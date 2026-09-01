@@ -29,7 +29,6 @@ export const currentUser = cache(async (): Promise<User | null> => {
   const supabase = await createClient();
   const repo = new SupabaseUserRepository(supabase);
   return (
-    (await repo.findByAuthId(authUser.id)) ??
-    (await repo.create({ authUserId: authUser.id, email: authUser.email ?? "" }))
+    await repo.findOrCreateByAuthId({ authUserId: authUser.id, email: authUser.email ?? "" })
   );
 });

@@ -87,8 +87,7 @@ async function resolveUserId(supabase: ServerClient): Promise<number | null> {
 
   const repo = new SupabaseUserRepository(supabase);
   const profile =
-    (await repo.findByAuthId(user.id)) ??
-    (await repo.create({ authUserId: user.id, email: user.email ?? "" }));
+    await repo.findOrCreateByAuthId({ authUserId: user.id, email: user.email ?? "" });
   return Number(profile.id);
 }
 

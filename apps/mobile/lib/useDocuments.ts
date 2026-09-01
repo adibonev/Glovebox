@@ -36,8 +36,7 @@ export function useDocuments() {
     setError(null);
     try {
       const user =
-        (await userRepo.findByAuthId(session.user.id)) ??
-        (await userRepo.create({ authUserId: session.user.id, email: session.user.email ?? "" }));
+        await userRepo.findOrCreateByAuthId({ authUserId: session.user.id, email: session.user.email ?? "" });
       setUserId(user.id);
 
       const [vehicles, services, documents] = await Promise.all([

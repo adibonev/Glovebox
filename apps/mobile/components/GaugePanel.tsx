@@ -67,11 +67,16 @@ function Gauge({ urgent }: { urgent: NonNullable<UrgentView> }) {
           <Text style={{ color: urgent.color }} className="mt-1.5 text-xs uppercase tracking-[3px]">
             дни
           </Text>
-          <Text className="mt-1.5 max-w-[150px] text-center text-[13px] text-muted">
-            {urgent.expired ? `${urgent.typeLabel} изтече` : `до ${urgent.typeLabel}`}
-          </Text>
         </View>
       </View>
+
+      {/* The Service Type name sits below the dial, not inside it: the ring leaves about
+          140px of clear width, and the longer names — "Гражданска отговорност", "Технически
+          преглед" — wrapped onto three lines and collided with the arc. Out here they have
+          the full panel. */}
+      <Text className="mt-3 px-2 text-center text-sm text-silver" numberOfLines={2}>
+        {urgent.expired ? `${urgent.typeLabel} изтече` : `до ${urgent.typeLabel}`}
+      </Text>
     </View>
   );
 }
