@@ -1,32 +1,42 @@
 Заглавията (Subject) за всеки шаблон в Supabase.
 Тялото е в едноименния .html файл — отваряш го, Ctrl+A, Ctrl+C.
+Заглавието е ОТДЕЛНО поле от тялото и се пропуска най-лесно.
 
-01-confirm-signup.html
+01-confirm-signup.html   [Authentication → Templates]
     Потвърди имейла си за Glovebox
 
-02-invite-user.html
+02-invite-user.html   [Authentication → Templates]
     Покана за Glovebox
 
-03-magic-link.html
+03-magic-link.html   [Authentication → Templates]
     Вход в Glovebox
 
-04-change-email.html
+04-change-email.html   [Authentication → Templates]
     Потвърди новия си имейл за Glovebox
 
-05-reset-password.html
+05-reset-password.html   [Authentication → Templates]
     Нова парола за Glovebox
 
-06-reauthentication.html
+06-reauthentication.html   [Authentication → Templates]
     Код за потвърждение — Glovebox
 
-07-security-password-changed.html
+07-security-password-changed.html   [Authentication → Security]
     Паролата ти за Glovebox е сменена
 
-08-security-email-changed.html
+08-security-email-changed.html   [Authentication → Security]
     Имейлът за Glovebox е сменен
 
-09-security-signin-linked.html
+09-security-signin-linked.html   [Authentication → Security]
     Нов начин за вход в Glovebox
 
-10-security-signin-removed.html
+10-security-signin-removed.html   [Authentication → Security]
     Премахнат начин за вход в Glovebox
+
+11-security-phone-changed.html   [Authentication → Security]
+    Телефонният номер за Glovebox е сменен
+
+12-security-mfa-added.html   [Authentication → Security]
+    Добавена двуфакторна защита в Glovebox
+
+13-security-mfa-removed.html   [Authentication → Security]
+    Премахната двуфакторна защита в Glovebox

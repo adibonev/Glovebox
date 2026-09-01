@@ -318,8 +318,10 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
 и му дават път да реагира, ако не е бил той. Затова нямат бутон за действие и не ползват
 променливи: няма какво да се потвърждава.
 
-„Phone number changed", „MFA method added" и „MFA method removed" ги пропускам — нямаш нито
-телефонен вход, нито MFA, така че няма как да се задействат.
+И седемте превключвателя в Security са включени, затова и седемте имат шаблон. Последните три
+— телефон и двата за MFA — няма как да се задействат при сегашните настройки (няма нито
+телефонен вход, нито MFA), но са попълнени, за да не остане поле, което един ден да изпрати
+английски текст от чуждо име.
 
 ## 1. Password changed — сменена парола
 
@@ -459,6 +461,120 @@ grid, а Gmail изрязва `<style>` блоковете. Това е един
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Премахнат начин за вход</div>
         <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
           Начин за вход беше премахнат от профила ти в Glovebox. Увери се, че ти остава поне един работещ начин да влезеш.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+
+## 5. Phone number changed — сменен телефон
+
+**Subject**
+
+```
+Телефонният номер за Glovebox е сменен
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Телефонният номер на профила ти</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Телефонният номер, свързан с профила ти в Glovebox, беше променен.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+
+## 6. MFA method added — добавена двуфакторна защита
+
+**Subject**
+
+```
+Добавена двуфакторна защита в Glovebox
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Нова двуфакторна защита</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Към профила ти в Glovebox беше добавена двуфакторна защита. Отсега при вход ще се иска и втора стъпка.
+        </div>
+      </td></tr>
+      <tr><td style="padding:28px 36px 36px;">
+        <div style="border-top:1px solid rgba(244,241,234,0.08);padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#6E756F;line-height:1.6;">
+          Ако не си бил ти — <a href="https://www.glovebox.bg/login" style="color:#C4954C;">смени паролата си веднага</a> и провери кой има достъп до пощата ти.<br>
+          <a href="https://www.glovebox.bg" style="color:#6E756F;">glovebox.bg</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+```
+
+
+## 7. MFA method removed — премахната двуфакторна защита
+
+**Subject**
+
+```
+Премахната двуфакторна защита в Glovebox
+```
+
+**Body**
+
+```html
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07100C;margin:0;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background-color:#0B1712;border:1px solid rgba(244,241,234,0.08);border-radius:16px;">
+      <tr><td style="padding:36px 36px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;"><img src="https://www.glovebox.bg/email-logo.png" width="48" height="48" alt="Glovebox" style="display:block;width:48px;height:48px;border:0;border-radius:11px;"></td>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:#F4F1EA;">Glove<span style="color:#C4954C;">box</span></td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:28px 36px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F4F1EA;line-height:1.3;">Премахната двуфакторна защита</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#CFD2CB;line-height:1.6;padding-top:12px;">
+          Двуфакторната защита на профила ти в Glovebox беше премахната. Профилът вече се пази само с парола.
         </div>
       </td></tr>
       <tr><td style="padding:28px 36px 36px;">
