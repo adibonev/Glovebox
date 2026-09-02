@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Wordmark } from "@/components/Wordmark";
+import { SITE_URL } from "@/lib/config";
 import { signInWithApple, signInWithProvider } from "@/lib/oauth";
 import { supabase } from "@/lib/supabase";
 
@@ -202,6 +203,21 @@ export default function LoginScreen() {
             </View>
             <Text className="text-base font-semibold text-ivory">Продължи с Google</Text>
           </Pressable>
+
+          {/* GDPR transparency: the User has to be told what they are agreeing to before an
+              account exists, and the web sign-up already says this. Applies to every route in,
+              which is why it sits below the social buttons rather than under the form. */}
+          <Text className="mt-7 text-center text-xs leading-5 text-dim">
+            С продължаването приемаш{" "}
+            <Text className="text-copper" onPress={() => Linking.openURL(`${SITE_URL}/terms`)}>
+              Общите условия
+            </Text>{" "}
+            и{" "}
+            <Text className="text-copper" onPress={() => Linking.openURL(`${SITE_URL}/privacy`)}>
+              Политиката за поверителност
+            </Text>
+            .
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
