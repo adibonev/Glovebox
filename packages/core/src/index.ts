@@ -14,6 +14,7 @@ export * from "./billing";
 export * from "./domain";
 export * from "./registryCheck";
 export * from "./reminder";
+export * from "./signIn";
 export * from "./repository";
 export * from "./repository.in-memory";
 export * from "./repository.supabase";

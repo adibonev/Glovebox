@@ -1,4 +1,4 @@
-import { BILLING_ENABLED, type Plan } from "@glovebox/core";
+import { BILLING_ENABLED, hasPassword, signInProviders, type Plan } from "@glovebox/core";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,6 +30,10 @@ export default function ProfileTab() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [code, setCode] = useState("");
   const [awaitingCode, setAwaitingCode] = useState(false);
+
+  // A User who only ever signed in with Apple or Google has no password to change.
+  const providers = signInProviders(session?.user.app_metadata?.providers ?? []);
+  const canSetPassword = hasPassword(providers);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -150,7 +154,19 @@ export default function ProfileTab() {
           <PrimaryButton label="Запази името" onPress={saveName} loading={savingName} />
         </View>
 
-        {/* Password */}
+        {/* Password — only for Users who actually have one. */}
+        {!canSetPassword ? (
+          <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
+            <Text className="text-xs uppercase tracking-wider text-dim">Вход</Text>
+            <Text className="mt-2 text-base text-ivory">
+              Влизаш с {providers.map((p) => (p === "apple" ? "Apple" : "Google")).join(" и ")}
+            </Text>
+            <Text className="mt-1.5 text-sm leading-5 text-silver">
+              Профилът ти няма парола — самоличността ти се потвърждава от{" "}
+              {providers.includes("apple") ? "Apple" : "Google"} при всеки вход.
+            </Text>
+          </View>
+        ) : (
         <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
           <Field
             label="Нова парола"
@@ -190,6 +206,7 @@ export default function ProfileTab() {
             />
           )}
         </View>
+        )}
 
         {BILLING_ENABLED && plan === "free" && (
           <View className="mt-4 rounded-2xl border border-copper/40 bg-panel p-4">

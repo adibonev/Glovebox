@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { BILLING_ENABLED } from "@glovebox/core";
+import { BILLING_ENABLED, hasPassword, signInProviders } from "@glovebox/core";
 
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +47,11 @@ export default async function AccountPage({
     .eq("auth_user_id", user.id)
     .maybeSingle();
   const plan = profile ? await getPlan(supabase, profile.id) : "free";
+
+  // A User who only ever signed in with Google has no password to change.
+  const providers = signInProviders(user.app_metadata?.providers ?? []);
+  const canSetPassword = hasPassword(providers);
+  const providerLabel = providers.includes("apple") ? "Apple" : "Google";
 
   return (
     <Shell email={user.email ?? ""}>
@@ -106,8 +111,22 @@ export default async function AccountPage({
             </button>
           </form>
 
-          {/* Two steps on purpose: a password change needs a code from the User's mailbox,
-              so a borrowed logged-in browser is not enough to take the account over. */}
+          {!canSetPassword ? (
+            <div className={cardClass}>
+              <div>
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-dim">Вход</span>
+                <p className="mt-1 font-display text-xl font-semibold text-ivory">
+                  Влизаш с {providerLabel}
+                </p>
+                <p className="mt-2 font-body text-[13px] leading-relaxed text-muted">
+                  Профилът ти няма парола — самоличността ти се потвърждава от {providerLabel} при
+                  всеки вход. Имейл: {user.email}
+                </p>
+              </div>
+            </div>
+          ) : (
+          /* Two steps on purpose: a password change needs a code from the User's mailbox,
+             so a borrowed logged-in browser is not enough to take the account over. */
           <form action={sent === "code" ? updatePassword : requestPasswordChange} className={cardClass}>
             <Field label="Имейл">
               <input
@@ -144,6 +163,7 @@ export default async function AccountPage({
               {sent === "code" ? "Потвърди и смени" : "Изпрати код"}
             </button>
           </form>
+          )}
 
           <form action={signOut}>
             <button
