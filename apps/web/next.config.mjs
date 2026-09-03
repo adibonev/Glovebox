@@ -4,6 +4,10 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   // Consume the workspace packages as TypeScript source (internal packages).
   transpilePackages: ["@glovebox/core", "@glovebox/ui"],
+  // Document recognition runs only in the browser (`_lib/scan.ts` imports it lazily, from an
+  // event handler). Kept out of the server bundle: its Node worker reaches for `worker_threads`
+  // and friends, which would be bundled for a code path the server never runs.
+  serverExternalPackages: ["tesseract.js"],
   eslint: {
     // The whole monorepo is linted from the root flat config via `pnpm lint`.
     ignoreDuringBuilds: true,
