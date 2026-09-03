@@ -83,12 +83,103 @@ function allDates(text: string): Date[] {
   return dates;
 }
 
-/** The first date appearing after `label` in `text`, or null. */
-function dateAfter(text: string, label: RegExp): Date | null {
-  const at = label.exec(text);
-  if (!at) return null;
-  const rest = text.slice(at.index + at[0].length, at.index + at[0].length + 60);
-  return allDates(rest)[0] ?? null;
+// --- Finding a named field through OCR noise ---------------------------------------------
+
+/**
+ * The text reduced to letters and digits, with a map back to the original positions.
+ *
+ * Comparing in this form makes a label match survive the two things OCR does most: dropping or
+ * inventing punctuation and spaces ("Рег. №" → "Рег Ne"), and splitting a line in the wrong place.
+ */
+function compact(text: string): { chars: string; positions: number[] } {
+  let chars = "";
+  const positions: number[] = [];
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text.charAt(i).toUpperCase();
+    // "№" is kept: it is what makes short labels like "Рег. №" distinctive enough to find.
+    if (/[0-9A-ZА-Я№]/u.test(ch)) {
+      chars += ch;
+      positions.push(i);
+    }
+  }
+  return { chars, positions };
+}
+
+/**
+ * Put the numero sign back before anything is compared. Tesseract renders "№" as "Ne", "No" or
+ * "N2", and those stray letters would otherwise sit inside a label and inside a value.
+ */
+function restoreNumero(text: string): string {
+  return text.replace(/(?<![A-Za-z])N[eo2](?![A-Za-z])/g, "№");
+}
+
+/** Levenshtein distance, abandoned as soon as it cannot come in under `cap`. */
+function editDistance(a: string, b: string, cap: number): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    const current = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+      const value = Math.min(
+        (previous[j] ?? Infinity) + 1,
+        (current[j - 1] ?? Infinity) + 1,
+        (previous[j - 1] ?? Infinity) + cost,
+      );
+      current.push(value);
+      if (value < best) best = value;
+    }
+    if (best > cap) return cap + 1;
+    previous = current;
+  }
+  return previous[b.length] ?? cap + 1;
+}
+
+/** How much of a label may be wrong before we stop believing we found it. */
+const LABEL_ERROR_RATIO = 0.25;
+
+/**
+ * The position in `text` just past the field named `label`, or null when that field is not
+ * legible. Approximate on purpose: OCR of Cyrillic gets a few characters wrong in almost every
+ * label, and an exact match would silently drop the field — but the tolerance stays tight
+ * enough that a *different* label never matches.
+ */
+function findFieldEnd(text: string, label: string): number | null {
+  const needle = compact(label).chars;
+  const { chars, positions } = compact(text);
+  if (needle.length === 0 || chars.length < needle.length) return null;
+
+  const cap = Math.floor(needle.length * LABEL_ERROR_RATIO);
+  let bestAt = -1;
+  let bestDistance = cap + 1;
+
+  for (let i = 0; i + needle.length <= chars.length; i += 1) {
+    const distance = editDistance(needle, chars.substr(i, needle.length), cap);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestAt = i;
+      if (distance === 0) break;
+    }
+  }
+
+  if (bestAt < 0 || bestDistance > cap) return null;
+  // One past the last character the label consumed, in the original text.
+  return (positions[bestAt + needle.length - 1] ?? text.length - 1) + 1;
+}
+
+/** The text of the field named `label`, up to `length` characters, or null. */
+function valueInField(text: string, label: string, length = 60): string | null {
+  const end = findFieldEnd(text, label);
+  if (end === null) return null;
+  // Whatever separates a label from its value — ":", ".", "№", spaces — is not part of it.
+  return text.slice(end, end + length).replace(/^[\s:.,;)№-]+/u, "");
+}
+
+/** The first date printed in the field named `label`, or null when that field is not legible. */
+function dateInField(text: string, label: string): Date | null {
+  // A value sits right after its label; anything further away belongs to another field.
+  const value = valueInField(text, label, 40);
+  return value ? (allDates(value)[0] ?? null) : null;
 }
 
 // --- Makes ------------------------------------------------------------------------------
@@ -350,10 +441,47 @@ const EMPTY: InspectionScan = {
   mileageKm: null,
 };
 
-// A VIN is 17 characters, digits and Latin letters except I, O and Q.
-const VIN = /\b([A-HJ-NPR-Z0-9]{17})\b/;
-const PLATE_LINE = /Рег\.?\s*№\s*:?\s*([A-ZА-Я]{1,2}\s?\d{4}\s?[A-ZА-Я]{1,2})\b/iu;
-const MODEL_LINE = /Марка\s*\/\s*Модел\s*:?\s*([^\n]+)/iu;
+/**
+ * The numero sign as OCR really returns it. Tesseract almost never produces "№" from a scanned
+ * certificate — it comes back as "Ne", "No" or "N2", which silently broke every anchor that
+ * expected the character itself, and left "NE" sitting inside the model.
+ */
+const NUMERO = "(?:№|N[eo2₂])";
+
+/**
+ * A VIN is 17 characters. Matched permissively and repaired afterwards: the VIN alphabet
+ * excludes I, O and Q *because* they look like 1 and 0, so any OCR hands back are really digits.
+ */
+const VIN = /(?<![A-Z0-9])([A-Z0-9]{17})(?![A-Z0-9])/;
+
+/** Bulgarian plate: one or two letters, four digits, one or two letters. */
+const PLATE_SHAPE = "[A-ZА-Я]{1,2}\\s?\\d{4}\\s?[A-ZА-Я]{1,2}";
+const PLATE_LINE = new RegExp(`Рег\\.?\\s*${NUMERO}?\\s*:?\\s*(${PLATE_SHAPE})`, "iu");
+/** The same shape anywhere: nothing else on the certificate is written like a plate. */
+const PLATE_ANYWHERE = new RegExp(`(?<![A-ZА-Я0-9])(${PLATE_SHAPE})(?![A-ZА-Я0-9])`, "u");
+
+/**
+ * The field names exactly as the certificate prints them.
+ *
+ * This form is prescribed by regulation and has no variants — every station in the country
+ * issues the same layout with the same wording — so these are constants to recognise, not
+ * guesses about what a document might say.
+ */
+const FIELDS = {
+  plate: "Рег. №",
+  vin: "Идент. № (VIN, рама)",
+  model: "Марка / Модел",
+  mileage: "Километропоказател",
+  firstRegistration: "Дата на първа регистрация",
+  inspectionDate: "Прегледът е извършен на",
+  expiryDate: "Подлежи на преглед до",
+} as const;
+
+/** Repair an OCR'd VIN: I, O and Q cannot occur in one, so they are 1, 0 and 0. */
+function repairVin(raw: string): string | null {
+  const fixed = raw.replace(/I/g, "1").replace(/[OQ]/g, "0");
+  return /^[A-HJ-NPR-Z0-9]{17}$/.test(fixed) ? fixed : null;
+}
 
 /**
  * Where the make/model value ends. The certificate prints in **two columns**, so the line that
@@ -364,9 +492,12 @@ const MODEL_LINE = /Марка\s*\/\s*Модел\s*:?\s*([^\n]+)/iu;
  * Note the `(?!\p{L})` tail rather than `\b`: JavaScript's word boundary is defined on ASCII
  * word characters only, so it never fires after a Cyrillic letter.
  */
-const NEXT_COLUMN =
-  /\s*\(|\s{2,}|\s+(?:Търговско|Двигател|Километропоказател|Вид|Цвят|Категория|ЕГН|Екологична|Собственик|Дата|Адрес|Разрешение|Протокол|Идент|Рег)(?!\p{L})/iu;
-const MILEAGE = /Километропоказател\s*:?\s*([\d\s]+)\s*(?:km|км)/iu;
+const NEXT_COLUMN = new RegExp(
+  `\\s*\\(|\\s{2,}|\\s+${NUMERO}(?!\\p{L})` +
+    `|\\s+(?:Търговско|Двигател|Километропоказател|Вид|Цвят|Категория|ЕГН|Екологична` +
+    `|Собственик|Дата|Адрес|Разрешение|Протокол|Идент|Рег)(?!\\p{L})`,
+  "iu",
+);
 
 /**
  * Read a Roadworthiness Inspection certificate.
@@ -379,48 +510,38 @@ const MILEAGE = /Километропоказател\s*:?\s*([\d\s]+)\s*(?:km|�
 export function readInspectionCertificate(text: string): InspectionScan {
   if (typeof text !== "string" || text.trim() === "") return { ...EMPTY };
 
-  const dates = allDates(text);
-  const inspectionDate = dateAfter(text, /Прегледът\s+е\s+извършен\s+на\s*:?/iu);
+  const source = restoreNumero(text);
 
-  // Preferred: the date immediately before "включително" — a word that appears nowhere else.
-  const inclusive = /(\d{2})[.\-/](\d{2})[.\-/](\d{4})\s*(?:г\.?)?\s*включително/iu.exec(text);
-  const anchored =
-    inclusive && utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]));
+  // Every value must both follow its named field *and* look like what that field holds. A label
+  // matched in the wrong place therefore yields nothing rather than something wrong.
+  const plateNear = valueInField(source, FIELDS.plate, 30);
+  const plateShape = plateNear ? PLATE_ANYWHERE.exec(plateNear)?.[1] : undefined;
 
-  // Fallback when OCR destroyed that word: the latest date on the certificate. It is only the
-  // Expiry Date if it is genuinely *after* the Inspection — a photo that cuts off the bottom
-  // line leaves the Inspection date as the latest, and reporting that would fill in a plausible
-  // date a year early. Nothing is worse here than a wrong date the User does not question.
-  const latest =
-    dates.length > 0
-      ? dates.reduce((newest, d) => (d.getTime() > newest.getTime() ? d : newest))
-      : null;
-  const fallback =
-    latest && (!inspectionDate || latest.getTime() > inspectionDate.getTime()) ? latest : null;
+  const vinNear = valueInField(source, FIELDS.vin, 40);
+  const rawVin = vinNear ? VIN.exec(vinNear)?.[1] : undefined;
 
-  const expiryDate = anchored || fallback;
+  const rawModel = valueInField(source, FIELDS.model, 60);
 
-  const rawPlate = PLATE_LINE.exec(text)?.[1];
-  const plate = rawPlate ? normalizePlate(rawPlate) || null : null;
+  const rawMileage = valueInField(source, FIELDS.mileage, 24)?.match(/([\d\s]{1,10})/)?.[1];
+  const mileageKm = rawMileage?.trim() ? Number(rawMileage.replace(/\s/g, "")) : null;
 
-  const vin = VIN.exec(text)?.[1] ?? null;
-
-  const rawModel = MODEL_LINE.exec(text)?.[1];
-  const { brand, model } = rawModel
-    ? splitMakeAndModel(rawModel.split(NEXT_COLUMN)[0] ?? "")
-    : { brand: null, model: null };
-
-  const rawMileage = MILEAGE.exec(text)?.[1];
-  const mileageKm = rawMileage ? Number(rawMileage.replace(/\s/g, "")) : null;
+  // The Expiry Date carries a second marker unique to that field: it is the only date on the
+  // certificate followed by "включително".
+  const inclusive = /(\d{2})[.\-/](\d{2})[.\-/](\d{4})\s*(?:г\.?)?\s*включително/iu.exec(source);
 
   return {
-    plate,
-    vin,
-    brand,
-    model,
-    firstRegistration: dateAfter(text, /Дата\s+на\s+първа\s+регистрация\s*:?/iu),
-    inspectionDate,
-    expiryDate,
+    plate: plateShape ? normalizePlate(plateShape) || null : null,
+    vin: rawVin ? repairVin(rawVin) : null,
+    ...(rawModel
+      ? splitMakeAndModel(rawModel.split(NEXT_COLUMN)[0] ?? "")
+      : { brand: null, model: null }),
+    firstRegistration: dateInField(source, FIELDS.firstRegistration),
+    inspectionDate: dateInField(source, FIELDS.inspectionDate),
+    expiryDate:
+      dateInField(source, FIELDS.expiryDate) ??
+      (inclusive
+        ? utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]))
+        : null),
     mileageKm: mileageKm != null && Number.isFinite(mileageKm) ? mileageKm : null,
   };
 }

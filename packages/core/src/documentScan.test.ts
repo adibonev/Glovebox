@@ -124,15 +124,15 @@ describe("readInspectionCertificate", () => {
     expect(scan.mileageKm).toBe(15631);
   });
 
-  it("still finds the Expiry Date when OCR mangles the Cyrillic label", () => {
-    // Worst case: every label is unreadable, only the dates survive. The Expiry Date is the
-    // latest date on the certificate, so it is recoverable without any label at all.
+  it("reports no Expiry Date when OCR destroyed the field naming it", () => {
+    // Every label transliterated into Latin gibberish. Nothing here names a field, so nothing
+    // is read — an empty box the User fills beats a confident wrong date.
     const mangled = `
       YAOCTOBEPEHNE 3A TEXHNYECKA N3NPABHOCT
       ... 05.09.2011 ... 17.08.2026 ... 17.08.2027 ...
     `;
 
-    expect(readInspectionCertificate(mangled).expiryDate).toEqual(new Date("2027-08-17"));
+    expect(readInspectionCertificate(mangled).expiryDate).toBeNull();
   });
 
   it("refuses to pass off the Inspection date as the Expiry Date", () => {
@@ -186,3 +186,80 @@ describe("readInspectionCertificate", () => {
     });
   });
 });
+
+// What Tesseract actually returns for the Audi certificate: "№" comes back as "Ne", the make
+// runs into the model, and one VIN digit is misread. Kept verbatim — this is the shape of the
+// noise the reader has to survive.
+const NOISY_OCR = `
+УДОСТОВЕРЕНИЕ ЗА ТЕХНИЧЕСКА ИЗПРАВНОСТ НА ППС
+Протокол Ne: 43685703   Разрешение Ne: 1985 / 1   Начало: 17.08.2026 17:24
+(2) Рег. Ne EH9697KA    (1) Идент. Ne (VIN, рама) WAUZZZ4G4CN031801
+Марка / Модел: АУДИА 6 NE   Търговско наименование:
+Двигател Ne CDU026033   (4) Километропоказател: 369786 km
+Дата на първа регистрация: 05.09.2011 г.
+17.08.2027 г. включително
+`;
+
+describe("readInspectionCertificate — real OCR noise", () => {
+  it("reads the plate although '№' came back as 'Ne'", () => {
+    expect(readInspectionCertificate(NOISY_OCR).plate).toBe("EH9697KA");
+  });
+
+  it("keeps the misread '№' out of the model", () => {
+    expect(readInspectionCertificate(NOISY_OCR).model).toBe("A 6");
+  });
+
+  it("reads the date of first registration, and the year with it", () => {
+    expect(readInspectionCertificate(NOISY_OCR).firstRegistration).toEqual(
+      new Date("2011-09-05"),
+    );
+  });
+
+  it("reads a label through OCR errors in it", () => {
+    // "Дата на първа регистрация" with three characters wrong — well inside what a scan of a
+    // Cyrillic document produces, and still unambiguously that field.
+    const misread = "Дата ня първа регнстрацяя: 05.09.2011 г.";
+
+    expect(readInspectionCertificate(misread).firstRegistration).toEqual(new Date("2011-09-05"));
+  });
+
+  it("reads the Expiry Date from its own named field", () => {
+    const labelled = "(8) Подлежи на преглед до: 17.08.2027 г. включително";
+
+    expect(readInspectionCertificate(labelled).expiryDate).toEqual(new Date("2027-08-17"));
+  });
+
+  it("takes no value at all when no field names it", () => {
+    // Bare dates with nothing naming them. Guessing which is the Expiry Date — by taking the
+    // latest, or by looking for a statutory gap — is how a plausible wrong date gets saved.
+    const unlabelled = "... 05.09.2011 ... 17.08.2026 ... 17.08.2027 ...";
+    const scan = readInspectionCertificate(unlabelled);
+
+    expect(scan.expiryDate).toBeNull();
+    expect(scan.firstRegistration).toBeNull();
+  });
+
+  it("takes no plate when nothing names it, however plate-shaped the text looks", () => {
+    const unlabelled = "УДОСТОВЕРЕНИЕ\n... EH9697KA ... 43685703 ...";
+
+    expect(readInspectionCertificate(unlabelled).plate).toBeNull();
+  });
+
+  it("does not confuse the Inspection date with the Expiry Date", () => {
+    // A photo that cut off the bottom line leaves only the date the Inspection happened.
+    const cropped = "(3) Прегледът е извършен на: 17.08.2026 г.";
+    const scan = readInspectionCertificate(cropped);
+
+    expect(scan.inspectionDate).toEqual(new Date("2026-08-17"));
+    expect(scan.expiryDate).toBeNull();
+  });
+
+  it("normalises letters a VIN cannot contain", () => {
+    // I, O and Q are excluded from the VIN alphabet precisely because they look like 1 and 0,
+    // so any that OCR produces are certainly digits.
+    const withLookalikes = "Идент. Ne (VIN, рама) WAUZZZ4G4CNO318O1";
+
+    expect(readInspectionCertificate(withLookalikes).vin).toBe("WAUZZZ4G4CN031801");
+  });
+});
+
