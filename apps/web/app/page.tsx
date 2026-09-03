@@ -1,3 +1,4 @@
+import { DOCUMENT_SCAN_ENABLED } from "@glovebox/core";
 import Link from "next/link";
 
 import { GaugePanel } from "@/components/GaugePanel";
@@ -6,6 +7,7 @@ import { PlateBadge } from "@/components/PlateBadge";
 import { Shell } from "@/components/Shell";
 import { VehicleCard } from "@/components/VehicleCard";
 
+import { AddVehicleForm } from "./_components/AddVehicleForm";
 import { ServiceList } from "./_components/ServiceList";
 import { VehicleSwitcher } from "./_components/VehicleSwitcher";
 import { getDashboardData } from "./_lib/dashboard";
@@ -120,9 +122,15 @@ function EmptyHero() {
         Добре дошъл в Glovebox
       </h1>
       <p className="mb-6 mt-2 font-body text-muted">
-        Как предпочиташ да добавиш първата си кола?
+        {DOCUMENT_SCAN_ENABLED
+          ? "Как предпочиташ да добавиш първата си кола?"
+          : "Добави първата си кола, за да започнеш да следиш сроковете."}
       </p>
 
+      {!DOCUMENT_SCAN_ENABLED && <AddVehicleForm />}
+
+      {DOCUMENT_SCAN_ENABLED && (
+      <>
       <Link
         href="/vehicles/scan"
         className="group mb-3 flex items-start gap-4 rounded-3xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] p-6 transition hover:border-copper/70 hover:shadow-[0_14px_40px_-16px_rgba(196,149,76,0.6)]"
@@ -133,10 +141,10 @@ function EmptyHero() {
           </svg>
         </span>
         <span className="flex flex-col gap-1">
-          <span className="font-display text-lg font-semibold text-ivory">Автоматично</span>
+          <span className="font-display text-lg font-semibold text-ivory">Със снимка</span>
           <span className="font-body text-sm text-silver/70">
-            Снимай или прикачи удостоверението за технически преглед. Марката, моделът, номерът,
-            рамата и срокът се попълват сами.
+            Снимай удостоверението за технически преглед. Марката, моделът, номерът, рамата и
+            срокът се попълват сами.
           </span>
         </span>
       </Link>
@@ -157,6 +165,8 @@ function EmptyHero() {
           </span>
         </span>
       </Link>
+      </>
+      )}
     </section>
   );
 }

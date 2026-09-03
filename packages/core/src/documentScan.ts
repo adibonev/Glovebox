@@ -14,6 +14,21 @@
 
 import { normalizePlate } from "./registryCheck";
 
+/**
+ * Master switch for Document Scan. While `false` the apps offer only manual entry and show no
+ * way in at all; the `/vehicles/scan` page stays reachable by its address for testing.
+ *
+ * A User is offered exactly two ways to add a Vehicle: type it in, or **photograph the
+ * certificate through the guided camera**. Attaching a file is deliberately not one of them —
+ * an arbitrary photo from the gallery is the case recognition handles worst, and the guide
+ * frame is what makes the difference between a reading that works and one that half works.
+ *
+ * Same shape as {@link BILLING_ENABLED} — one flag, in `core`, read by web and mobile alike.
+ */
+// Typed as `boolean`, not the literal, so call sites read it as a real runtime flag rather than
+// dead code — and turning it off is a one-word change.
+export const DOCUMENT_SCAN_ENABLED: boolean = true;
+
 // --- The QR code on the certificate -----------------------------------------------------
 
 /** Host serving the official public check for an Inspection certificate. */
@@ -419,7 +434,7 @@ export function readPolicy(text: string): PolicyScan {
   }
 
   const dates = allDates(text);
-  const rawPlate = PLATE_LINE.exec(text)?.[1];
+  const rawPlate = PLATE_ANYWHERE.exec(text)?.[1];
 
   const policyVin = firstValidVin(text);
 
@@ -473,11 +488,16 @@ const NUMERO = "(?:№|N[eo2₂])";
  */
 const VIN_ALL = /(?<![A-Z0-9])([A-Z0-9]{17})(?![A-Z0-9])/g;
 
-/** Bulgarian plate: one or two letters, four digits, one or two letters. */
-const PLATE_SHAPE = "[A-ZА-Я]{1,2}\\s?\\d{4}\\s?[A-ZА-Я]{1,2}";
-const PLATE_LINE = new RegExp(`Рег\\.?\\s*${NUMERO}?\\s*:?\\s*(${PLATE_SHAPE})`, "iu");
-/** The same shape anywhere: nothing else on the certificate is written like a plate. */
-const PLATE_ANYWHERE = new RegExp(`(?<![A-ZА-Я0-9])(${PLATE_SHAPE})(?![A-ZА-Я0-9])`, "u");
+/**
+ * Bulgarian plate: one or two region letters, four digits, then **exactly two** letters.
+ *
+ * The trailing pair is not optional, and getting that wrong cost a real reading: with one
+ * letter allowed there, "CO1452CP" matched as "O1452C" — a fragment of the plate passing for
+ * the plate. No leading look-behind either, so a plate glued to the preceding label still
+ * starts in the right place.
+ */
+const PLATE_SHAPE = "[A-ZА-Я]{1,2}\\s?\\d{4}\\s?[A-ZА-Я]{2}";
+const PLATE_ANYWHERE = new RegExp(`(?<![0-9])(${PLATE_SHAPE})(?![A-ZА-Я0-9])`, "u");
 
 /**
  * The field names exactly as the certificate prints them.

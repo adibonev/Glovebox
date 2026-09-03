@@ -1,3 +1,4 @@
+import { DOCUMENT_SCAN_ENABLED } from "@glovebox/core";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -135,28 +136,35 @@ function CountPills({ counts }: { counts: GarageVehicle["counts"] }) {
 }
 
 /**
- * The two ways in: scan a document, or type it in. Scanning leads because one photo of the
- * Inspection certificate fills the Vehicle and its Expiry Date at once.
+ * The way in. Scanning a document sits behind {@link DOCUMENT_SCAN_ENABLED} and appears
+ * alongside manual entry only once it is switched on.
  */
 function AddVehicleButton() {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Link
-        href="/vehicles/scan"
-        className="group inline-flex items-center gap-2 rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70 hover:from-copper/20 hover:shadow-[0_10px_30px_-10px_rgba(196,149,76,0.6)]"
-      >
-        <span className="grid h-4 w-4 place-items-center rounded-full bg-copper/20 text-copper">
-          <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M2 5.5V3a1 1 0 0 1 1-1h2.5M14 5.5V3a1 1 0 0 0-1-1h-2.5M2 10.5V13a1 1 0 0 0 1 1h2.5M14 10.5V13a1 1 0 0 1-1 1h-2.5M4.5 8h7" />
-          </svg>
-        </span>
-        Сканирай документ
-      </Link>
+      {DOCUMENT_SCAN_ENABLED && (
+        <Link
+          href="/vehicles/scan"
+          className="group inline-flex items-center gap-2 rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70 hover:from-copper/20 hover:shadow-[0_10px_30px_-10px_rgba(196,149,76,0.6)]"
+        >
+          <span className="grid h-4 w-4 place-items-center rounded-full bg-copper/20 text-copper">
+            <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M2 5.5V3a1 1 0 0 1 1-1h2.5M14 5.5V3a1 1 0 0 0-1-1h-2.5M2 10.5V13a1 1 0 0 0 1 1h2.5M14 10.5V13a1 1 0 0 1-1 1h-2.5M4.5 8h7" />
+            </svg>
+          </span>
+          Сканирай документ
+        </Link>
+      )}
       <Link
         href="/vehicles/new"
-        className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 font-body text-sm text-silver/70 transition hover:border-white/25 hover:text-ivory"
+        className="group inline-flex items-center gap-2 rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70 hover:from-copper/20 hover:shadow-[0_10px_30px_-10px_rgba(196,149,76,0.6)]"
       >
-        Въведи ръчно
+        <span className="grid h-4 w-4 place-items-center rounded-full bg-copper/20 text-copper transition group-hover:rotate-90">
+          <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+            <path d="M8 3.5v9M3.5 8h9" />
+          </svg>
+        </span>
+        Добави автомобил
       </Link>
     </div>
   );

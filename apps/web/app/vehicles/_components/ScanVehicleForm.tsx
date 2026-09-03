@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { DocumentCamera } from "./DocumentCamera";
 import { addScannedVehicle } from "../../_lib/actions";
 import { NO_FORM_ERROR } from "../../_lib/formState";
 import { readDocument } from "../../_lib/scan";
@@ -83,24 +84,29 @@ function scanSummary(draft: InspectionDraft): string | null {
  */
 export function ScanVehicleForm() {
   const [draft, setDraft] = useState<InspectionDraft | null>(null);
+  const [recognised, setRecognised] = useState<string>("");
   const [reading, setReading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [camera, setCamera] = useState(false);
   const [state, submit] = useActionState(addScannedVehicle, NO_FORM_ERROR);
-  const cameraRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
 
-  async function handleFile(file: File) {
-    // Only blocks keeping the file, not reading it — recognition never uploads anything.
-    setScanError(documentTooLargeMessage(file));
+  /**
+   * Put a photo taken in-page into the file input, so it travels with the form if the User
+   * chooses to keep it. A DataTransfer is the only way to set `input.files` from script.
+   */
+  function attachFile(file: File) {
+    const input = uploadRef.current;
+    if (!input || typeof DataTransfer === "undefined") return;
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+  }
 
-    // A PDF has no pixels to recognise without a renderer. Rather than fail silently, open the
-    // form empty so the User can type the dates in and still keep the file.
-    if (file.type === "application/pdf") {
-      setDraft(BLANK_DRAFT);
-      setScanError("PDF файловете още не се разчитат. Въведи данните ръчно — файлът пак може да се запази.");
-      return;
-    }
+  async function handlePhoto(file: File) {
+    // Only blocks keeping the photo, not reading it — recognition never uploads anything.
+    setScanError(documentTooLargeMessage(file));
 
     setReading(true);
     setProgress(0);
@@ -108,6 +114,7 @@ export function ScanVehicleForm() {
       const input = await readDocument(file, setProgress);
       const scanned = scanInspectionDocument(input);
       setDraft(scanned);
+      setRecognised(input.text);
       setScanError(scanSummary(scanned));
     } catch {
       setDraft(BLANK_DRAFT);
@@ -122,58 +129,37 @@ export function ScanVehicleForm() {
   return (
     <form action={submit} className="flex flex-col gap-6">
       {/*
-        Two inputs, both named "document", so whichever the User reached for carries the file
-        through to the action — it reads them with getAll and takes the one that is not empty.
-        Kept mounted after the scan so the same file can still be saved as a Document.
+        Carries the captured photo to the action, so the User can keep it as a Document. Never
+        opened as a picker: the only way in is the guided camera, whose framing is what makes
+        the reading work.
       */}
-      <input
-        ref={cameraRef}
-        type="file"
-        name="document"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void handleFile(file);
-        }}
-      />
-      <input
-        ref={uploadRef}
-        type="file"
-        name="document"
-        accept="image/*,application/pdf"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void handleFile(file);
-        }}
-      />
+      <input ref={uploadRef} type="file" name="document" accept="image/*" className="hidden" />
 
-      {!draft && (
+      {camera && (
+        <DocumentCamera
+          onCapture={(file) => {
+            setCamera(false);
+            attachFile(file);
+            void handlePhoto(file);
+          }}
+          onCancel={() => setCamera(false)}
+        />
+      )}
+
+      {!draft && !camera && (
         <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-md">
           <p className="font-body text-silver/75">
             Дай <strong className="text-ivory">удостоверението за технически преглед</strong> —
             оттам излизат и колата, и срокът на прегледа.
           </p>
-          <div className="mx-auto flex flex-wrap justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => cameraRef.current?.click()}
-              disabled={reading}
-              className="rounded-xl bg-copper px-5 py-2.5 font-body font-semibold text-ink transition hover:bg-copper/90 disabled:opacity-60"
-            >
-              {reading ? "Разчитам…" : "Снимай документа"}
-            </button>
-            <button
-              type="button"
-              onClick={() => uploadRef.current?.click()}
-              disabled={reading}
-              className="rounded-xl border border-white/15 px-5 py-2.5 font-body font-semibold text-silver/80 transition hover:border-white/30 hover:text-ivory disabled:opacity-60"
-            >
-              Прикачи файл
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setCamera(true)}
+            disabled={reading}
+            className="mx-auto rounded-xl bg-copper px-5 py-2.5 font-body font-semibold text-ink transition hover:bg-copper/90 disabled:opacity-60"
+          >
+            {reading ? "Разчитам…" : "Снимай документа"}
+          </button>
 
           {reading && (
             <div className="mx-auto w-full max-w-xs">
@@ -307,11 +293,28 @@ export function ScanVehicleForm() {
             onClick={() => {
               setDraft(null);
               setScanError(null);
+              setRecognised("");
             }}
             className="font-body text-sm text-muted transition hover:text-ivory"
           >
             Сканирай друг документ
           </button>
+
+          {/*
+            The recognised text, on request. When a field comes back empty the cause is almost
+            always visible here — a mangled label, a column that bled into the next — and it is
+            the difference between fixing the reader and guessing at it.
+          */}
+          {recognised && (
+            <details className="rounded-xl border border-white/10 bg-ink/40 px-4 py-3">
+              <summary className="cursor-pointer font-body text-[12px] text-muted transition hover:text-ivory">
+                Какво разчетох от документа
+              </summary>
+              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-silver/60">
+                {recognised}
+              </pre>
+            </details>
+          )}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { DOCUMENT_SCAN_ENABLED } from "@glovebox/core";
 import Link from "next/link";
 
 import type { VehicleSummary } from "../_lib/dashboard";
@@ -42,7 +43,7 @@ export function VehicleSwitcher({
         })}
 
       <Link
-        href="/vehicles/scan"
+        href={DOCUMENT_SCAN_ENABLED ? "/vehicles/scan" : "/vehicles/new"}
         className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-white/20 px-3.5 py-1.5 font-body text-[13px] font-medium text-muted transition hover:border-copper/50 hover:text-copper"
       >
         <span aria-hidden>+</span>

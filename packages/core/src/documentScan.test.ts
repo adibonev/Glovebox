@@ -263,6 +263,12 @@ describe("readInspectionCertificate — real OCR noise", () => {
     expect(scan.firstRegistration).toBeNull();
   });
 
+  it("reads a whole plate, not a shorter run inside it", () => {
+    // Real failure: "CO1452CP" came back as "O1452C". A Bulgarian plate ends in exactly two
+    // letters, so accepting one there let a fragment of the plate pass for the plate itself.
+    expect(readInspectionCertificate("(2) Рег. № CO1452CP\n").plate).toBe("CO1452CP");
+  });
+
   it("identifies the plate by its format, which nothing else on the certificate shares", () => {
     // Unlike a date, a plate needs no label to be identifiable: one-or-two letters, four
     // digits, one-or-two letters matches exactly one string on this form. The protocol number

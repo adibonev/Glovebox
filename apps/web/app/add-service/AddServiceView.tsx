@@ -1,6 +1,6 @@
 "use client";
 
-import { isExpiringServiceType, readPolicy, scanInspectionDocument } from "@glovebox/core";
+import { isExpiringServiceType } from "@glovebox/core";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -9,14 +9,7 @@ import { ServiceTypeIcon } from "../_components/ServiceTypeIcon";
 import { addService } from "../_lib/actions";
 import { NO_FORM_ERROR } from "../_lib/formState";
 import { SERVICE_TYPE_LABELS } from "../_lib/labels";
-import { readDocument } from "../_lib/scan";
 import { documentTooLargeMessage } from "../_lib/upload";
-
-/** Service Types whose document we know how to read. Everything else is attached as-is. */
-const READABLE_TYPES = new Set(["inspection", "civil_liability", "casco"]);
-
-/** `YYYY-MM-DD` for a date input. */
-const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
 // rta.government.bg gates the ГТП check behind a captcha, so we can't auto-fetch it (and shouldn't —
 // ToS). The button opens the official check; the User reads the date there and confirms it here.
@@ -32,47 +25,9 @@ export function AddServiceView({ vehicleId, plate = null }: { vehicleId: string;
   // A file over the Server Action body limit is refused here — sending it would blow up the
   // whole submit before any of our code runs, and the Service Record would be lost silently.
   const [fileError, setFileError] = useState<string | null>(null);
-  const [reading, setReading] = useState(false);
-  const [scanNote, setScanNote] = useState<string | null>(null);
   const [state, submit] = useActionState(addService, NO_FORM_ERROR);
   const expiring = isExpiringServiceType(type);
   const error = fileError ?? state.error;
-
-  /**
-   * Read an attached document and fill the date (and the amount, on a policy) from it.
-   *
-   * Recognition runs on this device — attaching and reading are the same gesture, but nothing
-   * is uploaded until the form is submitted. Every filled value stays editable.
-   */
-  async function fillFromDocument(file: File) {
-    if (!READABLE_TYPES.has(type) || !file.type.startsWith("image/")) return;
-
-    setReading(true);
-    setScanNote(null);
-    try {
-      const input = await readDocument(file);
-      const expiry =
-        type === "inspection"
-          ? scanInspectionDocument(input).serviceRecord?.expiryDate ?? null
-          : readPolicy(input.text).expiryDate;
-
-      if (expiry) setExpiryDate(isoDay(expiry));
-
-      // Only a policy states an amount due; a certificate never does.
-      const due = type === "inspection" ? null : readPolicy(input.text).cost;
-      if (due != null) setCost(String(due));
-
-      setScanNote(
-        expiry
-          ? "Попълних от документа. Провери стойностите, преди да запазиш."
-          : "Не разчетох дата от документа — попълни я ръчно. Файлът пак ще се запази.",
-      );
-    } catch {
-      setScanNote("Разчитането не сработи. Попълни ръчно — файлът пак ще се запази.");
-    } finally {
-      setReading(false);
-    }
-  }
 
   return (
     <form action={submit} className="flex flex-col gap-7">
@@ -165,21 +120,9 @@ export function AddServiceView({ vehicleId, plate = null }: { vehicleId: string;
           type="file"
           name="document"
           accept="application/pdf,image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            setFileError(documentTooLargeMessage(file));
-            if (file) void fillFromDocument(file);
-          }}
+          onChange={(e) => setFileError(documentTooLargeMessage(e.target.files?.[0]))}
           className="block w-full cursor-pointer rounded-xl border border-white/10 bg-ink/60 py-2 pl-2 pr-4 font-body text-sm text-muted outline-none transition file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-emerald file:px-4 file:py-2 file:font-body file:text-sm file:font-semibold file:text-ivory hover:file:bg-emerald/90 focus:border-copper/60"
         />
-        {READABLE_TYPES.has(type) && (
-          <span className="font-body text-[12px] text-silver/55">
-            {reading
-              ? "Разчитам документа на твоето устройство…"
-              : (scanNote ??
-                "Прикачи снимка на документа и ще попълня датата вместо теб.")}
-          </span>
-        )}
       </label>
 
       <label className="flex flex-col gap-2">
