@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { certificateCheckUrl, parseCertificateQr, readInspectionCertificate } from "./documentScan";
+import {
+  certificateCheckUrl,
+  parseCertificateQr,
+  readInspectionCertificate,
+  vinChecksumValid,
+} from "./documentScan";
 
 // The OCR text of a real Roadworthiness Inspection certificate (Audi A6, 2026). Field order
 // follows the printed layout, which is fixed by regulation.
@@ -36,6 +41,25 @@ const LAND_ROVER_CERTIFICATE = `
 (3) Прегледът е извършен на: 27.10.2022 г.
 (8) Подлежи на преглед до: 27.10.2023 г. включително
 `;
+
+describe("vinChecksumValid", () => {
+  it("accepts a VIN whose check digit agrees with the rest of it", () => {
+    expect(vinChecksumValid("WAUZZZ4G4CN031801")).toBe(true);
+  });
+
+  it("catches the misreading that looks entirely convincing", () => {
+    // The same VIN as scanned off a photo: OCR turned two 4s into the letter A. Nothing about
+    // the result looks wrong to a person skimming a confirmation screen — the check digit is
+    // the only thing that notices.
+    expect(vinChecksumValid("WAUZZZAGACN031801")).toBe(false);
+  });
+
+  it("rejects anything that is not shaped like a VIN at all", () => {
+    expect(vinChecksumValid("WAUZZZ4G4CN03180")).toBe(false);
+    expect(vinChecksumValid("WAUZZZ4G4CN03180I")).toBe(false);
+    expect(vinChecksumValid("")).toBe(false);
+  });
+});
 
 describe("parseCertificateQr", () => {
   it("reads the certificate number out of the official check link", () => {

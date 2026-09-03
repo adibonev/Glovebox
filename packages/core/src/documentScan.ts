@@ -496,6 +496,39 @@ const FIELDS = {
   expiryDate: "Подлежи на преглед до",
 } as const;
 
+// ISO 3779: each character has a value, each position a weight, and the ninth character is the
+// remainder of the weighted sum modulo 11 ("X" for 10).
+const VIN_VALUES: Record<string, number> = {
+  A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, J: 1, K: 2, L: 3, M: 4,
+  N: 5, P: 7, R: 9, S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
+};
+const VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
+
+/**
+ * Whether a VIN's own check digit agrees with the rest of it.
+ *
+ * Worth checking because OCR reliably confuses 4 with A, 5 with S and 8 with B, and a VIN with
+ * one character wrong looks exactly as convincing as a correct one. A failure is **not** proof
+ * the reading is wrong — plenty of European VINs carry no meaningful check digit — but it is
+ * good reason to ask the User to compare it against the document.
+ *
+ * Deliberately no auto-repair: substituting the confusable glyphs on a real misread VIN produced
+ * *two* candidates that both satisfy the checksum, so picking one would be a coin toss.
+ */
+export function vinChecksumValid(vin: string): boolean {
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 17; i += 1) {
+    const ch = vin.charAt(i);
+    const value = VIN_VALUES[ch] ?? Number(ch);
+    sum += value * (VIN_WEIGHTS[i] ?? 0);
+  }
+
+  const remainder = sum % 11;
+  return (remainder === 10 ? "X" : String(remainder)) === vin.charAt(8);
+}
+
 /** Repair an OCR'd VIN: I, O and Q cannot occur in one, so they are 1, 0 and 0. */
 function repairVin(raw: string): string | null {
   const fixed = raw.replace(/I/g, "1").replace(/[OQ]/g, "0");

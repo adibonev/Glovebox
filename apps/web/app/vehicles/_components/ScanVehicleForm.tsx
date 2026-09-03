@@ -1,6 +1,11 @@
 "use client";
 
-import { missingVehicleFields, scanInspectionDocument, type InspectionDraft } from "@glovebox/core";
+import {
+  missingVehicleFields,
+  scanInspectionDocument,
+  vinChecksumValid,
+  type InspectionDraft,
+} from "@glovebox/core";
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -229,13 +234,26 @@ export function ScanVehicleForm() {
             />
           </div>
 
-          <input
-            name="vin"
-            maxLength={17}
-            defaultValue={draft.vehicle.vin ?? ""}
-            placeholder="VIN / рама"
-            className={`${fieldClass} uppercase placeholder:normal-case`}
-          />
+          <div className="flex flex-col gap-2">
+            <input
+              name="vin"
+              maxLength={17}
+              defaultValue={draft.vehicle.vin ?? ""}
+              placeholder="VIN / рама"
+              className={`${fieldClass} uppercase placeholder:normal-case`}
+            />
+            {/*
+              A VIN carries its own check digit, and OCR reliably turns 4 into A, 5 into S and
+              8 into B. One wrong character reads as convincingly as a correct one, so this is
+              the only place a person gets told to look twice.
+            */}
+            {draft.vehicle.vin && !vinChecksumValid(draft.vehicle.vin) && (
+              <span className="font-body text-[12px] text-expiring">
+                Сверѝ рамата знак по знак — контролната ѝ цифра не излиза. Разчитането обърква
+                4 с A, 5 с S и 8 с B.
+              </span>
+            )}
+          </div>
 
           <BodyTypePicker />
 
