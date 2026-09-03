@@ -51,9 +51,9 @@ export default async function DashboardPage({
                   <span className="font-body text-sm text-muted">{vehicle.year}</span>
                 )}
               </div>
-              {vehicles.length > 1 && (
-                <VehicleSwitcher vehicles={vehicles} activeId={vehicle.id} />
-              )}
+              {/* Always rendered: it also carries the "add another Vehicle" chip. */}
+              <VehicleSwitcher vehicles={vehicles} activeId={vehicle.id} />
+
               <VehicleCard bodyType={vehicle.bodyType} alt={vehicle.name} />
             </div>
 
