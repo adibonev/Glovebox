@@ -129,6 +129,103 @@ export async function addVehicle(formData: FormData): Promise<void> {
   redirect(data ? `/?v=${data.id}` : "/");
 }
 
+/**
+ * Create a Vehicle and its Roadworthiness Inspection from a **confirmed** Document Scan.
+ *
+ * The scan itself happened in the browser (`_lib/scan.ts`) and the User has already corrected
+ * every field on screen — nothing here trusts the recognition. Both rows are written in one
+ * submit because one photographed certificate describes both: the Vehicle and the Inspection
+ * that expires.
+ */
+export async function addScannedVehicle(_prev: FormState, formData: FormData): Promise<FormState> {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const brand = String(formData.get("brand") ?? "").trim();
+  const model = String(formData.get("model") ?? "").trim();
+  if (!brand || !model) return { error: "Марката и моделът са задължителни." };
+
+  // The form offers two ways in — camera and file picker — as two inputs sharing this name.
+  // Only the one the User actually reached for holds a file.
+  const file =
+    formData.getAll("document").find((entry): entry is File => entry instanceof File && entry.size > 0) ??
+    null;
+  const tooLarge = file ? documentTooLargeMessage(file) : null;
+  if (tooLarge) return { error: tooLarge };
+
+  // Quota gate: Free is capped at 1 Vehicle → Paywall (ADR-0003).
+  const plan = await getPlan(supabase, userId);
+  if (!canAddVehicle(plan, await countVehicles(supabase, userId))) {
+    redirect("/paywall?reason=vehicle");
+  }
+
+  const yearRaw = String(formData.get("year") ?? "").trim();
+  const { data: vehicle, error: vehicleError } = await supabase
+    .from("cars")
+    .insert({
+      user_id: userId,
+      brand,
+      model,
+      year: yearRaw ? Number(yearRaw) : null,
+      license_plate: String(formData.get("plate") ?? "").trim() || null,
+      vin: String(formData.get("vin") ?? "").trim().toUpperCase() || null,
+      body_type: readBodyType(formData),
+    })
+    .select("id")
+    .single();
+
+  if (vehicleError || !vehicle) {
+    Sentry.captureException(vehicleError ?? new Error("addScannedVehicle: no vehicle row"));
+    return { error: "Колата не беше записана. Провери връзката и опитай пак." };
+  }
+
+  // The Inspection is optional: a certificate whose Expiry Date could not be read still gives
+  // a usable Vehicle, and the User adds the date from the "what's missing" step.
+  const expiryDate = String(formData.get("expiryDate") ?? "").trim();
+  if (expiryDate) {
+    const mileageRaw = String(formData.get("mileage") ?? "").trim();
+    const { data: service, error: serviceError } = await supabase
+      .from("services")
+      .insert({
+        car_id: vehicle.id,
+        user_id: userId,
+        service_type: "inspection",
+        expiry_date: expiryDate,
+        mileage: mileageRaw ? Number(mileageRaw) : null,
+        // The official public check read off the document's QR code — opened by the User, never
+        // fetched by us (see the migration adding this column).
+        check_url: String(formData.get("checkUrl") ?? "").trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (serviceError || !service) {
+      // The Vehicle is already saved, so this is a partial success, not a failure — say so
+      // rather than sending the User back to rescan a document that worked.
+      Sentry.captureException(serviceError ?? new Error("addScannedVehicle: no service row"));
+      return { error: "Колата е записана, но прегледът не беше. Добави го ръчно." };
+    }
+
+    // The photo is kept only when the User asked for it on the confirmation screen. Scanning
+    // and storing are separate decisions: the scan happened on their device, storing it here
+    // puts a document full of personal data in our bucket.
+    const keepDocument = formData.get("saveDocument") === "on";
+    if (keepDocument && file) {
+      await storeDocument(supabase, authUser.id, userId, service.id, file);
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/vehicles");
+  revalidatePath("/documents");
+  redirect(`/?v=${vehicle.id}`);
+}
+
 export async function updateVehicle(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const userId = await resolveUserId(supabase);

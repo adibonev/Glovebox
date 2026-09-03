@@ -318,6 +318,7 @@ export type Database = {
       services: {
         Row: {
           car_id: number
+          check_url: string | null
           cost: number | null
           created_at: string | null
           expiry_date: string | null
@@ -338,6 +339,7 @@ export type Database = {
         }
         Insert: {
           car_id: number
+          check_url?: string | null
           cost?: number | null
           created_at?: string | null
           expiry_date?: string | null
@@ -358,6 +360,7 @@ export type Database = {
         }
         Update: {
           car_id?: number
+          check_url?: string | null
           cost?: number | null
           created_at?: string | null
           expiry_date?: string | null
