@@ -288,6 +288,23 @@ function latinizeModel(model: string): string {
     .join(" ");
 }
 
+/**
+ * The catalogue entry `rest` begins with, allowing for OCR errors — "АУU А 6" is an Audi.
+ *
+ * Matching against a closed list of makes is a lookup, not a guess: either the reading is close
+ * to a real make or it is close to none, and the tolerance stays under a third of the name so
+ * two different makes can never be confused for one another.
+ */
+function matchMake(rest: string): string | undefined {
+  const exact = MAKES_LONGEST_FIRST.find((name) => rest.startsWith(name));
+  if (exact) return exact;
+
+  return MAKES_LONGEST_FIRST.find((name) => {
+    const cap = Math.floor(name.length / 3);
+    return cap > 0 && editDistance(name, rest.slice(0, name.length), cap) <= cap;
+  });
+}
+
 /** Split "АУДИ А 6" into a canonical make and the remaining model text. */
 function splitMakeAndModel(raw: string): { brand: string | null; model: string | null } {
   let rest = raw.replace(/\s+/g, " ").trim().toUpperCase();
@@ -300,7 +317,7 @@ function splitMakeAndModel(raw: string): { brand: string | null; model: string |
   // the model and hands back "АУДИА 6" for "АУДИ А 6". Longest-first ordering stops a longer
   // make being swallowed by a shorter one that prefixes it.
   for (;;) {
-    const hit = MAKES_LONGEST_FIRST.find((name) => rest.startsWith(name));
+    const hit = matchMake(rest);
     if (!hit) break;
     brand ??= MAKES[hit] ?? null;
     rest = rest.slice(hit.length).trim();
@@ -404,9 +421,11 @@ export function readPolicy(text: string): PolicyScan {
   const dates = allDates(text);
   const rawPlate = PLATE_LINE.exec(text)?.[1];
 
+  const policyVin = firstValidVin(text);
+
   return {
     plate: rawPlate ? normalizePlate(rawPlate) || null : null,
-    vin: VIN.exec(text)?.[1] ?? null,
+    vin: policyVin ? repairVin(policyVin) : null,
     startDate: firstDateMatch(text, COVER_START),
     expiryDate: firstDateMatch(text, COVER_END) ?? coverPairEnd(dates),
     cost: readTotalDue(text),
@@ -452,7 +471,7 @@ const NUMERO = "(?:№|N[eo2₂])";
  * A VIN is 17 characters. Matched permissively and repaired afterwards: the VIN alphabet
  * excludes I, O and Q *because* they look like 1 and 0, so any OCR hands back are really digits.
  */
-const VIN = /(?<![A-Z0-9])([A-Z0-9]{17})(?![A-Z0-9])/;
+const VIN_ALL = /(?<![A-Z0-9])([A-Z0-9]{17})(?![A-Z0-9])/g;
 
 /** Bulgarian plate: one or two letters, four digits, one or two letters. */
 const PLATE_SHAPE = "[A-ZА-Я]{1,2}\\s?\\d{4}\\s?[A-ZА-Я]{1,2}";
@@ -484,6 +503,19 @@ function repairVin(raw: string): string | null {
 }
 
 /**
+ * The first seventeen-character run that survives VIN repair. Scanning all candidates matters
+ * when the page was recognised twice: the Bulgarian pass leaves a Cyrillic-contaminated version
+ * that cannot be a VIN, and the English pass leaves the real one.
+ */
+function firstValidVin(text: string): string | undefined {
+  for (const match of text.matchAll(VIN_ALL)) {
+    const candidate = match[1];
+    if (candidate && repairVin(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+/**
  * Where the make/model value ends. The certificate prints in **two columns**, so the line that
  * carries the make also carries whatever sits to its right ("АУДИ А 6    Търговско наименование:").
  * The column gap is a run of spaces; when OCR collapses it, the neighbouring label still marks
@@ -512,13 +544,15 @@ export function readInspectionCertificate(text: string): InspectionScan {
 
   const source = restoreNumero(text);
 
-  // Every value must both follow its named field *and* look like what that field holds. A label
-  // matched in the wrong place therefore yields nothing rather than something wrong.
-  const plateNear = valueInField(source, FIELDS.plate, 30);
-  const plateShape = plateNear ? PLATE_ANYWHERE.exec(plateNear)?.[1] : undefined;
-
-  const vinNear = valueInField(source, FIELDS.vin, 40);
-  const rawVin = vinNear ? VIN.exec(vinNear)?.[1] : undefined;
+  // The VIN and the plate are found by their format rather than by their label, and this is not
+  // the same liberty as picking a date out of the air. A date is meaningless without the field
+  // naming it — four of them sit on this certificate. A VIN is seventeen characters from an
+  // alphabet chosen to be unambiguous, and a plate is one-or-two letters, four digits,
+  // one-or-two letters: on this form exactly one string matches each, so the format *is* the
+  // identification. It also survives the apps recognising the page twice, where the legible
+  // copy sits in the English pass and its Bulgarian label in the other.
+  const plateShape = PLATE_ANYWHERE.exec(source)?.[1];
+  const rawVin = firstValidVin(source);
 
   const rawModel = valueInField(source, FIELDS.model, 60);
 

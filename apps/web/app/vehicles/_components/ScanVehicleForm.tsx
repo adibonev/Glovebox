@@ -1,6 +1,6 @@
 "use client";
 
-import { scanInspectionDocument, type InspectionDraft } from "@glovebox/core";
+import { missingVehicleFields, scanInspectionDocument, type InspectionDraft } from "@glovebox/core";
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -41,6 +41,33 @@ const BLANK_DRAFT: InspectionDraft = {
   certificateUrl: null,
 };
 
+/** Bulgarian names for the fields a scan can leave empty, in the order they appear. */
+const FIELD_NAMES: Record<string, string> = {
+  brand: "марка",
+  model: "модел",
+  year: "година",
+  plate: "рег. номер",
+  vin: "рама",
+};
+
+/**
+ * What to tell the User after a scan. Naming the fields that came back empty is far more use
+ * than "не успях да разчета документа" over a form that is half filled in — and when the Expiry
+ * Date is the missing one, the cause is nearly always the same: the last line of the
+ * certificate sat outside the frame.
+ */
+function scanSummary(draft: InspectionDraft): string | null {
+  const missing = missingVehicleFields(draft.vehicle).map((field) => FIELD_NAMES[field] ?? field);
+  if (!draft.serviceRecord) missing.unshift("срокът на прегледа");
+  if (missing.length === 0) return null;
+
+  const tail = draft.serviceRecord
+    ? ""
+    : " Срокът е на последния ред на удостоверението — ако не е влязъл в кадъра, снимай пак с целия долен ред.";
+
+  return `Разчетох част от данните. Допълни ръчно: ${missing.join(", ")}.${tail}`;
+}
+
 /**
  * Step one of the automatic onboarding: photograph or attach the Roadworthiness Inspection
  * certificate, confirm what was read, save the Vehicle and the Inspection in one go.
@@ -76,11 +103,7 @@ export function ScanVehicleForm() {
       const input = await readDocument(file, setProgress);
       const scanned = scanInspectionDocument(input);
       setDraft(scanned);
-      if (!scanned.serviceRecord && !scanned.vehicle.plate) {
-        setScanError(
-          "Не успях да разчета документа. Провери дали е удостоверението за технически преглед, или въведи данните ръчно.",
-        );
-      }
+      setScanError(scanSummary(scanned));
     } catch {
       setDraft(BLANK_DRAFT);
       setScanError("Разчитането не сработи. Опитай пак с по-ясна снимка или въведи ръчно.");

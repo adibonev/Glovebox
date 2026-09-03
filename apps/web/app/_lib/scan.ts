@@ -15,10 +15,14 @@
 import type { DocumentScanInput } from "@glovebox/core";
 
 /**
- * Bulgarian for the labels, English for the Latin fields. The VIN and the plate are Latin
- * characters printed among Cyrillic text, and the English model reads those far better.
+ * Two separate passes, not one combined "bul+eng".
+ *
+ * Loading both models at once lets them compete *inside a single word*, and the result is
+ * mixed-script nonsense — "АУДИ" came back as "АУU". Run apart, each pass stays internally
+ * consistent: Bulgarian reads the field names and the dates, English reads the VIN and the
+ * plate, which are Latin characters sitting in a Cyrillic document.
  */
-const LANGUAGES = "bul+eng";
+const PASSES = ["bul", "eng"] as const;
 
 /** How far along the recognition is, for a progress bar. `0..1`. */
 export type ScanProgress = (fraction: number) => void;
@@ -112,24 +116,35 @@ async function prepareImage(file: File): Promise<Blob> {
   }
 }
 
-/** Printed text read off the image by Tesseract, running in a Web Worker on this device. */
+/**
+ * Printed text read off the image by Tesseract, running in a Web Worker on this device — once
+ * per language. The two results are returned together: the reader looks up field names in the
+ * Bulgarian text and picks the VIN and plate out of the English one.
+ */
 async function recognizeText(file: File, onProgress?: ScanProgress): Promise<string> {
   // Imported lazily: the engine and its language data are several megabytes and must not
   // land in the initial bundle of a page most Users never scan from.
   const { createWorker } = await import("tesseract.js");
+  const image = await prepareImage(file);
+  const results: string[] = [];
 
-  const worker = await createWorker(LANGUAGES, undefined, {
-    logger: ({ progress, status }) => {
-      if (status === "recognizing text") onProgress?.(progress);
-    },
-  });
-
-  try {
-    const { data } = await worker.recognize(await prepareImage(file));
-    return data.text;
-  } finally {
-    await worker.terminate();
+  for (const [index, language] of PASSES.entries()) {
+    const worker = await createWorker(language, undefined, {
+      logger: ({ progress, status }) => {
+        if (status === "recognizing text") {
+          onProgress?.((index + progress) / PASSES.length);
+        }
+      },
+    });
+    try {
+      const { data } = await worker.recognize(image);
+      results.push(data.text);
+    } finally {
+      await worker.terminate();
+    }
   }
+
+  return results.join("\n");
 }
 
 /**

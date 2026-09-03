@@ -239,10 +239,13 @@ describe("readInspectionCertificate — real OCR noise", () => {
     expect(scan.firstRegistration).toBeNull();
   });
 
-  it("takes no plate when nothing names it, however plate-shaped the text looks", () => {
-    const unlabelled = "УДОСТОВЕРЕНИЕ\n... EH9697KA ... 43685703 ...";
+  it("identifies the plate by its format, which nothing else on the certificate shares", () => {
+    // Unlike a date, a plate needs no label to be identifiable: one-or-two letters, four
+    // digits, one-or-two letters matches exactly one string on this form. The protocol number
+    // and the engine number sit right beside it and neither is mistaken for it.
+    const other = "УДОСТОВЕРЕНИЕ\n... 43685703 ... CDU026033 ... EH9697KA ...";
 
-    expect(readInspectionCertificate(unlabelled).plate).toBeNull();
+    expect(readInspectionCertificate(other).plate).toBe("EH9697KA");
   });
 
   it("does not confuse the Inspection date with the Expiry Date", () => {
@@ -252,6 +255,36 @@ describe("readInspectionCertificate — real OCR noise", () => {
 
     expect(scan.inspectionDate).toEqual(new Date("2026-08-17"));
     expect(scan.expiryDate).toBeNull();
+  });
+
+  it("takes the VIN and plate from the English pass, where they are legible", () => {
+    // The apps recognise the page twice and hand both results in. The Bulgarian pass reads the
+    // field names but mangles Latin runs; the English pass reads those cleanly. A VIN and a
+    // plate each have a format nothing else on the certificate shares, so the right one is
+    // identifiable wherever it sits — unlike a date, which needs its label to mean anything.
+    const twoPasses = `
+      (2) Рег. № ЕН9б97КА    (1) Идент. № (VIN, рама) МАU2ZZ4С4СN0З18О1
+      Дата на първа регистрация: 05.09.2011 г.
+      (2) Per. No EH9697KA   (1) MgeHT. No (VIN, pama) WAUZZZ4G4CN031801
+    `;
+    const scan = readInspectionCertificate(twoPasses);
+
+    expect(scan.vin).toBe("WAUZZZ4G4CN031801");
+    expect(scan.plate).toBe("EH9697KA");
+  });
+
+  it("recognises a make with a character misread, against the known catalogue", () => {
+    // Matching against a closed list is a lookup, not a guess. The tolerance stays under a
+    // third of the name, so a badly mangled reading finds nothing rather than the wrong make.
+    const scan = readInspectionCertificate("Марка / Модел: АУДЙ А 6\n");
+
+    expect(scan.brand).toBe("Audi");
+  });
+
+  it("does not invent a make that is nothing like any in the catalogue", () => {
+    expect(readInspectionCertificate("Марка / Модел: ЖЪЛТА ПОДВОДНИЦА\n").brand).toBeNull();
+    // "АУU" — half the name gone. Close enough to guess at, not close enough to know.
+    expect(readInspectionCertificate("Марка / Модел: АУU А 6\n").brand).toBeNull();
   });
 
   it("normalises letters a VIN cannot contain", () => {
