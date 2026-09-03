@@ -118,9 +118,7 @@ describe("readInspectionCertificate", () => {
     expect(scan.plate).toBe("CO1452CP");
     expect(scan.vin).toBe("SALLNAAE82A202202");
     expect(scan.brand).toBe("Land Rover");
-    // Left exactly as printed: "ФРИЛАНДЕР" carries Cyrillic letters with no Latin look-alike,
-    // so transliterating it would produce a mangled half-Latin word. The User edits it instead.
-    expect(scan.model).toBe("ФРИЛАНДЕР 2");
+    expect(scan.model).toBe("Freelander 2");
     expect(scan.expiryDate).toEqual(new Date("2023-10-27"));
     expect(scan.firstRegistration).toEqual(new Date("2002-09-16"));
     expect(scan.mileageKm).toBe(15631);
@@ -135,6 +133,42 @@ describe("readInspectionCertificate", () => {
     `;
 
     expect(readInspectionCertificate(mangled).expiryDate).toEqual(new Date("2027-08-17"));
+  });
+
+  it("refuses to pass off the Inspection date as the Expiry Date", () => {
+    // Real failure: a photo that cut off the bottom line left only the date the Inspection was
+    // carried out. Falling back to "the latest date" then filled 17.08.2026 — plausible, wrong,
+    // and a year early. Better to report nothing and let the User type it.
+    const bottomCropped = `
+      УДОСТОВЕРЕНИЕ ЗА ТЕХНИЧЕСКА ИЗПРАВНОСТ НА ППС
+      Дата на първа регистрация: 05.09.2011 г.
+      (3) Прегледът е извършен на: 17.08.2026 г.
+    `;
+
+    expect(readInspectionCertificate(bottomCropped).expiryDate).toBeNull();
+  });
+
+  it("reads the make even when OCR runs it into the model", () => {
+    // Real OCR output: "АУДИ А 6" came back as "АУДИА 6", and the neighbouring column bled in.
+    const noisy = "Марка / Модел: АУДИА 6 А (VIN, REL WA | 'AK\n";
+    const scan = readInspectionCertificate(noisy);
+
+    expect(scan.brand).toBe("Audi");
+    expect(scan.model).not.toContain("VIN");
+  });
+
+  it("always returns the model in Latin letters, never Cyrillic", () => {
+    const scan = readInspectionCertificate("Марка / Модел: ЛЕНД РОВЕР ФРИЛАНДЕР 2\n");
+
+    expect(scan.brand).toBe("Land Rover");
+    expect(scan.model).toBe("Freelander 2");
+  });
+
+  it("transliterates a model it does not recognise rather than leaving it Cyrillic", () => {
+    const scan = readInspectionCertificate("Марка / Модел: ШКОДА КОДИЯК\n");
+
+    expect(scan.brand).toBe("Škoda");
+    expect(scan.model).toBe("KODIYAK");
   });
 
   it("returns nulls rather than throwing when the text is not a certificate at all", () => {

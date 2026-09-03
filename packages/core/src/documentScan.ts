@@ -144,17 +144,57 @@ const LOOKALIKE: Record<string, string> = {
   О: "O", Р: "P", С: "C", Т: "T", У: "Y", Х: "X",
 };
 
+/** Full Bulgarian → Latin transliteration, for model names with no Latin look-alike. */
+const TRANSLITERATE: Record<string, string> = {
+  А: "A", Б: "B", В: "V", Г: "G", Д: "D", Е: "E", Ж: "ZH", З: "Z", И: "I",
+  Й: "Y", К: "K", Л: "L", М: "M", Н: "N", О: "O", П: "P", Р: "R", С: "S",
+  Т: "T", У: "U", Ф: "F", Х: "H", Ц: "TS", Ч: "CH", Ш: "SH", Щ: "SHT",
+  Ъ: "A", Ь: "Y", Ю: "YU", Я: "YA",
+};
+
 /**
- * A model name in Latin **only when the whole string is already Latin look-alikes and digits**
- * ("А 6" → "A 6"). Anything with a letter that has no Latin twin ("ФРИЛАНДЕР") is left exactly
- * as printed — half-transliterating it would produce a mangled word nobody recognises.
+ * Models whose Bulgarian spelling transliterates to something nobody would recognise.
+ * Deliberately short — this is the table to grow from a real make/model catalogue.
+ */
+const MODEL_SPELLINGS: Record<string, string> = {
+  ФРИЛАНДЕР: "Freelander",
+  ДИСКЪВЪРИ: "Discovery",
+  ОКТАВИЯ: "Octavia",
+  ФАБИЯ: "Fabia",
+  СУПЕРБ: "Superb",
+  ПАСАТ: "Passat",
+  ГОЛФ: "Golf",
+  ТУАРЕГ: "Touareg",
+  КОРСА: "Corsa",
+  АСТРА: "Astra",
+  ФОКУС: "Focus",
+  ФИЕСТА: "Fiesta",
+  МОНДЕО: "Mondeo",
+  КОРОЛА: "Corolla",
+  АВЕНСИС: "Avensis",
+  ЯРИС: "Yaris",
+};
+
+/**
+ * A model name **always in Latin**. The certificate prints it in Cyrillic, and a Cyrillic model
+ * is useless for search and looks broken next to a Latin make.
+ *
+ * Three steps per word: a known spelling wins; a word made only of Latin look-alikes maps
+ * straight across ("А 6" → "A 6"); anything left is transliterated, so nothing Cyrillic survives.
  */
 function latinizeModel(model: string): string {
-  const letters = [...model].filter((ch) => /\p{L}/u.test(ch));
-  if (letters.length > 0 && letters.every((ch) => ch in LOOKALIKE)) {
-    return [...model].map((ch) => LOOKALIKE[ch] ?? ch).join("");
-  }
-  return model;
+  return model
+    .split(/\s+/)
+    .filter((word) => word !== "")
+    .map((word) => {
+      const known = MODEL_SPELLINGS[word];
+      if (known) return known;
+      if ([...word].every((ch) => !/\p{L}/u.test(ch) || ch in LOOKALIKE)) {
+        return [...word].map((ch) => LOOKALIKE[ch] ?? ch).join("");
+      }
+      return [...word].map((ch) => TRANSLITERATE[ch] ?? LOOKALIKE[ch] ?? ch).join("");
+    })
+    .join(" ");
 }
 
 /** Split "АУДИ А 6" into a canonical make and the remaining model text. */
@@ -164,10 +204,12 @@ function splitMakeAndModel(raw: string): { brand: string | null; model: string |
 
   // Strip make names off the front repeatedly — some certificates print the make twice
   // ("ЛЕНД РОВЕР ЛАНД РОВЕР ФРИЛАНДЕР 2").
+  //
+  // A bare prefix match, not "the name followed by a space": OCR routinely runs the make into
+  // the model and hands back "АУДИА 6" for "АУДИ А 6". Longest-first ordering stops a longer
+  // make being swallowed by a shorter one that prefixes it.
   for (;;) {
-    const hit = MAKES_LONGEST_FIRST.find(
-      (name) => rest === name || rest.startsWith(`${name} `),
-    );
+    const hit = MAKES_LONGEST_FIRST.find((name) => rest.startsWith(name));
     if (!hit) break;
     brand ??= MAKES[hit] ?? null;
     rest = rest.slice(hit.length).trim();
@@ -323,7 +365,7 @@ const MODEL_LINE = /Марка\s*\/\s*Модел\s*:?\s*([^\n]+)/iu;
  * word characters only, so it never fires after a Cyrillic letter.
  */
 const NEXT_COLUMN =
-  /\s{2,}|\s+(?:Търговско|Двигател|Километропоказател|Вид|Цвят|Категория|ЕГН|Екологична|Собственик|Дата|Адрес|Разрешение|Протокол|Идент|Рег)(?!\p{L})/iu;
+  /\s*\(|\s{2,}|\s+(?:Търговско|Двигател|Километропоказател|Вид|Цвят|Категория|ЕГН|Екологична|Собственик|Дата|Адрес|Разрешение|Протокол|Идент|Рег)(?!\p{L})/iu;
 const MILEAGE = /Километропоказател\s*:?\s*([\d\s]+)\s*(?:km|км)/iu;
 
 /**
@@ -338,14 +380,25 @@ export function readInspectionCertificate(text: string): InspectionScan {
   if (typeof text !== "string" || text.trim() === "") return { ...EMPTY };
 
   const dates = allDates(text);
+  const inspectionDate = dateAfter(text, /Прегледът\s+е\s+извършен\s+на\s*:?/iu);
 
-  // Preferred: the date immediately before "включително". Fallback: the latest date present.
+  // Preferred: the date immediately before "включително" — a word that appears nowhere else.
   const inclusive = /(\d{2})[.\-/](\d{2})[.\-/](\d{4})\s*(?:г\.?)?\s*включително/iu.exec(text);
-  const expiryDate =
-    (inclusive && utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]))) ||
-    (dates.length > 0
-      ? dates.reduce((latest, d) => (d.getTime() > latest.getTime() ? d : latest))
-      : null);
+  const anchored =
+    inclusive && utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]));
+
+  // Fallback when OCR destroyed that word: the latest date on the certificate. It is only the
+  // Expiry Date if it is genuinely *after* the Inspection — a photo that cuts off the bottom
+  // line leaves the Inspection date as the latest, and reporting that would fill in a plausible
+  // date a year early. Nothing is worse here than a wrong date the User does not question.
+  const latest =
+    dates.length > 0
+      ? dates.reduce((newest, d) => (d.getTime() > newest.getTime() ? d : newest))
+      : null;
+  const fallback =
+    latest && (!inspectionDate || latest.getTime() > inspectionDate.getTime()) ? latest : null;
+
+  const expiryDate = anchored || fallback;
 
   const rawPlate = PLATE_LINE.exec(text)?.[1];
   const plate = rawPlate ? normalizePlate(rawPlate) || null : null;
@@ -366,7 +419,7 @@ export function readInspectionCertificate(text: string): InspectionScan {
     brand,
     model,
     firstRegistration: dateAfter(text, /Дата\s+на\s+първа\s+регистрация\s*:?/iu),
-    inspectionDate: dateAfter(text, /Прегледът\s+е\s+извършен\s+на\s*:?/iu),
+    inspectionDate,
     expiryDate,
     mileageKm: mileageKm != null && Number.isFinite(mileageKm) ? mileageKm : null,
   };

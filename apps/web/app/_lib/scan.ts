@@ -56,6 +56,62 @@ async function readQrCodes(file: File): Promise<string[]> {
   }
 }
 
+/**
+ * Resolution Tesseract wants for body text. A phone photo of an A4 page taken at arm's length
+ * puts the small print near the engine's lower limit, which is where a VIN comes back as
+ * fragments; enlarging before recognition costs a moment and recovers most of it.
+ */
+const MIN_LONG_SIDE = 2200;
+const MAX_LONG_SIDE = 3600;
+
+/**
+ * Prepare a photo for recognition: size it into the range the engine reads best, and drop the
+ * colour. The certificate is printed on a pale blue guilloche background, and greyscale removes
+ * that cast without touching the dark text.
+ *
+ * Returns the original file untouched if anything is unavailable — a worse scan beats no scan.
+ */
+async function prepareImage(file: File): Promise<Blob> {
+  if (typeof createImageBitmap !== "function" || typeof document === "undefined") return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const scale =
+      longest < MIN_LONG_SIDE
+        ? MIN_LONG_SIDE / longest
+        : longest > MAX_LONG_SIDE
+          ? MAX_LONG_SIDE / longest
+          : 1;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return file;
+
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const px = image.data;
+    for (let i = 0; i < px.length; i += 4) {
+      // Rec. 601 luma — the weighting that keeps blue ink dark instead of washing it out.
+      const grey = 0.299 * (px[i] ?? 0) + 0.587 * (px[i + 1] ?? 0) + 0.114 * (px[i + 2] ?? 0);
+      px[i] = px[i + 1] = px[i + 2] = grey;
+    }
+    ctx.putImageData(image, 0, 0);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png"),
+    );
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
 /** Printed text read off the image by Tesseract, running in a Web Worker on this device. */
 async function recognizeText(file: File, onProgress?: ScanProgress): Promise<string> {
   // Imported lazily: the engine and its language data are several megabytes and must not
@@ -69,7 +125,7 @@ async function recognizeText(file: File, onProgress?: ScanProgress): Promise<str
   });
 
   try {
-    const { data } = await worker.recognize(file);
+    const { data } = await worker.recognize(await prepareImage(file));
     return data.text;
   } finally {
     await worker.terminate();
