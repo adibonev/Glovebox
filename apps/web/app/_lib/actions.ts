@@ -125,8 +125,9 @@ export async function addVehicle(formData: FormData): Promise<void> {
 
   revalidatePath("/");
   revalidatePath("/vehicles");
-  // Land on the freshly added Vehicle's dashboard.
-  redirect(data ? `/?v=${data.id}` : "/");
+  // Both routes in — scanned or typed — continue through the same setup checklist, so a Vehicle
+  // added by hand does not quietly end up with only the one obligation the User remembered.
+  redirect(data ? `/vehicles/${data.id}/setup` : "/");
 }
 
 /**
@@ -223,7 +224,8 @@ export async function addScannedVehicle(_prev: FormState, formData: FormData): P
   revalidatePath("/");
   revalidatePath("/vehicles");
   revalidatePath("/documents");
-  redirect(`/?v=${vehicle.id}`);
+  // On to the rest of the obligations — one certificate covers the Inspection and nothing else.
+  redirect(`/vehicles/${vehicle.id}/setup`);
 }
 
 export async function updateVehicle(formData: FormData): Promise<void> {
@@ -541,7 +543,20 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
 
   revalidatePath("/");
   revalidatePath("/documents");
-  redirect("/");
+  // The setup checklist sends the User here one Service Type at a time; going back to it keeps
+  // the remaining ones in front of them instead of dropping them on the dashboard each time.
+  redirect(safeReturnTo(formData) ?? "/");
+}
+
+/**
+ * A `returnTo` from the form, accepted only when it is one of our own paths.
+ *
+ * The value rides in on a request, so it is not to be trusted: without the shape check a
+ * crafted form could turn our own redirect into one pointing at someone else's site.
+ */
+function safeReturnTo(formData: FormData): string | null {
+  const value = String(formData.get("returnTo") ?? "");
+  return /^\/[A-Za-z0-9/_-]*$/.test(value) ? value : null;
 }
 
 export async function updateService(formData: FormData): Promise<void> {

@@ -128,15 +128,24 @@ export interface VehicleTaxDeadlines {
 }
 
 /**
- * Vehicle Tax deadlines for `year`, fixed by ЗМДТ: 30 April (in full, for the 5% discount),
- * then two equal instalments by 30 June and 31 October. A deadline landing on a weekend
- * rolls to the next working day.
+ * Vehicle Tax deadlines for `year` under ЗМДТ чл. 60: 30 April (paid in full, for the 5%
+ * discount), then two equal instalments by 30 June and 31 October. A deadline landing on a
+ * weekend rolls to the next working day.
  *
- * These need no input from the User at all — every Vehicle owner in the country shares them,
- * so the Reminders can be raised the moment a Vehicle is added.
+ * **These apply to a Vehicle already owned when the year began, and to the dates only.**
+ * Two things this deliberately does not claim:
  *
- * Public holidays are **not** modelled: a statutory holiday falling on one of these dates
- * would push it one day further than returned here. Erring early is deliberate.
+ * - *The amount is not here and cannot be.* Each municipal council sets its own rate by
+ *   ordinance within the bounds of the law, and the sum is computed from engine power, a
+ *   coefficient for the year of manufacture and the ecological category — so the same car is
+ *   taxed differently in different municipalities. The Cost stays the User's to enter.
+ * - *A Vehicle acquired during the year does not use these dates.* Its tax falls due within
+ *   **two months of acquisition**, at 1/12 of the annual amount for each remaining month
+ *   including the month of acquisition. Ask before assuming; do not raise these Reminders
+ *   silently on a Vehicle that was just bought.
+ *
+ * Public holidays are **not** modelled either: a statutory holiday falling on one of these
+ * dates would push it one day further than returned here. Erring early is deliberate.
  */
 export function vehicleTaxDeadlines(year: number): VehicleTaxDeadlines {
   return {

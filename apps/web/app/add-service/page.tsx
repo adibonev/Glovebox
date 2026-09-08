@@ -11,7 +11,7 @@ import { AddServiceView } from "./AddServiceView";
 export default async function AddServicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string }>;
+  searchParams: Promise<{ v?: string; type?: string; next?: string }>;
 }) {
   const user = await currentUser();
   if (!user) redirect("/login");
@@ -23,9 +23,13 @@ export default async function AddServicePage({
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
 
   // Add to the Vehicle the dashboard was showing (`?v=`), otherwise the first one owned.
-  const { v } = await searchParams;
+  const { v, type, next } = await searchParams;
   const vehicle = vehicles.find((candidate) => candidate.id === v) ?? vehicles[0];
   if (!vehicle) redirect("/");
+
+  // Arriving from the setup checklist: start on the Service Type it asked for, and go back
+  // there afterwards so the remaining ones stay in front of the User.
+  const backToSetup = next === "setup";
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -36,7 +40,7 @@ export default async function AddServicePage({
       <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col gap-8 px-6 py-16">
         <header className="flex flex-col gap-2">
           <Link
-            href="/"
+            href={backToSetup ? `/vehicles/${vehicle.id}/setup` : "/"}
             className="font-mono text-[11px] uppercase tracking-[0.25em] text-silver/55 transition hover:text-copper"
           >
             ← Назад
@@ -45,7 +49,12 @@ export default async function AddServicePage({
         </header>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-md">
-          <AddServiceView vehicleId={vehicle.id} plate={vehicle.plate} />
+          <AddServiceView
+            vehicleId={vehicle.id}
+            plate={vehicle.plate}
+            initialType={type}
+            returnTo={backToSetup ? `/vehicles/${vehicle.id}/setup` : null}
+          />
         </div>
       </div>
     </main>
