@@ -51,7 +51,15 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Glovebox ползва камерата, за да снимеш документа за технически преглед и данните да се попълнят сами. Снимката се разчита на телефона ти и не се качва никъде.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ]
     ]
   }
 }

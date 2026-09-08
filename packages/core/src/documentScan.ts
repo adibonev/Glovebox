@@ -15,15 +15,17 @@
 import { normalizePlate } from "./registryCheck";
 
 /**
- * Master switch for Document Scan. While `false` the apps offer only manual entry and show no
- * way in at all; the `/vehicles/scan` page stays reachable by its address for testing.
+ * Rollout switch for Document Scan **in the mobile app**.
  *
- * A User is offered exactly two ways to add a Vehicle: type it in, or **photograph the
- * certificate through the guided camera**. Attaching a file is deliberately not one of them —
- * an arbitrary photo from the gallery is the case recognition handles worst, and the guide
- * frame is what makes the difference between a reading that works and one that half works.
+ * Reading a document is a phone feature by design, not a staged web rollout. Nobody
+ * photographs their registration certificate sitting at a desk, so the web offers only manual
+ * entry and carries none of this; the mobile app offers both.
  *
- * Same shape as {@link BILLING_ENABLED} — one flag, in `core`, read by web and mobile alike.
+ * The one way in is the **guided camera**. Picking a file is deliberately not offered: an
+ * arbitrary photo from the gallery is the case recognition handles worst, and the guide frame
+ * is the difference between a reading that works and one that half works.
+ *
+ * Everything below is shared — the same reader serves whichever app calls it.
  */
 // Typed as `boolean`, not the literal, so call sites read it as a real runtime flag rather than
 // dead code — and turning it off is a one-word change.

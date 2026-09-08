@@ -1,4 +1,4 @@
-import { canAddService, canAddVehicle } from "@glovebox/core";
+import { DOCUMENT_SCAN_ENABLED, canAddService, canAddVehicle } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
@@ -45,12 +45,27 @@ export default function VehiclesTab() {
           )}
 
           {canAddVehicleNow ? (
-            <Pressable
-              onPress={() => router.push("/vehicle/new")}
-              className="mb-4 items-center rounded-2xl border border-emerald/60 bg-emerald/15 py-4"
-            >
-              <Text className="text-base font-semibold text-ivory">+ Добави автомобил</Text>
-            </Pressable>
+            <View className="mb-4 gap-2">
+              {DOCUMENT_SCAN_ENABLED && (
+                <Pressable
+                  onPress={() => router.push("/vehicle/scan")}
+                  className="items-center rounded-2xl border border-copper/60 bg-copper/15 py-4"
+                >
+                  <Text className="text-base font-semibold text-ivory">
+                    Снимай документа за преглед
+                  </Text>
+                  <Text className="mt-0.5 text-xs text-muted">
+                    Попълва колата и срока вместо теб
+                  </Text>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={() => router.push("/vehicle/new")}
+                className="items-center rounded-2xl border border-emerald/60 bg-emerald/15 py-4"
+              >
+                <Text className="text-base font-semibold text-ivory">+ Добави ръчно</Text>
+              </Pressable>
+            </View>
           ) : (
             <View className="mb-4 rounded-2xl border border-copper/40 bg-panel p-4">
               <Text className="text-sm text-silver">
