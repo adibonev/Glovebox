@@ -21,6 +21,16 @@ import { Screen } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { getPlan } from "@/lib/plan";
 import { supabase } from "@/lib/supabase";
+import { visionOcrAvailable, visionRecognize } from "@/modules/vision-ocr";
+
+/**
+ * Preferences, not demands — anything the device lacks is dropped by the module.
+ *
+ * Bulgarian is not among Vision's languages, but Russian is, and the two alphabets differ by
+ * three letters Bulgarian does not use. It reads a Bulgarian certificate as well as any
+ * Cyrillic. English is there for the VIN, the plate and the numbers, which are Latin.
+ */
+const VISION_LANGUAGES = ["bg-BG", "ru-RU", "en-US"];
 
 const userRepo = new SupabaseUserRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
@@ -70,10 +80,14 @@ export default function ScanVehicleScreen() {
     setStage("reading");
     setProgress(0);
     try {
-      const reader = readerRef.current;
-      if (!reader) throw new Error("Разчитането още не е готово. Опитай пак след миг.");
-
-      const text = await reader.read(dataUrl);
+      let text: string;
+      if (visionOcrAvailable) {
+        text = await visionRecognize(dataUrl, VISION_LANGUAGES);
+      } else {
+        const reader = readerRef.current;
+        if (!reader) throw new Error("Разчитането още не е готово. Опитай пак след миг.");
+        text = await reader.read(dataUrl);
+      }
       const scanned = scanInspectionDocument({ text });
 
       setDraft(scanned);
@@ -140,9 +154,9 @@ export default function ScanVehicleScreen() {
     }
   };
 
-  // The reader lives outside the stages: its WebView must stay mounted so the engine and its
-  // language data are ready by the time a photo arrives, and stay cached afterwards.
-  const reader = (
+  // Only where Vision is missing. The WebView engine has to stay mounted across the stages so
+  // it is ready by the time a photo arrives; Vision needs nothing kept warm.
+  const reader = visionOcrAvailable ? null : (
     <DocumentReader handleRef={readerRef} onProgress={setProgress} />
   );
 
@@ -163,12 +177,14 @@ export default function ScanVehicleScreen() {
         <Text className="text-center text-base text-silver">
           Разчитам документа на твоя телефон…
         </Text>
-        <View className="h-1 w-48 overflow-hidden rounded-full bg-white/10">
-          <View
-            style={{ width: `${Math.round(progress * 100)}%` }}
-            className="h-full bg-copper"
-          />
-        </View>
+        {!visionOcrAvailable && (
+          <View className="h-1 w-48 overflow-hidden rounded-full bg-white/10">
+            <View
+              style={{ width: `${Math.round(progress * 100)}%` }}
+              className="h-full bg-copper"
+            />
+          </View>
+        )}
       </View>
     );
   }
@@ -180,6 +196,11 @@ export default function ScanVehicleScreen() {
       <View className="mb-4 rounded-xl border border-status-valid/40 bg-status-valid/10 p-4">
         <Text className="text-sm leading-5 text-ivory">
           Сканирането приключи, моля убедете се, че данните са въведени правилно.
+        </Text>
+        {/* Which engine ran. Vision links natively or it does not, and the fallback is silent —
+            without this we would both assume the fast one was used. */}
+        <Text className="mt-2 text-xs text-dim">
+          Разчетено с {visionOcrAvailable ? "Apple Vision" : "резервния двигател"}
         </Text>
       </View>
 
