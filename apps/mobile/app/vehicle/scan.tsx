@@ -5,13 +5,14 @@ import {
   canAddVehicle,
   missingVehicleFields,
   scanInspectionDocument,
+  suggestVinCorrection,
   vinChecksumValid,
   type InspectionDraft,
 } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { DocumentCamera } from "@/components/DocumentCamera";
 import { DocumentReader, type DocumentReaderHandle } from "@/components/DocumentReader";
@@ -60,6 +61,10 @@ export default function ScanVehicleScreen() {
   const [plate, setPlate] = useState("");
   const [vin, setVin] = useState("");
   const [expiry, setExpiry] = useState("");
+
+  // Only offered, never applied: outside North America the ninth character is often not a real
+  // check digit, so a correct VIN can fail it (see suggestVinCorrection).
+  const vinSuggestion = suggestVinCorrection(vin.trim().toUpperCase());
 
   const onCapture = async (dataUrl: string) => {
     setStage("reading");
@@ -164,9 +169,6 @@ export default function ScanVehicleScreen() {
             className="h-full bg-copper"
           />
         </View>
-        <Text className="text-center text-xs text-muted">
-          Първия път се сваля езиковият пакет — после е бързо.
-        </Text>
       </View>
     );
   }
@@ -174,6 +176,12 @@ export default function ScanVehicleScreen() {
   return (
     <Screen title="Провери данните">
       {reader}
+
+      <View className="mb-4 rounded-xl border border-status-valid/40 bg-status-valid/10 p-4">
+        <Text className="text-sm leading-5 text-ivory">
+          Сканирането приключи, моля убедете се, че данните са въведени правилно.
+        </Text>
+      </View>
 
       {note && (
         <View className="mb-4 rounded-xl border border-copper/40 bg-panel p-4">
@@ -202,10 +210,23 @@ export default function ScanVehicleScreen() {
       {/* A VIN carries its own check digit, and recognition reliably turns 4 into A, 5 into S
           and 8 into B. One wrong character reads as convincingly as a correct one. */}
       {vin.trim().length === 17 && !vinChecksumValid(vin.trim().toUpperCase()) && (
-        <Text className="-mt-2 mb-4 text-xs text-status-expiring">
-          Сверѝ рамата знак по знак — контролната ѝ цифра не излиза. Разчитането обърква 4 с A,
-          5 с S и 8 с B.
-        </Text>
+        <View className="-mt-2 mb-4 gap-2">
+          <Text className="text-xs text-status-expiring">
+            Сверѝ рамата знак по знак — контролната ѝ цифра не излиза. Разчитането обърква 4 с A,
+            5 с S и 8 с B.
+          </Text>
+          {vinSuggestion && (
+            <Pressable
+              onPress={() => setVin(vinSuggestion)}
+              className="self-start rounded-lg border border-copper/50 bg-copper/10 px-3 py-2"
+            >
+              <Text className="text-xs text-copper">
+                Може би <Text className="font-semibold">{vinSuggestion}</Text> — докосни, за да
+                я използваш
+              </Text>
+            </Pressable>
+          )}
+        </View>
       )}
 
       <Field

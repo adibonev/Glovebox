@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,6 +20,20 @@ import { useGarage } from "@/lib/useGarage";
 export default function DashboardTab() {
   const router = useRouter();
   const { data, loading, refreshing, onRefresh, error } = useGarage();
+  const offeredAddVehicle = useRef(false);
+
+  /**
+   * A brand-new User lands on a dashboard with nothing on it, so send them straight into adding
+   * a car rather than leaving them to find the button.
+   *
+   * Once per launch, not on every visit: someone who backs out of the chooser must be able to
+   * stay on the empty dashboard instead of being pushed back in a loop.
+   */
+  useEffect(() => {
+    if (loading || !data || data.cards.length > 0 || offeredAddVehicle.current) return;
+    offeredAddVehicle.current = true;
+    router.push("/vehicle/add");
+  }, [data, loading, router]);
 
   const attention = (data?.flat ?? []).filter((f) => f.status !== "Valid");
   const top = attention.slice(0, 4);
@@ -106,7 +121,7 @@ export default function DashboardTab() {
           {data && data.cards.length === 0 && (
             <View className="mt-12 items-center">
               <Text className="text-center text-base text-muted">Още нямаш добавени автомобили.</Text>
-              <Pressable onPress={() => router.push("/vehicle/new")} className="mt-4 rounded-xl bg-emerald px-5 py-3">
+              <Pressable onPress={() => router.push("/vehicle/add")} className="mt-4 rounded-xl bg-emerald px-5 py-3">
                 <Text className="font-semibold text-ivory">+ Добави автомобил</Text>
               </Pressable>
             </View>

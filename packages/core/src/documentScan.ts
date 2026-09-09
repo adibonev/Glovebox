@@ -558,16 +558,62 @@ function repairVin(raw: string): string | null {
 }
 
 /**
+ * Glyph pairs recognition swaps inside a VIN. I, O and Q are absent: `repairVin` has already
+ * turned those into digits, because the VIN alphabet excludes them precisely for looking alike.
+ */
+const VIN_CONFUSABLES: Readonly<Record<string, string>> = {
+  "4": "A", A: "4",
+  "5": "S", S: "5",
+  "8": "B", B: "8",
+  "2": "Z", Z: "2",
+  "6": "G", G: "6",
+  "7": "T", T: "7",
+  "0": "D", D: "0",
+};
+
+/**
+ * A VIN one confusable glyph away from the one read, whose check digit comes out.
+ *
+ * Recognition turns 4 into A about as often as it reads it correctly, and a VIN with one wrong
+ * character looks exactly as convincing as a right one — nothing on the page contradicts it.
+ * The ninth character is a checksum over the other sixteen, so a single swap that makes it come
+ * out is almost certainly the character that was misread.
+ *
+ * Returns null unless **exactly one** swap works. Two candidates mean the evidence does not
+ * choose between them, and a VIN that already checks out needs no help. The caller must offer
+ * this to the User rather than apply it: outside North America the ninth character is often not
+ * a real check digit, so a VIN can be correct and still fail — which is why this only ever
+ * suggests, and only ever a reading one glyph away from what was actually on the page.
+ */
+export function suggestVinCorrection(vin: string): string | null {
+  const subject = vin.trim().toUpperCase();
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(subject) || vinChecksumValid(subject)) return null;
+
+  const found = new Set<string>();
+  for (let i = 0; i < subject.length; i++) {
+    const swap = VIN_CONFUSABLES[subject.charAt(i)];
+    if (!swap) continue;
+    const candidate = subject.slice(0, i) + swap + subject.slice(i + 1);
+    if (vinChecksumValid(candidate)) found.add(candidate);
+  }
+  return found.size === 1 ? [...found][0]! : null;
+}
+
+/**
  * The first seventeen-character run that survives VIN repair. Scanning all candidates matters
  * when the page was recognised twice: the Bulgarian pass leaves a Cyrillic-contaminated version
  * that cannot be a VIN, and the English pass leaves the real one.
  */
 function firstValidVin(text: string): string | undefined {
+  const readings: string[] = [];
   for (const match of text.matchAll(VIN_ALL)) {
-    const candidate = match[1];
-    if (candidate && repairVin(candidate)) return candidate;
+    const repaired = match[1] ? repairVin(match[1]) : null;
+    if (repaired) readings.push(repaired);
   }
-  return undefined;
+  // Where the page was recognised twice, the passes disagree on the odd glyph. Prefer a reading
+  // whose check digit comes out over merely the first one seen — this picks between things the
+  // engine actually produced, and never invents a character.
+  return readings.find(vinChecksumValid) ?? readings[0];
 }
 
 /**
@@ -585,6 +631,26 @@ const NEXT_COLUMN = new RegExp(
     `|Собственик|Дата|Адрес|Разрешение|Протокол|Идент|Рег)(?!\\p{L})`,
   "iu",
 );
+
+/** An Inspection is valid for six months to two years; allow three before calling it nonsense. */
+const MAX_INSPECTION_VALIDITY_MS = 3 * YEAR_MS;
+
+/**
+ * The first candidate that can actually be an Expiry Date.
+ *
+ * An Inspection expires *after* it was carried out and within a couple of years of it, so the
+ * date of the Inspection is a test every candidate must pass. Without it there is nothing to
+ * check against and the first reading stands.
+ */
+function chooseExpiry(candidates: readonly (Date | null)[], inspection: Date | null): Date | null {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (!inspection) return candidate;
+    const gap = candidate.getTime() - inspection.getTime();
+    if (gap > 0 && gap <= MAX_INSPECTION_VALIDITY_MS) return candidate;
+  }
+  return null;
+}
 
 /**
  * Read a Roadworthiness Inspection certificate.
@@ -614,9 +680,14 @@ export function readInspectionCertificate(text: string): InspectionScan {
   const rawMileage = valueInField(source, FIELDS.mileage, 24)?.match(/([\d\s]{1,10})/)?.[1];
   const mileageKm = rawMileage?.trim() ? Number(rawMileage.replace(/\s/g, "")) : null;
 
-  // The Expiry Date carries a second marker unique to that field: it is the only date on the
+  // The Expiry Date carries a marker unique to that field: it is the only date on the
   // certificate followed by "включително".
   const inclusive = /(\d{2})[.\-/](\d{2})[.\-/](\d{4})\s*(?:г\.?)?\s*включително/iu.exec(source);
+  const inclusiveDate = inclusive
+    ? utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]))
+    : null;
+
+  const inspectionDate = dateInField(source, FIELDS.inspectionDate);
 
   return {
     plate: plateShape ? normalizePlate(plateShape) || null : null,
@@ -625,12 +696,15 @@ export function readInspectionCertificate(text: string): InspectionScan {
       ? splitMakeAndModel(rawModel.split(NEXT_COLUMN)[0] ?? "")
       : { brand: null, model: null }),
     firstRegistration: dateInField(source, FIELDS.firstRegistration),
-    inspectionDate: dateInField(source, FIELDS.inspectionDate),
-    expiryDate:
-      dateInField(source, FIELDS.expiryDate) ??
-      (inclusive
-        ? utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]))
-        : null),
+    inspectionDate,
+    // "включително" first: it names the field on its own line and cannot be confused with
+    // another. The labelled read comes second because the label match tolerates OCR damage,
+    // and a damaged label can land on a neighbouring date — which is how a certificate issued
+    // in 2026 came back expiring in 2011.
+    expiryDate: chooseExpiry(
+      [inclusiveDate, dateInField(source, FIELDS.expiryDate)],
+      inspectionDate,
+    ),
     mileageKm: mileageKm != null && Number.isFinite(mileageKm) ? mileageKm : null,
   };
 }

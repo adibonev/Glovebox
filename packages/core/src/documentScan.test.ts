@@ -4,6 +4,7 @@ import {
   certificateCheckUrl,
   parseCertificateQr,
   readInspectionCertificate,
+  suggestVinCorrection,
   vinChecksumValid,
 } from "./documentScan";
 
@@ -326,3 +327,58 @@ describe("readInspectionCertificate — real OCR noise", () => {
   });
 });
 
+
+describe("suggestVinCorrection", () => {
+  // A VIN whose ninth character is a real check digit, so a single wrong character shows up.
+  const VALID = "1HGCM82633A004352";
+
+  it("recovers a VIN whose A was recognised as 4", () => {
+    expect(suggestVinCorrection("1HGCM826334004352")).toBe(VALID);
+  });
+
+  it("suggests nothing when two different swaps both make the check digit come out", () => {
+    // The check digit is a sum modulo 11, so roughly one swap in eleven satisfies it by
+    // chance. Here "8"→"B" does as well as the "A"→"4" that was actually misread, and
+    // guessing between them would be worse than leaving it to the User.
+    expect(suggestVinCorrection("1HGCM82633A00A352")).toBeNull();
+  });
+
+  it("suggests nothing for a VIN that already checks out", () => {
+    expect(suggestVinCorrection(VALID)).toBeNull();
+  });
+
+  it("suggests nothing for a VIN read off a real certificate that already checks out", () => {
+    expect(suggestVinCorrection("WAUZZZ4G4CN031801")).toBeNull();
+  });
+
+  it("suggests nothing for something that is not a VIN at all", () => {
+    expect(suggestVinCorrection("не е рама")).toBeNull();
+  });
+});
+
+describe("readInspectionCertificate — the Expiry Date is the one after the Inspection", () => {
+  it("prefers the date marked 'включително' over a date sitting under a mangled label", () => {
+    const text = `
+Прегледът е извършен на: 17.08.2026 г.
+Подлежи на преглед до: 05.09.2011 г.
+Валидно до 17.08.2027 г. включително
+`;
+    expect(readInspectionCertificate(text).expiryDate).toEqual(new Date("2027-08-17"));
+  });
+
+  it("refuses an Expiry Date that falls before the Inspection itself", () => {
+    const text = `
+Прегледът е извършен на: 17.08.2026 г.
+Подлежи на преглед до: 05.09.2011 г.
+`;
+    expect(readInspectionCertificate(text).expiryDate).toBeNull();
+  });
+
+  it("refuses an Expiry Date implausibly far after the Inspection", () => {
+    const text = `
+Прегледът е извършен на: 17.08.2026 г.
+Подлежи на преглед до: 17.08.2044 г.
+`;
+    expect(readInspectionCertificate(text).expiryDate).toBeNull();
+  });
+});
