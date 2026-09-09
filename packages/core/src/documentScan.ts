@@ -682,7 +682,10 @@ export function readInspectionCertificate(text: string): InspectionScan {
 
   // The Expiry Date carries a marker unique to that field: it is the only date on the
   // certificate followed by "включително".
-  const inclusive = /(\d{2})[.\-/](\d{2})[.\-/](\d{4})\s*(?:г\.?)?\s*включително/iu.exec(source);
+  // "вкл" plus whatever survived of the ending: the word is long, sits at the very bottom of the
+  // page where focus falls off, and no other date on the certificate is followed by anything
+  // starting that way — so the prefix identifies the field on its own.
+  const inclusive = /(\d{2})[.\-/](\d{2})[.\-/](\d{4})\s*(?:г\.?)?\s*вкл[\p{L}]*/iu.exec(source);
   const inclusiveDate = inclusive
     ? utcDate(Number(inclusive[1]), Number(inclusive[2]), Number(inclusive[3]))
     : null;

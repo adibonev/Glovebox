@@ -374,6 +374,16 @@ describe("readInspectionCertificate — the Expiry Date is the one after the Ins
     expect(readInspectionCertificate(text).expiryDate).toBeNull();
   });
 
+  it("still finds the Expiry Date when OCR mangles the tail of 'включително'", () => {
+    // No other line on the certificate carries a date followed by a word starting "вкл", so
+    // the anchor holds even when the rest of the long word comes back damaged.
+    const text = `
+Прегледът е извършен на: 17.08.2026 г.
+Подлежи на преглед до: 17.08.2027 г. вклкючктелно.
+`;
+    expect(readInspectionCertificate(text).expiryDate).toEqual(new Date("2027-08-17"));
+  });
+
   it("refuses an Expiry Date implausibly far after the Inspection", () => {
     const text = `
 Прегледът е извършен на: 17.08.2026 г.
