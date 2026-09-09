@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { readPolicy } from "./documentScan";
+import { scanPolicyDocument } from "./scanDraft";
 
 // A real Casco policy (ДЗИ, 2026) — clean laser print, bilingual labels absent, dual currency.
 const DZI_CASCO = `
@@ -86,5 +87,31 @@ describe("readPolicy", () => {
       expiryDate: null,
       cost: null,
     });
+  });
+});
+
+describe("scanPolicyDocument", () => {
+  it("turns a Casco policy into a Service Record of that type", () => {
+    const draft = scanPolicyDocument({ text: DZI_CASCO }, "casco");
+
+    expect(draft.serviceRecord).toEqual({
+      serviceType: "casco",
+      expiryDate: new Date("2027-05-13"),
+      cost: 393.38,
+    });
+  });
+
+  it("carries the plate and VIN printed on the policy", () => {
+    // The caller checks these against the Vehicle: a policy for another car is the one mistake
+    // a User cannot spot on a confirmation form, because every date on it looks right.
+    const draft = scanPolicyDocument({ text: DALLBOGG_MTPL }, "civil_liability");
+
+    expect(draft.insuredVehicle.plate).toBeTruthy();
+  });
+
+  it("proposes no Service Record when no Expiry Date could be read", () => {
+    const draft = scanPolicyDocument({ text: "списък за пазаруване" }, "casco");
+
+    expect(draft.serviceRecord).toBeNull();
   });
 });

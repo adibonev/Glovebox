@@ -11,6 +11,7 @@
 import {
   parseCertificateQr,
   readInspectionCertificate,
+  readPolicy,
   type CertificateRef,
   type InspectionScan,
 } from "./documentScan";
@@ -95,6 +96,43 @@ export function scanInspectionDocument(input: DocumentScanInput): InspectionDraf
     (input.qrPayloads ?? []).map(parseCertificateQr).find((ref) => ref !== null) ?? null;
 
   return buildInspectionDraft(readInspectionCertificate(input.text), certificate);
+}
+
+/** The Service Types whose document a camera can actually read. */
+export const SCANNABLE_SERVICE_TYPES = ["inspection", "civil_liability", "casco"] as const;
+
+/** Everything one photographed insurance policy yields. */
+export interface PolicyDraft {
+  /** Null when no Expiry Date could be read — there is then nothing to remind about. */
+  serviceRecord: ServiceRecordDraft | null;
+  /**
+   * The vehicle the policy is written for.
+   *
+   * Worth carrying even though it is not saved: a policy for the wrong car is the one mistake a
+   * User cannot catch on a confirmation form, because every date on it is genuine. Comparing
+   * this against the Vehicle turns that into something the app can point at.
+   */
+  insuredVehicle: { plate: string | null; vin: string | null };
+}
+
+/**
+ * Read one photographed insurance policy into a confirmable Draft.
+ *
+ * The Service Type is told, not guessed: Civil Liability and Casco policies are laid out alike,
+ * and the User has already said which one they are photographing.
+ */
+export function scanPolicyDocument(
+  input: DocumentScanInput,
+  serviceType: "civil_liability" | "casco",
+): PolicyDraft {
+  const policy = readPolicy(input.text);
+
+  return {
+    serviceRecord: policy.expiryDate
+      ? { serviceType, expiryDate: policy.expiryDate, cost: policy.cost }
+      : null,
+    insuredVehicle: { plate: policy.plate, vin: policy.vin },
+  };
 }
 
 /** Vehicle fields in the order the confirmation screen shows them. */
