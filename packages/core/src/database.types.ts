@@ -276,6 +276,7 @@ export type Database = {
           id: number
           sent_at: string | null
           service_type: string | null
+          stage: string | null
           user_id: number | null
         }
         Insert: {
@@ -286,6 +287,7 @@ export type Database = {
           id?: number
           sent_at?: string | null
           service_type?: string | null
+          stage?: string | null
           user_id?: number | null
         }
         Update: {
@@ -296,6 +298,7 @@ export type Database = {
           id?: number
           sent_at?: string | null
           service_type?: string | null
+          stage?: string | null
           user_id?: number | null
         }
         Relationships: [

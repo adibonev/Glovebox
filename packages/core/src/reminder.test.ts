@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { dueReminders } from "./reminder";
+import type { ServiceRecord } from "./domain";
+import { dueReminders, remindByEmail } from "./reminder";
 
 describe("dueReminders", () => {
   it("returns a Reminder for a Service Record whose Expiry Date is within its Service Type's Reminder Window", () => {
@@ -56,7 +57,7 @@ describe("dueReminders", () => {
     expect(due).toEqual([]);
   });
 
-  it("returns an empty array for an already-Expired Service Record", () => {
+  it("still reminds about an Expired Service Record — that is the message that saves a fine", () => {
     // A Civil Liability Insurance Service Record whose Expiry Date is 10 days in the past.
     const serviceRecords = [
       {
@@ -76,7 +77,8 @@ describe("dueReminders", () => {
 
     const due = dueReminders(serviceRecords, windows, today);
 
-    expect(due).toEqual([]);
+    expect(due).toHaveLength(1);
+    expect(due[0]?.stage).toBe("expired");
   });
 
   it("never raises a Reminder for a non-expiring Service Type (Repair)", () => {
@@ -116,12 +118,14 @@ describe("dueReminders", () => {
         serviceType: "vignette",
         expiryDate: new Date("2026-06-11"),
         daysUntilExpiry: 10,
+        stage: "window",
       },
       {
         serviceRecordId: "go-due",
         serviceType: "civil_liability",
         expiryDate: new Date("2026-06-15"),
         daysUntilExpiry: 14,
+        stage: "window",
       },
     ]);
   });
@@ -147,6 +151,7 @@ describe("dueReminders", () => {
         serviceType: "civil_liability",
         expiryDate: new Date("2026-06-15"),
         daysUntilExpiry: 14,
+        stage: "window",
       },
     ]);
   });
@@ -165,5 +170,49 @@ describe("dueReminders", () => {
     const due = dueReminders(serviceRecords, windows, today);
 
     expect(due.map((r) => r.daysUntilExpiry)).toEqual([5, 14, 25]);
+  });
+});
+
+describe("reminderStage — the ladder that keeps nagging until it is renewed", () => {
+  const record = (expiryDate: Date): ServiceRecord => ({
+    id: "1",
+    vehicleId: "1",
+    serviceType: "civil_liability",
+    expiryDate,
+    cost: null,
+  });
+  const inDays = (days: number) => new Date(Date.UTC(2026, 0, 1 + days));
+  const today = new Date(Date.UTC(2026, 0, 1));
+  const stageAt = (days: number) =>
+    dueReminders([record(inDays(days))], { civil_liability: 15 }, today)[0]?.stage;
+
+  it("opens at the Reminder Window the User chose", () => {
+    expect(stageAt(15)).toBe("window");
+    expect(stageAt(9)).toBe("window");
+  });
+
+  it("says nothing while the Expiry Date is still beyond that window", () => {
+    expect(stageAt(16)).toBeUndefined();
+  });
+
+  it("escalates two days out, then one", () => {
+    expect(stageAt(2)).toBe("twoDays");
+    expect(stageAt(1)).toBe("oneDay");
+  });
+
+  it("treats the Expiry Date itself as still valid — the document runs to the end of that day", () => {
+    expect(stageAt(0)).toBe("oneDay");
+  });
+
+  it("reports it expired once the day has passed", () => {
+    expect(stageAt(-1)).toBe("expired");
+    expect(stageAt(-40)).toBe("expired");
+  });
+
+  it("carries e-mail only at the opening step; the rest are a nudge on the phone", () => {
+    expect(remindByEmail("window")).toBe(true);
+    expect(remindByEmail("twoDays")).toBe(false);
+    expect(remindByEmail("oneDay")).toBe(false);
+    expect(remindByEmail("expired")).toBe(false);
   });
 });
