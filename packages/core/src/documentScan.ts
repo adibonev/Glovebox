@@ -267,6 +267,53 @@ const TRANSLITERATE: Record<string, string> = {
 const MODEL_SPELLINGS: Record<string, string> = {
   ФРИЛАНДЕР: "Freelander",
   ДИСКЪВЪРИ: "Discovery",
+  ЕВОК: "Evoque",
+  ТИГУАН: "Tiguan",
+  ТУРАН: "Touran",
+  ПОЛО: "Polo",
+  КАДИ: "Caddy",
+  ШАРАН: "Sharan",
+  КАШКАЙ: "Qashqai",
+  МИКРА: "Micra",
+  ЖУК: "Juke",
+  МЕГАН: "Megane",
+  КЛИО: "Clio",
+  ЛАГУНА: "Laguna",
+  СЦЕНИК: "Scenic",
+  КЕНГУ: "Kangoo",
+  СИВИК: "Civic",
+  АКОРД: "Accord",
+  ДЖАЗ: "Jazz",
+  ВЕКТРА: "Vectra",
+  ЗАФИРА: "Zafira",
+  МЕРИВА: "Meriva",
+  ИНСИГНИЯ: "Insignia",
+  КУГА: "Kuga",
+  ГАЛАКСИ: "Galaxy",
+  ТРАНЗИТ: "Transit",
+  АУРИС: "Auris",
+  ПРИУС: "Prius",
+  КОДИЯК: "Kodiaq",
+  РУМСТЕР: "Roomster",
+  ЙЕТИ: "Yeti",
+  ТУКСОН: "Tucson",
+  СПОРТИДЖ: "Sportage",
+  СИИД: "Ceed",
+  РИО: "Rio",
+  КСАРА: "Xsara",
+  БЕРЛИНГО: "Berlingo",
+  ПИКАСО: "Picasso",
+  ПУНТО: "Punto",
+  ДОБЛО: "Doblo",
+  БРАВО: "Bravo",
+  ИБИЦА: "Ibiza",
+  ЛЕОН: "Leon",
+  АЛТЕА: "Altea",
+  ДЪСТЕР: "Duster",
+  ЛОГАН: "Logan",
+  САНДЕРО: "Sandero",
+  ВИТО: "Vito",
+  СПРИНТЕР: "Sprinter",
   ОКТАВИЯ: "Octavia",
   ФАБИЯ: "Fabia",
   СУПЕРБ: "Superb",
@@ -291,18 +338,35 @@ const MODEL_SPELLINGS: Record<string, string> = {
  * straight across ("А 6" → "A 6"); anything left is transliterated, so nothing Cyrillic survives.
  */
 function latinizeModel(model: string): string {
-  return model
-    .split(/\s+/)
-    .filter((word) => word !== "")
-    .map((word) => {
+  return joinLetterToNumber(
+    model
+      .split(/\s+/)
+      .filter((word) => word !== "")
+      .map((word) => {
       const known = MODEL_SPELLINGS[word];
       if (known) return known;
       if ([...word].every((ch) => !/\p{L}/u.test(ch) || ch in LOOKALIKE)) {
         return [...word].map((ch) => LOOKALIKE[ch] ?? ch).join("");
       }
-      return [...word].map((ch) => TRANSLITERATE[ch] ?? LOOKALIKE[ch] ?? ch).join("");
-    })
-    .join(" ");
+        return [...word].map((ch) => TRANSLITERATE[ch] ?? LOOKALIKE[ch] ?? ch).join("");
+      }),
+  ).join(" ");
+}
+
+/**
+ * "А 6" is an A6 and "Х 5" an X5 — a lone letter belongs to the number printed after it.
+ *
+ * Only a single letter joins. "ФРИЛАНДЕР 2" is a Freelander 2, and gluing a whole word to its
+ * number would invent a name no manufacturer uses.
+ */
+function joinLetterToNumber(words: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const word of words) {
+    const previous = out[out.length - 1];
+    if (previous && /^[A-Z]$/.test(previous) && /^\d/.test(word)) out[out.length - 1] = previous + word;
+    else out.push(word);
+  }
+  return out;
 }
 
 /**

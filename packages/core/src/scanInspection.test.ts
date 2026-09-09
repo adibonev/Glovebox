@@ -25,7 +25,7 @@ describe("scanInspectionDocument", () => {
 
     expect(draft.vehicle).toEqual({
       brand: "Audi",
-      model: "A 6",
+      model: "A6",
       year: 2011,
       plate: "EH9697KA",
       vin: "WAUZZZ4G4CN031801",

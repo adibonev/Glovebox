@@ -116,7 +116,7 @@ describe("readInspectionCertificate", () => {
 
     expect(scan.brand).toBe("Audi");
     // "А 6" is written in Cyrillic look-alikes only, so it transliterates cleanly to Latin.
-    expect(scan.model).toBe("A 6");
+    expect(scan.model).toBe("A6");
   });
 
   it("stops the model at the neighbouring column even when OCR collapses the gap", () => {
@@ -124,7 +124,7 @@ describe("readInspectionCertificate", () => {
     // space, so the label to the right must not end up inside the model.
     const collapsed = "Марка / Модел: АУДИ А 6 Търговско наименование:\n";
 
-    expect(readInspectionCertificate(collapsed).model).toBe("A 6");
+    expect(readInspectionCertificate(collapsed).model).toBe("A6");
   });
 
   it("reads the odometer reading", () => {
@@ -190,10 +190,10 @@ describe("readInspectionCertificate", () => {
   });
 
   it("transliterates a model it does not recognise rather than leaving it Cyrillic", () => {
-    const scan = readInspectionCertificate("Марка / Модел: ШКОДА КОДИЯК\n");
+    const scan = readInspectionCertificate("Марка / Модел: ШКОДА ЕЛРОК\n");
 
     expect(scan.brand).toBe("Škoda");
-    expect(scan.model).toBe("KODIYAK");
+    expect(scan.model).toBe("ELROK");
   });
 
   it("returns nulls rather than throwing when the text is not a certificate at all", () => {
@@ -231,7 +231,7 @@ describe("readInspectionCertificate — real OCR noise", () => {
   });
 
   it("keeps the misread '№' out of the model", () => {
-    expect(readInspectionCertificate(NOISY_OCR).model).toBe("A 6");
+    expect(readInspectionCertificate(NOISY_OCR).model).toBe("A6");
   });
 
   it("reads the date of first registration, and the year with it", () => {
@@ -339,6 +339,28 @@ describe("readInspectionCertificate — the VIN is Latin even when read as Cyril
 
   it("still rejects a run of Cyrillic that is only pretending to be a VIN", () => {
     expect(readInspectionCertificate("ПРЕГЛЕДЪТБЕШЕИЗВЪРШЕН").vin).toBeNull();
+  });
+});
+
+describe("readInspectionCertificate — the model reads as the manufacturer writes it", () => {
+  const modelOf = (line: string) => readInspectionCertificate(`Марка / Модел: ${line}
+`).model;
+
+  it("joins a lone letter to the number it belongs to", () => {
+    // The certificate prints "АУДИ А 6"; the car is an A6.
+    expect(modelOf("АУДИ А 6")).toBe("A6");
+    expect(modelOf("БМВ Х 5")).toBe("X5");
+  });
+
+  it("leaves a number that follows a whole word alone", () => {
+    expect(modelOf("ЛЕНД РОВЕР ФРИЛАНДЕР 2")).toBe("Freelander 2");
+  });
+
+  it("spells a model the way its maker does, not as it sounds in Bulgarian", () => {
+    expect(modelOf("ФОЛКСВАГЕН ТИГУАН")).toBe("Tiguan");
+    expect(modelOf("НИСАН КАШКАЙ")).toBe("Qashqai");
+    expect(modelOf("РЕНО МЕГАН")).toBe("Megane");
+    expect(modelOf("ХОНДА СИВИК")).toBe("Civic");
   });
 });
 
