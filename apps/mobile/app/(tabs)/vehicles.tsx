@@ -48,7 +48,7 @@ export default function VehiclesTab() {
             <View className="mb-4">
               {/* One entry point; how to add is asked on the next screen, not here. */}
               <Pressable
-                onPress={() => router.push("/vehicle/add")}
+                onPress={() => router.push("/vehicle/setup")}
                 className="items-center rounded-2xl border border-emerald/60 bg-emerald/15 py-4"
               >
                 <Text className="text-base font-semibold text-ivory">+ Добави автомобил</Text>

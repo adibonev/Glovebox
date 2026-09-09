@@ -32,7 +32,7 @@ export default function DashboardTab() {
   useEffect(() => {
     if (loading || !data || data.cards.length > 0 || offeredAddVehicle.current) return;
     offeredAddVehicle.current = true;
-    router.push("/vehicle/add");
+    router.push("/vehicle/setup");
   }, [data, loading, router]);
 
   const attention = (data?.flat ?? []).filter((f) => f.status !== "Valid");
@@ -121,7 +121,7 @@ export default function DashboardTab() {
           {data && data.cards.length === 0 && (
             <View className="mt-12 items-center">
               <Text className="text-center text-base text-muted">Още нямаш добавени автомобили.</Text>
-              <Pressable onPress={() => router.push("/vehicle/add")} className="mt-4 rounded-xl bg-emerald px-5 py-3">
+              <Pressable onPress={() => router.push("/vehicle/setup")} className="mt-4 rounded-xl bg-emerald px-5 py-3">
                 <Text className="font-semibold text-ivory">+ Добави автомобил</Text>
               </Pressable>
             </View>
