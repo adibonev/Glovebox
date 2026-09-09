@@ -328,6 +328,20 @@ describe("readInspectionCertificate — real OCR noise", () => {
 });
 
 
+describe("readInspectionCertificate — the VIN is Latin even when read as Cyrillic", () => {
+  it("recovers a VIN whose lookalike letters came back in Cyrillic", () => {
+    // What the Bulgarian pass returns for WAUZZZ4G4CN031801: А and С here are Cyrillic, and
+    // nothing on screen distinguishes them from the Latin letters they stand in for.
+    const text = "(1) Идент. № (VIN, рама) WАUZZZ4G4СN031801";
+
+    expect(readInspectionCertificate(text).vin).toBe("WAUZZZ4G4CN031801");
+  });
+
+  it("still rejects a run of Cyrillic that is only pretending to be a VIN", () => {
+    expect(readInspectionCertificate("ПРЕГЛЕДЪТБЕШЕИЗВЪРШЕН").vin).toBeNull();
+  });
+});
+
 describe("suggestVinCorrection", () => {
   // A VIN whose ninth character is a real check digit, so a single wrong character shows up.
   const VALID = "1HGCM82633A004352";

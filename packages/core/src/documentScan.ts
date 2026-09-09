@@ -487,8 +487,14 @@ const NUMERO = "(?:№|N[eo2₂])";
 /**
  * A VIN is 17 characters. Matched permissively and repaired afterwards: the VIN alphabet
  * excludes I, O and Q *because* they look like 1 and 0, so any OCR hands back are really digits.
+ *
+ * Cyrillic capitals are allowed into the match on purpose. A VIN is Latin by definition, but
+ * the page is recognised once with a Bulgarian model, and that pass returns the twelve letters
+ * with a Cyrillic twin — А, В, Е, К, М, Н, О, Р, С, Т, У, Х — as the Cyrillic ones. On screen
+ * nothing tells them apart; to a regex over Latin they were simply not a VIN, which is how a
+ * perfectly legible frame number came back empty.
  */
-const VIN_ALL = /(?<![A-Z0-9])([A-Z0-9]{17})(?![A-Z0-9])/g;
+const VIN_ALL = /(?<![A-Z0-9А-Я])([A-Z0-9А-Я]{17})(?![A-Z0-9А-Я])/gu;
 
 /**
  * Bulgarian plate: one or two region letters, four digits, then **exactly two** letters.
@@ -551,9 +557,13 @@ export function vinChecksumValid(vin: string): boolean {
   return (remainder === 10 ? "X" : String(remainder)) === vin.charAt(8);
 }
 
-/** Repair an OCR'd VIN: I, O and Q cannot occur in one, so they are 1, 0 and 0. */
+/**
+ * Repair an OCR'd VIN: Cyrillic lookalikes become the Latin letters they were printed as, and
+ * I, O and Q become 1, 0 and 0 — the VIN alphabet excludes those three for looking like digits.
+ */
 function repairVin(raw: string): string | null {
-  const fixed = raw.replace(/I/g, "1").replace(/[OQ]/g, "0");
+  const latin = [...raw].map((ch) => LOOKALIKE[ch] ?? ch).join("");
+  const fixed = latin.replace(/I/g, "1").replace(/[OQ]/g, "0");
   return /^[A-HJ-NPR-Z0-9]{17}$/.test(fixed) ? fixed : null;
 }
 
