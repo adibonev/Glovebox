@@ -2,7 +2,7 @@ import { colors } from "@glovebox/ui";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
@@ -36,9 +36,20 @@ export function DocumentCamera({
   const cameraRef = useRef<CameraView>(null);
 
   const [busy, setBusy] = useState(false);
-  const [torch, setTorch] = useState(false);
+  /**
+   * The torch starts on. Under room light the print loses contrast and recognition starts
+   * guessing — "A6" on the page came back as "A B". Lit from the phone, the same page reads
+   * right, so the torch is something to switch off, not something to remember to switch on.
+   */
+  const [torch, setTorch] = useState(true);
   const [zoom, setZoom] = useState(0);
   const [lens, setLens] = useState<string | undefined>(undefined);
+  /**
+   * Whether the lens picked in onCameraReady is the one actually running. iOS puts the torch out
+   * when the camera is swapped under it and never relights it, so the torch waits for the swap
+   * to land. Android has no lens choice and relights the torch itself whenever the camera opens.
+   */
+  const [lensSettled, setLensSettled] = useState(Platform.OS !== "ios");
   const [focusing, setFocusing] = useState(false);
 
   /**
@@ -50,13 +61,17 @@ export function DocumentCamera({
    * exclusion: anything but ultra-wide, telephoto or the multi-lens virtual devices.
    */
   const onCameraReady = useCallback(async () => {
+    let chosen: string | undefined;
     try {
       const lenses = (await cameraRef.current?.getAvailableLensesAsync()) ?? [];
       const plain = lenses.find((name) => /wide/i.test(name) && !/ultra|dual|triple|tele/i.test(name));
-      setLens(plain ?? lenses.find((name) => !/ultra|tele/i.test(name)));
+      chosen = plain ?? lenses.find((name) => !/ultra|tele/i.test(name));
+      setLens(chosen);
     } catch {
       // Not fatal: without a choice the OS default still takes a picture.
     }
+    // No swap is coming, so no lens event will say it landed.
+    if (!chosen) setLensSettled(true);
   }, []);
 
   /** expo-camera exposes no focus point, but dropping autofocus and restoring it re-runs it. */
@@ -143,10 +158,14 @@ export function DocumentCamera({
         facing="back"
         selectedLens={lens}
         zoom={zoom}
-        enableTorch={torch}
+        enableTorch={torch && lensSettled}
         autofocus={focusing ? "off" : "on"}
         animateShutter={false}
         onCameraReady={() => void onCameraReady()}
+        onAvailableLensesChanged={() => {
+          // The first one reports the lens iOS opened with, before any choice was made.
+          if (lens) setLensSettled(true);
+        }}
       >
         {/* Tapping the preview re-runs autofocus, the way a camera app behaves. */}
         <Pressable className="flex-1" onPress={refocus}>
