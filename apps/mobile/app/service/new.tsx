@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { ChipPicker, DateField, Field, PrimaryButton, VignettePresets } from "@/components/forms";
+import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
@@ -84,6 +85,7 @@ export default function NewServiceScreen() {
       <ChipPicker label="Вид услуга" value={serviceType} options={TYPE_OPTIONS} onChange={setServiceType} />
       <DateField label={expiring ? "Валидна до" : "Дата на разход"} value={expiryDate} onChange={setExpiryDate} />
       {serviceType === "vignette" && <VignettePresets onPick={setExpiryDate} />}
+      <RegistryCheckLink serviceType={serviceType} />
       <Field
         label="Цена (€) · по избор"
         value={cost}

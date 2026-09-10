@@ -1,4 +1,4 @@
-import { cumulativeAt, cumulativePoints, type CumulativePoint } from "@glovebox/core";
+import { cumulativeAt, cumulativePoints, distanceDriven, type CumulativePoint } from "@glovebox/core";
 import { chartColors, colors, donutSlices } from "@glovebox/ui";
 import { useMemo, useState } from "react";
 import {
@@ -13,7 +13,8 @@ import Svg, { Circle, Line, Path } from "react-native-svg";
 
 import { Screen } from "@/components/Screen";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER, formatCost, formatCostCompact } from "@/lib/labels";
-import { useAnalysis } from "@/lib/useAnalysis";
+import { formatKm } from "@/lib/mileage";
+import { useAnalysis, type AnalysisReading } from "@/lib/useAnalysis";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const fmtDate = (ms: number) => {
@@ -22,7 +23,7 @@ const fmtDate = (ms: number) => {
 };
 
 export default function AnalysisScreen() {
-  const { vehicles, records, loading, error } = useAnalysis();
+  const { vehicles, records, readings, loading, error } = useAnalysis();
   const [car, setCar] = useState("all");
   const [category, setCategory] = useState("all");
   const [year, setYear] = useState("all");
@@ -59,7 +60,7 @@ export default function AnalysisScreen() {
 
   if (loading) {
     return (
-      <Screen title="Анализ на разходите">
+      <Screen title="Анализ">
         <View className="mt-12 items-center">
           <ActivityIndicator color={colors.copper} />
         </View>
@@ -68,16 +69,16 @@ export default function AnalysisScreen() {
   }
   if (error) {
     return (
-      <Screen title="Анализ на разходите">
+      <Screen title="Анализ">
         <View className="rounded-xl border border-status-expired/40 bg-panel p-4">
           <Text className="text-sm text-status-expired">{error}</Text>
         </View>
       </Screen>
     );
   }
-  if (records.length === 0) {
+  if (records.length === 0 && readings.length === 0) {
     return (
-      <Screen title="Анализ на разходите">
+      <Screen title="Анализ">
         <View className="mt-10 items-center">
           <Text className="text-center text-base text-muted">Още нямаш записани разходи.</Text>
           <Text className="mt-1 text-center text-sm text-dim">
@@ -128,8 +129,19 @@ export default function AnalysisScreen() {
   const maxT = allTs.length ? Math.max(...allTs) : 1;
   const maxY = Math.max(1, ...series.map((s) => s.points.at(-1)?.cumulative ?? 0));
 
+  // Mileage follows the car filter only: the Service Type and period filters are about spend.
+  const mileage = vehicles
+    .filter((v) => car === "all" || v.id === car)
+    .map((v) => ({
+      id: v.id,
+      name: v.name,
+      color: carColor(v.id),
+      readings: readings.filter((r) => r.vehicleId === v.id),
+    }))
+    .filter((v) => v.readings.length > 0);
+
   return (
-    <Screen title="Анализ на разходите">
+    <Screen title="Анализ">
       <FilterChips
         label="Кола"
         value={car}
@@ -156,7 +168,14 @@ export default function AnalysisScreen() {
         />
       )}
 
-      {filtered.length === 0 ? (
+      {records.length === 0 ? (
+        <View className="mt-6 items-center">
+          <Text className="text-center text-base text-muted">Още нямаш записани разходи.</Text>
+          <Text className="mt-1 text-center text-sm text-dim">
+            Добави цена към услугите, за да видиш анализа.
+          </Text>
+        </View>
+      ) : filtered.length === 0 ? (
         <View className="mt-8 items-center">
           <Text className="text-center text-base text-muted">Няма разходи за този филтър.</Text>
         </View>
@@ -195,7 +214,79 @@ export default function AnalysisScreen() {
           <SpendTimeline series={series} minT={minT} maxT={maxT} maxY={maxY} />
         </>
       )}
+
+      <MileagePerYear entries={mileage} />
     </Screen>
+  );
+}
+
+/**
+ * Kilometres driven per year, one bar for each stretch between two Mileage Readings. Every
+ * stretch is scaled to twelve months, so an Inspection done a month late does not read as a year
+ * of more driving.
+ */
+function MileagePerYear({
+  entries,
+}: {
+  entries: { id: string; name: string; color: string; readings: AnalysisReading[] }[];
+}) {
+  const rows = entries.map((entry) => ({ ...entry, driven: distanceDriven(entry.readings) }));
+  const widest = Math.max(1, ...rows.flatMap((row) => row.driven.map((stretch) => stretch.kmPerYear)));
+
+  return (
+    <View className="mt-5 rounded-2xl border border-white/10 bg-panel p-4">
+      <Text className="mb-1 text-sm text-muted">Пробег на година</Text>
+
+      {rows.length === 0 && (
+        <Text className="py-2 text-sm leading-5 text-silver">
+          Снимай талона от техническия преглед и тук ще се вижда колко километра караш на година.
+        </Text>
+      )}
+
+      {rows.map((row) => {
+        const latest = row.readings.reduce<AnalysisReading | null>(
+          (last, reading) => (!last || reading.readOn.getTime() > last.readOn.getTime() ? reading : last),
+          null,
+        );
+        return (
+          <View key={row.id} className="border-t border-white/[0.06] py-3">
+            {rows.length > 1 && <Text className="mb-2 text-[15px] text-ivory">{row.name}</Text>}
+            {row.driven.length === 0 ? (
+              <Text className="text-sm leading-5 text-silver">
+                {latest ? `${formatKm(latest.km)} към ${fmtDate(latest.readOn.getTime())}. ` : ""}
+                Снимай и талона от следващия преглед — тогава ще видиш колко си изминал за година.
+              </Text>
+            ) : (
+              row.driven.map((stretch) => (
+                <View key={stretch.to.getTime()} className="mb-3">
+                  <View className="mb-1.5 flex-row items-baseline justify-between">
+                    <Text className="text-xs text-dim">
+                      {fmtDate(stretch.from.getTime())} – {fmtDate(stretch.to.getTime())}
+                    </Text>
+                    <Text className="text-[15px] font-semibold text-ivory">
+                      {formatKm(stretch.kmPerYear)}/год.
+                    </Text>
+                  </View>
+                  <View className="h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <View
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.max(3, Math.round((stretch.kmPerYear / widest) * 100))}%`,
+                        backgroundColor: row.color,
+                      }}
+                    />
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        );
+      })}
+
+      <Text className="mt-1 text-xs leading-4 text-dim">
+        Изминатото между два прегледа, сметнато за 12 месеца.
+      </Text>
+    </View>
   );
 }
 

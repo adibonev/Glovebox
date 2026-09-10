@@ -1,6 +1,7 @@
 import {
   DOCUMENT_SCAN_ENABLED,
   SCANNABLE_SERVICE_TYPES,
+  SupabaseMileageReadingRepository,
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   SupabaseVehicleRepository,
@@ -19,18 +20,21 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { DocumentCamera } from "@/components/DocumentCamera";
 import { ChipPicker, DateField, Field, PrimaryButton } from "@/components/forms";
+import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { BODY_TYPES, BODY_TYPE_LABELS } from "@/lib/bodyType";
 import { SERVICE_TYPE_LABELS } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { parseCost } from "@/lib/cost";
+import { parseKm, todayAsDate } from "@/lib/mileage";
 import { useDocumentRecognition } from "@/lib/recognize";
 import { supabase } from "@/lib/supabase";
 
 const userRepo = new SupabaseUserRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
+const mileageRepo = new SupabaseMileageReadingRepository(supabase);
 
 /**
  * Adding a Vehicle, from an empty account to a car with its obligations recorded.
@@ -87,6 +91,10 @@ export default function VehicleSetupScreen() {
   const [remaining, setRemaining] = useState<string[]>([]);
   /** Read off the certificate; null when it could not be read, and then simply not recorded. */
   const [inspectionExpiry, setInspectionExpiry] = useState<Date | null>(null);
+  /** Kilometres off the certificate or typed in, recorded as the Vehicle's first Mileage Reading. */
+  const [mileage, setMileage] = useState("");
+  /** The Inspection date those kilometres were read on. Typed in by hand, they are today's. */
+  const [mileageReadOn, setMileageReadOn] = useState<Date | null>(null);
   const [expiry, setExpiry] = useState<Date>(inOneYear);
   const [cost, setCost] = useState("");
 
@@ -112,6 +120,8 @@ export default function VehicleSetupScreen() {
       setVin(scanned.vehicle.vin ?? "");
       // The certificate carries the Inspection itself, so that obligation is already answered.
       if (scanned.serviceRecord) setInspectionExpiry(scanned.serviceRecord.expiryDate);
+      setMileage(scanned.mileage ? String(scanned.mileage.km) : "");
+      setMileageReadOn(scanned.mileage?.readOn ?? null);
       const missing = missingVehicleFields(scanned.vehicle);
       setNote(missing.length ? "Част от данните не се разчетоха — допълни ги." : null);
     } catch {
@@ -160,6 +170,15 @@ export default function VehicleSetupScreen() {
           expiryDate: inspectionExpiry,
         });
         recorded.push("inspection");
+      }
+
+      // The kilometres are the Vehicle's first Mileage Reading. Not worth losing the Vehicle over:
+      // if the reading cannot be stored, the per-year chart simply starts with the next one.
+      const km = parseKm(mileage);
+      if (km !== null) {
+        await mileageRepo
+          .record({ vehicleId: vehicle.id, userId: user.id, km, readOn: mileageReadOn ?? todayAsDate() })
+          .catch(() => undefined);
       }
 
       setRemaining(
@@ -358,6 +377,16 @@ export default function VehicleSetupScreen() {
             )}
           </View>
         )}
+        <Field
+          label="Километри"
+          value={mileage}
+          onChangeText={setMileage}
+          keyboardType="number-pad"
+          placeholder="напр. 185000"
+        />
+        <Text className="-mt-2 mb-4 text-xs leading-4 text-muted">
+          Пазим километрите от всеки преглед, за да видиш в „Анализ“ колко караш на година.
+        </Text>
         {inspectionExpiry && (
           <Text className="mb-4 text-xs text-muted">
             Разчетено с {engineLabel}. Срокът на прегледа се записва заедно с колата.
@@ -410,6 +439,7 @@ export default function VehicleSetupScreen() {
           tone="emerald"
           onPress={() => setStage("serviceForm")}
         />
+        <RegistryCheckLink serviceType={serviceType} />
         <Pressable onPress={() => nextService()} className="mt-5 items-center py-3">
           <Text className="text-sm text-dim">Добави по-късно</Text>
         </Pressable>
@@ -422,6 +452,7 @@ export default function VehicleSetupScreen() {
       {reader}
       {note && <Notice>{note}</Notice>}
       <DateField label="Валидна до" value={expiry} onChange={setExpiry} />
+      <RegistryCheckLink serviceType={serviceType} />
       <Field
         label="Цена (€) · по избор"
         value={cost}

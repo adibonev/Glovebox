@@ -1,4 +1,5 @@
 import {
+  SupabaseMileageReadingRepository,
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   SupabaseVehicleRepository,
@@ -12,15 +13,18 @@ import { supabase } from "./supabase";
 const userRepo = new SupabaseUserRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
+const mileageRepo = new SupabaseMileageReadingRepository(supabase);
 
 export type AnalysisVehicle = { id: string; name: string };
 export type AnalysisRecord = { vehicleId: string; serviceType: string; cost: number; ts: number };
+export type AnalysisReading = { vehicleId: string; km: number; readOn: Date };
 
-/** Loads the raw costed Service Records + Vehicles; the screen filters & charts them. */
+/** Loads the raw costed Service Records, Mileage Readings and Vehicles; the screen filters & charts them. */
 export function useAnalysis() {
   const { session } = useAuth();
   const [vehicles, setVehicles] = useState<AnalysisVehicle[]>([]);
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
+  const [readings, setReadings] = useState<AnalysisReading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedOnce = useRef(false);
@@ -32,9 +36,12 @@ export function useAnalysis() {
       const user =
         await userRepo.findOrCreateByAuthId({ authUserId: session.user.id, email: session.user.email ?? "" });
 
-      const [vs, services] = await Promise.all([
+      const [vs, services, mileage] = await Promise.all([
         vehicleRepo.listByUser(user.id),
         serviceRepo.listByUser(user.id),
+        // Mileage Readings arrived later than the rest of the schema. A store without them still
+        // has spend worth showing, so their absence is not an error.
+        mileageRepo.listByUser(user.id).catch(() => []),
       ]);
 
       setVehicles(vs.map((v) => ({ id: v.id, name: `${v.brand} ${v.model}` })));
@@ -48,6 +55,7 @@ export function useAnalysis() {
             ts: s.expiryDate.getTime(),
           })),
       );
+      setReadings(mileage.map((r) => ({ vehicleId: r.vehicleId, km: r.km, readOn: r.readOn })));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Грешка при зареждане на анализа.");
     }
@@ -68,5 +76,5 @@ export function useAnalysis() {
     }, [load]),
   );
 
-  return { vehicles, records, loading, error };
+  return { vehicles, records, readings, loading, error };
 }
