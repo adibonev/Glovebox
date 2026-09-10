@@ -465,28 +465,77 @@ function coverPairEnd(dates: readonly Date[]): Date | null {
 
 // Amounts are printed with the currency beside them, and Bulgaria prints both during the
 // changeover ("393.38 EUR / 769.38 BGN"). Capture every pair so the euro one can be preferred.
-const AMOUNT_WITH_CURRENCY = /(\d[\d\s]*[.,]\d{2})\s*(EUR|BGN|лв\.?|€)?/giu;
+//
+// An amount is a number with exactly two decimals that is not part of a longer run of digits and
+// dots. That excludes dates, and it has to: the due date is printed right under the total, and
+// "14.05.2026" holds a perfectly amount-shaped "14.05". Thousands may be grouped by one space,
+// never by a line break, which would glue a year to the figure on the next line.
+const AMOUNT_WITH_CURRENCY =
+  /(?<![\d.,])((?:\d{1,3}(?:[ \u00A0]\d{3})+|\d+)[.,]\d{2})(?![.,]?\d)\s*(EUR|BGN|лв\.?|€)?/giu;
 const TOTAL_DUE = /(?:дължима\s+сума|обща\s+сума|total\s+(?:sum|amount))/iu;
+
+type Amount = { value: number; currency: string };
+
+/** Every amount in `text`, in reading order. */
+function amountsIn(text: string): Amount[] {
+  const found: Amount[] = [];
+  for (const m of text.matchAll(AMOUNT_WITH_CURRENCY)) {
+    const value = Number(m[1]?.replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(value)) found.push({ value, currency: (m[2] ?? "").toUpperCase() });
+  }
+  return found;
+}
+
+/** The euro figure when an amount is printed in both currencies, otherwise the first one. */
+function preferEuro(found: readonly Amount[]): number | null {
+  const euro = found.find((a) => a.currency === "EUR" || a.currency === "€");
+  return (euro ?? found[0])?.value ?? null;
+}
+
+/**
+ * The amounts on the lines running away from `from` in one direction, for as long as a line holds
+ * nothing but amounts — which is how OCR returns a figure printed apart from its label.
+ */
+function figuresRunning(lines: readonly string[], from: number, step: 1 | -1): Amount[] {
+  const found: Amount[] = [];
+  for (let i = from; ; i += step) {
+    const line = lines[i];
+    if (line === undefined) break;
+    const amounts = amountsIn(line);
+    const rest = line.replace(AMOUNT_WITH_CURRENCY, "").replace(/[\s/|]/gu, "");
+    if (amounts.length === 0 || rest !== "") break;
+    found.push(...amounts);
+  }
+  return found;
+}
 
 /**
  * The amount actually due. Deliberately anchored: a Casco policy also prints the sum the
  * Vehicle is insured for, which is far larger, so "the biggest number" would record a Cost
  * an order of magnitude wrong. With no labelled total, this stays null and the User types it.
+ *
+ * The figure is looked for where a reading actually puts it, not anywhere after the label. Beside
+ * the label is how a row-by-row reading returns "Общо дължима сума 162.10". ДЗИ, though, prints
+ * each figure flush right and a little above its label, so a top-to-bottom reading hands the
+ * figure back on a line of its own *before* the label, and the line after the label is the
+ * payment line with the due date. Where figures stand alone on both sides, the total is the
+ * larger of them: it is the premium plus the tax printed next to it.
  */
 function readTotalDue(text: string): number | null {
-  const at = TOTAL_DUE.exec(text);
-  if (!at) return null;
+  const lines = text.split("\n");
+  for (const [i, line] of lines.entries()) {
+    const at = TOTAL_DUE.exec(line);
+    if (!at) continue;
 
-  const span = text.slice(at.index, at.index + 120);
-  const found: { value: number; currency: string }[] = [];
-  for (const m of span.matchAll(AMOUNT_WITH_CURRENCY)) {
-    const value = Number(m[1]?.replace(/\s/g, "").replace(",", "."));
-    if (Number.isFinite(value)) found.push({ value, currency: (m[2] ?? "").toUpperCase() });
+    const beside = preferEuro(amountsIn(line.slice(at.index + at[0].length)));
+    if (beside !== null) return beside;
+
+    const apart = [figuresRunning(lines, i - 1, -1), figuresRunning(lines, i + 1, 1)]
+      .map(preferEuro)
+      .filter((value): value is number => value !== null);
+    if (apart.length > 0) return Math.max(...apart);
   }
-  if (found.length === 0) return null;
-
-  const euro = found.find((a) => a.currency === "EUR" || a.currency === "€");
-  return (euro ?? found[0])?.value ?? null;
+  return null;
 }
 
 /**
