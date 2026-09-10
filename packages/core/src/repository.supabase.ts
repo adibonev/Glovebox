@@ -3,7 +3,9 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import type {
   Document,
+  MileageReading,
   NewDocument,
+  NewMileageReading,
   NewServiceRecord,
   NewVehicle,
   ServiceRecord,
@@ -14,6 +16,7 @@ import type {
 } from "./domain";
 import type {
   DocumentRepository,
+  MileageReadingRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
@@ -90,6 +93,19 @@ function documentFromRow(
     name: row.name,
     mimeType: row.mime_type,
     createdAt: row.created_at ? new Date(row.created_at) : null,
+  };
+}
+
+type MileageRow = Database["public"]["Tables"]["mileage_readings"]["Row"];
+
+function mileageReadingFromRow(
+  row: Pick<MileageRow, "id" | "car_id" | "km" | "read_on">,
+): MileageReading {
+  return {
+    id: String(row.id),
+    vehicleId: String(row.car_id),
+    km: row.km,
+    readOn: new Date(row.read_on),
   };
 }
 
@@ -347,5 +363,49 @@ export class SupabaseUserRepository implements UserRepository {
     throw new Error(
       `Вече съществува профил с този имейл. Влез в него или се свържи с поддръжката.`,
     );
+  }
+}
+
+const MILEAGE_COLUMNS = "id, car_id, km, read_on";
+
+export class SupabaseMileageReadingRepository implements MileageReadingRepository {
+  constructor(private readonly client: SupabaseClient<Database>) {}
+
+  async listByVehicle(vehicleId: string): Promise<MileageReading[]> {
+    const result = await this.client
+      .from("mileage_readings")
+      .select(MILEAGE_COLUMNS)
+      .eq("car_id", Number(vehicleId))
+      .order("read_on");
+    return rowsOrThrow(result, "mileage_readings.listByVehicle").map(mileageReadingFromRow);
+  }
+
+  async listByUser(userId: string): Promise<MileageReading[]> {
+    const result = await this.client
+      .from("mileage_readings")
+      .select(MILEAGE_COLUMNS)
+      .eq("user_id", Number(userId))
+      .order("read_on");
+    return rowsOrThrow(result, "mileage_readings.listByUser").map(mileageReadingFromRow);
+  }
+
+  async record(input: NewMileageReading): Promise<MileageReading> {
+    // One reading per Vehicle per day (UNIQUE car_id, read_on): the same certificate scanned twice
+    // updates that day's reading instead of adding a second. RLS scopes the write to the owner.
+    const { data, error } = await this.client
+      .from("mileage_readings")
+      .upsert(
+        {
+          car_id: Number(input.vehicleId),
+          user_id: Number(input.userId),
+          km: input.km,
+          read_on: toISODate(input.readOn),
+        },
+        { onConflict: "car_id,read_on" },
+      )
+      .select(MILEAGE_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase mileage_readings.record failed: ${error.message}`);
+    return mileageReadingFromRow(data);
   }
 }

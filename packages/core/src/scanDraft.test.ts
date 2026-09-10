@@ -77,6 +77,18 @@ describe("buildInspectionDraft", () => {
 
     expect(draft.serviceRecord).toBeNull();
   });
+
+  it("carries the Mileage printed on the certificate, dated the day of the Inspection", () => {
+    expect(buildInspectionDraft(AUDI_SCAN, null).mileage).toEqual({
+      km: 369786,
+      readOn: new Date("2026-08-17"),
+    });
+  });
+
+  it("proposes no Mileage Reading without the Inspection date to place it on", () => {
+    // Undated, the kilometres cannot be set against any other reading.
+    expect(buildInspectionDraft({ ...AUDI_SCAN, inspectionDate: null }, null).mileage).toBeNull();
+  });
 });
 
 describe("missingVehicleFields", () => {

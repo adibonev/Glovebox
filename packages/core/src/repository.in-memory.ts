@@ -1,6 +1,8 @@
 import type {
   Document,
+  MileageReading,
   NewDocument,
+  NewMileageReading,
   NewServiceRecord,
   NewVehicle,
   ServiceRecord,
@@ -11,6 +13,7 @@ import type {
 } from "./domain";
 import type {
   DocumentRepository,
+  MileageReadingRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
@@ -201,4 +204,50 @@ export class InMemoryUserRepository implements UserRepository {
       throw new Error(`No User for Auth Identity ${input.authUserId} and the e-mail is taken`);
     }
   }
+}
+
+/** In-memory MileageReadingRepository for tests; keeps one reading per Vehicle per day, like the store. */
+export class InMemoryMileageReadingRepository implements MileageReadingRepository {
+  private seq = 0;
+
+  constructor(
+    private readonly vehicles: Vehicle[],
+    private readonly readings: MileageReading[],
+  ) {}
+
+  async listByVehicle(vehicleId: string): Promise<MileageReading[]> {
+    return oldestFirst(this.readings.filter((reading) => reading.vehicleId === vehicleId));
+  }
+
+  async listByUser(userId: string): Promise<MileageReading[]> {
+    const owned = new Set(
+      this.vehicles.filter((vehicle) => vehicle.userId === userId).map((vehicle) => vehicle.id),
+    );
+    return oldestFirst(this.readings.filter((reading) => owned.has(reading.vehicleId)));
+  }
+
+  async record(input: NewMileageReading): Promise<MileageReading> {
+    const day = input.readOn.toISOString().slice(0, 10);
+    const sameDay = this.readings.find(
+      (reading) =>
+        reading.vehicleId === input.vehicleId && reading.readOn.toISOString().slice(0, 10) === day,
+    );
+    if (sameDay) {
+      sameDay.km = input.km;
+      return sameDay;
+    }
+
+    const reading: MileageReading = {
+      id: `mem-m-${++this.seq}`,
+      vehicleId: input.vehicleId,
+      km: input.km,
+      readOn: input.readOn,
+    };
+    this.readings.push(reading);
+    return reading;
+  }
+}
+
+function oldestFirst(readings: MileageReading[]): MileageReading[] {
+  return [...readings].sort((a, b) => a.readOn.getTime() - b.readOn.getTime());
 }

@@ -14,6 +14,7 @@
 | **Service Record** | A single tracked obligation or event for a Vehicle with a start and expiry date | Service, entry, record |
 | **Service Type** | The category an individual Service Record belongs to (enumerated, BG-specific) | Category, kind |
 | **Mileage** | The odometer reading recorded on a Vehicle or Service Record | Kilometers, odo |
+| **Mileage Reading** | The Mileage of a Vehicle on a given day, read off a Roadworthiness Inspection certificate or entered by hand. Readings are history, never overwritten: consecutive ones give the distance driven per year | Odometer entry, km log |
 
 ### Service Types (the enumeration)
 
@@ -55,6 +56,7 @@
 | ---- | ---------- | ---------------- |
 | **Registry Check** | A lookup against an official government registry that returns the Expiry Status and/or Expiry Date for one Service Type of one Vehicle (first source: Roadworthiness Inspection via rta.government.bg) | Scrape, lookup, sync |
 | **Registry Checker** | A port (interface) that performs a Registry Check by registration plate | Provider, client, fetcher |
+| **Registry Check Page** | The official page where a User runs a Registry Check themselves, for a Service Type the app cannot check on its own: Vignette → BG TOLL (check.bgtoll.bg), Vehicle Tax → НАП (statement of local taxes) | Link, external check |
 | **Check Result** | The outcome of a Registry Check: `{ serviceType, expiryDate: ISO\|null, status: "valid"\|"expiring"\|"expired"\|"unknown", checkedAt, source }` | Response, payload |
 
 ---

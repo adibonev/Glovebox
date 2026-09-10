@@ -35,6 +35,22 @@ export interface RegistryChecker {
 /** Source label for the Roadworthiness Inspection registry. */
 export const RTA_SOURCE = "rta.government.bg";
 
+/**
+ * Where a User runs a Registry Check themselves, for the Service Types the app cannot check on its
+ * own. Every one of these registries sits behind a CAPTCHA or a sign-in, so the User goes to it:
+ * BG TOLL answers a Vignette by plate, and НАП's statement of local taxes covers the Vehicle Tax of
+ * most municipalities once signed in with a ПИК or an electronic signature.
+ */
+const REGISTRY_CHECK_PAGES: Readonly<Record<string, string>> = {
+  vignette: "https://check.bgtoll.bg",
+  tax: "https://portal.nra.bg/details/liabilities-payment-mdt",
+};
+
+/** The Registry Check Page for a Service Type; null where the User holds the document itself. */
+export function registryCheckPage(serviceType: string): string | null {
+  return REGISTRY_CHECK_PAGES[serviceType] ?? null;
+}
+
 /** Default Reminder Window (days) for deriving `expiring` when none is supplied. */
 const DEFAULT_INSPECTION_WINDOW = 30;
 

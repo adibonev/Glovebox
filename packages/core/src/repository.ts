@@ -1,6 +1,8 @@
 import type {
   Document,
+  MileageReading,
   NewDocument,
+  NewMileageReading,
   NewServiceRecord,
   NewVehicle,
   ServiceRecord,
@@ -47,6 +49,18 @@ export interface DocumentRepository {
   listByServiceRecord(serviceRecordId: string): Promise<Document[]>;
   create(input: NewDocument): Promise<Document>;
   delete(id: string): Promise<void>;
+}
+
+/**
+ * Access to Mileage Readings, oldest first. `record` keeps one reading per Vehicle per day:
+ * scanning the same certificate twice must not count the same kilometres twice, and a correction
+ * made that day replaces the reading rather than adding a second. Writes are RLS-scoped to the
+ * owner.
+ */
+export interface MileageReadingRepository {
+  listByVehicle(vehicleId: string): Promise<MileageReading[]>;
+  listByUser(userId: string): Promise<MileageReading[]>;
+  record(input: NewMileageReading): Promise<MileageReading>;
 }
 
 /**

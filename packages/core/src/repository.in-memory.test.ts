@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Document, ServiceRecord, Vehicle } from "./domain";
 import {
   InMemoryDocumentRepository,
+  InMemoryMileageReadingRepository,
   InMemoryServiceRecordRepository,
   InMemoryUserRepository,
   InMemoryVehicleRepository,
@@ -176,5 +177,27 @@ describe("InMemoryUserRepository", () => {
 
     expect(a).toEqual(b);
     expect(await repo.findByAuthId("auth-1")).toEqual(a);
+  });
+});
+
+describe("InMemoryMileageReadingRepository", () => {
+  it("records Mileage Readings and lists them for their Vehicle, oldest first", async () => {
+    const repo = new InMemoryMileageReadingRepository(vehicles, []);
+
+    await repo.record({ vehicleId: "car-1", userId: "user-1", km: 369786, readOn: new Date("2026-08-17") });
+    await repo.record({ vehicleId: "car-1", userId: "user-1", km: 350000, readOn: new Date("2025-08-12") });
+    await repo.record({ vehicleId: "car-2", userId: "user-2", km: 90000, readOn: new Date("2026-01-10") });
+
+    expect((await repo.listByVehicle("car-1")).map((r) => r.km)).toEqual([350000, 369786]);
+    expect((await repo.listByUser("user-2")).map((r) => r.km)).toEqual([90000]);
+  });
+
+  it("keeps one reading per Vehicle per day, so a certificate scanned twice counts once", async () => {
+    const repo = new InMemoryMileageReadingRepository(vehicles, []);
+
+    await repo.record({ vehicleId: "car-1", userId: "user-1", km: 369786, readOn: new Date("2026-08-17") });
+    await repo.record({ vehicleId: "car-1", userId: "user-1", km: 369796, readOn: new Date("2026-08-17") });
+
+    expect((await repo.listByVehicle("car-1")).map((r) => r.km)).toEqual([369796]);
   });
 });

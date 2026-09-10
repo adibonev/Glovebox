@@ -47,6 +47,12 @@ export interface InspectionDraft {
    * record themselves. Null when the document carried no QR code (certificates predating it).
    */
   certificateUrl: string | null;
+  /**
+   * What the odometer showed on the day of the Inspection: a Mileage Reading, and with the next
+   * certificate the distance driven in between. Null unless both were read — undated, the
+   * kilometres cannot be set against any other reading.
+   */
+  mileage: { km: number; readOn: Date } | null;
 }
 
 /** Assemble the drafts a scanned Inspection certificate proposes. */
@@ -69,6 +75,10 @@ export function buildInspectionDraft(
       : null,
     firstRegistration: scan.firstRegistration,
     certificateUrl: certificate?.url ?? null,
+    mileage:
+      scan.mileageKm != null && scan.inspectionDate
+        ? { km: scan.mileageKm, readOn: scan.inspectionDate }
+        : null,
   };
 }
 

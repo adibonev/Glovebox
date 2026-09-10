@@ -60,6 +60,22 @@ export interface Document {
   createdAt: Date | null;
 }
 
+/**
+ * The Mileage of a Vehicle on a given day.
+ *
+ * History, not state: each Inspection certificate adds one and none replaces another, which is
+ * what lets the distance driven between them be worked out. The Inspection Service Record cannot
+ * carry it — renewing that record moves its Expiry Date in place.
+ */
+export interface MileageReading {
+  id: string;
+  vehicleId: string;
+  /** What the odometer showed, in kilometres. */
+  km: number;
+  /** The day it showed it — the date of the Inspection when read off a certificate. */
+  readOn: Date;
+}
+
 /** The authenticated person who owns Vehicles; bridges the Supabase Auth Identity. */
 export interface User {
   id: string;
@@ -124,4 +140,12 @@ export interface NewDocument {
   name: string;
   mimeType?: string | null;
   sizeBytes?: number | null;
+}
+
+/** Fields to record a Mileage Reading. `userId` is the denormalised owner (`mileage_readings.user_id`). */
+export interface NewMileageReading {
+  vehicleId: string;
+  userId: string;
+  km: number;
+  readOn: Date;
 }

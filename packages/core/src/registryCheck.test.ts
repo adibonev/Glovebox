@@ -4,12 +4,27 @@ import {
   InMemoryRegistryChecker,
   normalizeInspectionResult,
   normalizePlate,
+  registryCheckPage,
   shouldRecheck,
   type CheckResult,
 } from "./registryCheck";
 
 const TODAY = new Date("2026-06-05T09:00:00.000Z");
 const WINDOW = 30;
+
+describe("registryCheckPage", () => {
+  it("sends a Vignette to BG TOLL's own validity check", () => {
+    expect(registryCheckPage("vignette")).toBe("https://check.bgtoll.bg");
+  });
+
+  it("sends Vehicle Tax to the NAP statement of local taxes", () => {
+    expect(registryCheckPage("tax")).toBe("https://portal.nra.bg/details/liabilities-payment-mdt");
+  });
+
+  it("offers no page for a Service Type whose document the User already holds", () => {
+    expect(registryCheckPage("civil_liability")).toBeNull();
+  });
+});
 
 describe("normalizePlate", () => {
   it("uppercases, drops spaces and maps Cyrillic plate letters to Latin", () => {

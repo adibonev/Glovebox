@@ -232,6 +232,48 @@ export type Database = {
           },
         ]
       }
+      mileage_readings: {
+        Row: {
+          car_id: number
+          created_at: string | null
+          id: number
+          km: number
+          read_on: string
+          user_id: number
+        }
+        Insert: {
+          car_id: number
+          created_at?: string | null
+          id?: number
+          km: number
+          read_on: string
+          user_id: number
+        }
+        Update: {
+          car_id?: number
+          created_at?: string | null
+          id?: number
+          km?: number
+          read_on?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mileage_readings_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_readings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_tokens: {
         Row: {
           created_at: string | null
