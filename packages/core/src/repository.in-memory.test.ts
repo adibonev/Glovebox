@@ -10,8 +10,8 @@ import {
 } from "./repository.in-memory";
 
 const vehicles: Vehicle[] = [
-  { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB", vin: null, bodyType: "sedan" },
-  { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null, vin: null, bodyType: null },
+  { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: 2019, plate: "CB1234AB", vin: null, bodyType: "sedan", fuelType: "diesel" },
+  { id: "car-2", userId: "user-2", brand: "Audi", model: "A4", year: 2020, plate: null, vin: null, bodyType: null, fuelType: null },
 ];
 
 const serviceRecords: ServiceRecord[] = [
@@ -74,12 +74,33 @@ describe("InMemoryVehicleRepository writes", () => {
     expect(await repo.getById(created.id)).toBeNull();
     expect(await repo.listByUser("user-1")).toEqual([]);
   });
+
+  it("records how a Vehicle is powered, and lets it be corrected", async () => {
+    const repo = new InMemoryVehicleRepository([]);
+
+    const created = await repo.create({
+      userId: "user-1",
+      brand: "Tesla",
+      model: "Model 3",
+      fuelType: "electric",
+    });
+    expect(created.fuelType).toBe("electric");
+
+    const corrected = await repo.update(created.id, { fuelType: "petrol" });
+    expect(corrected.fuelType).toBe("petrol");
+  });
+
+  it("leaves the Fuel Type unset for a Vehicle saved without one", async () => {
+    const repo = new InMemoryVehicleRepository([]);
+
+    expect((await repo.create({ userId: "user-1", brand: "Kia", model: "Ceed" })).fuelType).toBeNull();
+  });
 });
 
 describe("InMemoryServiceRecordRepository writes", () => {
   it("creates, updates and deletes a Service Record for a Vehicle", async () => {
     const cars: Vehicle[] = [
-      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: null, plate: null, vin: null, bodyType: null },
+      { id: "car-1", userId: "user-1", brand: "BMW", model: "320d", year: null, plate: null, vin: null, bodyType: null, fuelType: null },
     ];
     const repo = new InMemoryServiceRecordRepository(cars, []);
 

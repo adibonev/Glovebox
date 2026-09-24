@@ -74,6 +74,7 @@ describe.skipIf(!hasEnv)("Supabase repositories (integration)", () => {
       plate: null,
       vin: null,
       bodyType: null,
+      fuelType: null,
     });
   });
 

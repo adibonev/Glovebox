@@ -1,8 +1,10 @@
+import { parseFuelType } from "@glovebox/core";
 import Link from "next/link";
 
 import { updateVehicle } from "@/app/_lib/actions";
 
 import { BodyTypePicker } from "../../_components/BodyTypePicker";
+import { FuelTypePicker } from "../../_components/FuelTypePicker";
 import { VehicleIdentityFields } from "../../_components/VehicleIdentityFields";
 import { parseBodyType } from "../../_lib/bodyType";
 
@@ -17,6 +19,7 @@ export type EditableVehicle = {
   plate: string | null;
   vin: string | null;
   bodyType: string | null;
+  fuelType: string | null;
 };
 
 /** Edit a Vehicle's identity (brand / model / year / plate). */
@@ -44,6 +47,7 @@ export function EditVehicleForm({ vehicle }: { vehicle: EditableVehicle }) {
         className={`${fieldClass} uppercase placeholder:normal-case`}
       />
       <BodyTypePicker value={parseBodyType(vehicle.bodyType)} />
+      <FuelTypePicker value={parseFuelType(vehicle.fuelType)} />
       <div className="flex items-center gap-2">
         <button
           type="submit"

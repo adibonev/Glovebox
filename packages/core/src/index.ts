@@ -13,6 +13,7 @@ export * from "./analysis";
 export * from "./billing";
 export * from "./documentScan";
 export * from "./domain";
+export * from "./fuelType";
 export * from "./mileage";
 export * from "./registryCheck";
 export * from "./reminder";

@@ -27,6 +27,8 @@ export interface Vehicle {
   vin: string | null;
   /** Body type code driving the silhouette, when set (`cars.body_type`). */
   bodyType: string | null;
+  /** How the Vehicle is powered, when set (`cars.fuel_type`; see {@link FUEL_TYPES}). */
+  fuelType: string | null;
 }
 
 /**
@@ -97,6 +99,7 @@ export interface NewVehicle {
   plate?: string | null;
   vin?: string | null;
   bodyType?: string | null;
+  fuelType?: string | null;
 }
 
 /** Editable Vehicle fields; an omitted key is left unchanged. */
@@ -107,6 +110,7 @@ export interface VehicleChanges {
   plate?: string | null;
   vin?: string | null;
   bodyType?: string | null;
+  fuelType?: string | null;
 }
 
 /**

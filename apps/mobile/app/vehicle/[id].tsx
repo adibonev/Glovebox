@@ -1,4 +1,4 @@
-import { SupabaseVehicleRepository } from "@glovebox/core";
+import { FUEL_TYPES, SupabaseVehicleRepository, parseFuelType, type FuelType } from "@glovebox/core";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Text, View } from "react-native";
@@ -8,6 +8,7 @@ import { Screen } from "@/components/Screen";
 import { SelectField } from "@/components/SelectField";
 import { BODY_TYPES, BODY_TYPE_LABELS, parseBodyType, type BodyType } from "@/lib/bodyType";
 import { hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
+import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { supabase } from "@/lib/supabase";
 
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
@@ -23,6 +24,7 @@ export default function EditVehicleScreen() {
   const [plate, setPlate] = useState("");
   const [vin, setVin] = useState("");
   const [bodyType, setBodyType] = useState<BodyType>("sedan");
+  const [fuelType, setFuelType] = useState<FuelType | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +40,7 @@ export default function EditVehicleScreen() {
         setPlate(v.plate ?? "");
         setVin(v.vin ?? "");
         setBodyType(parseBodyType(v.bodyType));
+        setFuelType(parseFuelType(v.fuelType));
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -64,6 +67,7 @@ export default function EditVehicleScreen() {
         plate: plate.trim() || null,
         vin: vin.trim().toUpperCase() || null,
         bodyType,
+        fuelType,
       });
       router.back();
     } catch (e) {
@@ -128,6 +132,12 @@ export default function EditVehicleScreen() {
       <Field label="Регистрационен номер" value={plate} onChangeText={setPlate} autoCapitalize="characters" />
       <Field label="VIN / рама (по избор)" value={vin} onChangeText={setVin} autoCapitalize="characters" maxLength={17} />
       <ChipPicker label="Тип каросерия" value={bodyType} options={BODY_OPTIONS} onChange={setBodyType} />
+      <ChipPicker
+        label="Гориво"
+        value={fuelType}
+        options={FUEL_TYPES.map((type) => ({ value: type, label: FUEL_TYPE_LABELS[type] }))}
+        onChange={setFuelType}
+      />
       {error && <Text className="mb-2 text-sm text-status-expired">{error}</Text>}
       <PrimaryButton label="Запази" onPress={save} loading={saving} disabled={!brand.trim() || !model.trim()} />
       <DangerButton label="Изтрий автомобила" onPress={confirmDelete} />

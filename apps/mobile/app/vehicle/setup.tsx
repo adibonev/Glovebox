@@ -1,5 +1,6 @@
 import {
   DOCUMENT_SCAN_ENABLED,
+  FUEL_TYPES,
   SCANNABLE_SERVICE_TYPES,
   SupabaseMileageReadingRepository,
   SupabaseServiceRecordRepository,
@@ -12,6 +13,7 @@ import {
   scanPolicyDocument,
   suggestVinCorrection,
   vinChecksumValid,
+  type FuelType,
 } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
@@ -26,6 +28,7 @@ import { SelectField } from "@/components/SelectField";
 import { useAuth } from "@/lib/auth";
 import { BODY_TYPES, BODY_TYPE_LABELS } from "@/lib/bodyType";
 import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
+import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { SERVICE_TYPE_LABELS } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { parseCost } from "@/lib/cost";
@@ -82,6 +85,8 @@ export default function VehicleSetupScreen() {
 
   // The Vehicle.
   const [bodyType, setBodyType] = useState("sedan");
+  /** Null until chosen: an unanswered question is not the same as a petrol car. */
+  const [fuelType, setFuelType] = useState<FuelType | null>(null);
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
@@ -172,6 +177,7 @@ export default function VehicleSetupScreen() {
         plate: plate.trim() || null,
         vin: vin.trim().toUpperCase() || null,
         bodyType,
+        fuelType,
       });
       setVehicleId(vehicle.id);
 
@@ -321,6 +327,12 @@ export default function VehicleSetupScreen() {
           options={BODY_TYPES.map((type) => ({ value: type, label: BODY_TYPE_LABELS[type] }))}
           onChange={setBodyType}
         />
+        <ChipPicker
+          label="Гориво"
+          value={fuelType}
+          options={FUEL_TYPES.map((type) => ({ value: type, label: FUEL_TYPE_LABELS[type] }))}
+          onChange={setFuelType}
+        />
         <PrimaryButton label="Напред" onPress={() => setStage("vehicleSource")} />
       </Screen>
     );
@@ -468,10 +480,23 @@ export default function VehicleSetupScreen() {
           tone="emerald"
           onPress={() => setStage("serviceForm")}
         />
+        {/* Casco is the one obligation a driver may simply not have, and an answer of "no" has to
+            be as easy to give as "yes" — otherwise the only way on is a link that reads like
+            postponing something. */}
+        {serviceType === "casco" && (
+          <Choice
+            title="Нямам каско"
+            body="Продължаваме напред. Можеш да го добавиш по всяко време."
+            tone="plain"
+            onPress={() => nextService()}
+          />
+        )}
         <RegistryCheckLink serviceType={serviceType} />
-        <Pressable onPress={() => nextService()} className="mt-5 items-center py-3">
-          <Text className="text-sm text-dim">Добави по-късно</Text>
-        </Pressable>
+        {serviceType !== "casco" && (
+          <Pressable onPress={() => nextService()} className="mt-5 items-center py-3">
+            <Text className="text-sm text-dim">Добави по-късно</Text>
+          </Pressable>
+        )}
       </Screen>
     );
   }
@@ -506,16 +531,17 @@ function Choice({
 }: {
   title: string;
   body: string;
-  tone: "copper" | "emerald";
+  tone: "copper" | "emerald" | "plain";
   onPress: () => void;
 }) {
+  const TONES = {
+    copper: "border-copper/60 bg-copper/15",
+    emerald: "border-emerald/60 bg-emerald/15",
+    plain: "border-white/15 bg-white/[0.04]",
+  };
+
   return (
-    <Pressable
-      onPress={onPress}
-      className={`mb-3 rounded-2xl border p-5 ${
-        tone === "copper" ? "border-copper/60 bg-copper/15" : "border-emerald/60 bg-emerald/15"
-      }`}
-    >
+    <Pressable onPress={onPress} className={`mb-3 rounded-2xl border p-5 ${TONES[tone]}`}>
       <Text className="text-lg font-semibold text-ivory">{title}</Text>
       <Text className="mt-1.5 text-sm leading-5 text-silver">{body}</Text>
     </Pressable>

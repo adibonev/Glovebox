@@ -11,6 +11,7 @@ import {
   canAddDocument,
   canAddService,
   canAddVehicle,
+  parseFuelType,
   purgeAccount,
 } from "@glovebox/core";
 
@@ -28,6 +29,11 @@ import { documentTooLargeMessage } from "./upload";
 function readBodyType(formData: FormData): string {
   const value = String(formData.get("bodyType") ?? "");
   return (BODY_TYPES as string[]).includes(value) ? value : "sedan";
+}
+
+/** Read a Fuel Type from the form; null when nothing was chosen (that is not petrol). */
+function readFuelType(formData: FormData): string | null {
+  return parseFuelType(String(formData.get("fuelType") ?? ""));
 }
 
 /** Read an optional cost (EUR) from the form; accepts comma or dot decimals. */
@@ -119,6 +125,7 @@ export async function addVehicle(formData: FormData): Promise<void> {
       license_plate: plate || null,
       vin: vin || null,
       body_type: readBodyType(formData),
+      fuel_type: readFuelType(formData),
     })
     .select("id")
     .single();
@@ -153,6 +160,7 @@ export async function updateVehicle(formData: FormData): Promise<void> {
       license_plate: plate || null,
       vin: vin || null,
       body_type: readBodyType(formData),
+      fuel_type: readFuelType(formData),
     })
     .eq("id", id)
     .eq("user_id", userId);
