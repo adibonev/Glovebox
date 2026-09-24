@@ -16,6 +16,7 @@ export * from "./domain";
 export * from "./fuelType";
 export * from "./mileage";
 export * from "./registryCheck";
+export * from "./reviewPrompt";
 export * from "./reminder";
 export * from "./scanDraft";
 export * from "./schedule";

@@ -7,3 +7,7 @@ export const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? "https://www.gloveb
   /\/+$/,
   "",
 );
+
+/** The app's page in the App Store, and the entry that opens it straight on writing a review. */
+export const APP_STORE_URL = "https://apps.apple.com/bg/app/id6806023587";
+export const APP_STORE_REVIEW_URL = `${APP_STORE_URL}?action=write-review`;

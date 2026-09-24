@@ -32,6 +32,7 @@ import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } fr
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { SERVICE_TYPE_LABELS } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
+import { maybeAskForReview } from "@/lib/review";
 import { parseCost } from "@/lib/cost";
 import { parseKm, todayAsDate } from "@/lib/mileage";
 import { useDocumentRecognition } from "@/lib/recognize";
@@ -282,7 +283,12 @@ export default function VehicleSetupScreen() {
   };
 
   /** The journey ends where the User decides when to be told — the point of recording any of it. */
-  const finish = () => router.replace("/(tabs)/reminders");
+  const finish = () => {
+    router.replace("/(tabs)/reminders");
+    // A car is now fully recorded, which is the moment this app has earned a rating. Asked once
+    // the screen has settled rather than mid-navigation, and at most once a quarter.
+    setTimeout(() => void maybeAskForReview(), 1500);
+  };
 
   // ---- screens -----------------------------------------------------------------------------
 

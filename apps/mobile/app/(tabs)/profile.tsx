@@ -12,7 +12,7 @@ import {
   updatePassword,
 } from "@/lib/account";
 import { signOut, useAuth } from "@/lib/auth";
-import { SITE_URL } from "@/lib/config";
+import { APP_STORE_REVIEW_URL, SITE_URL } from "@/lib/config";
 import { useGarage } from "@/lib/useGarage";
 
 const PLAN_LABELS: Record<Plan, string> = { free: "Free", pro: "Pro", legacy: "Legacy" };
@@ -226,6 +226,15 @@ export default function ProfileTab() {
             <Text className="text-base font-semibold text-copper">♛ Админ панел</Text>
           </Pressable>
         )}
+
+        {/* The stars themselves live in the system prompt after a scan; this is for anyone who
+            goes looking to say something. */}
+        <Pressable
+          onPress={() => Linking.openURL(APP_STORE_REVIEW_URL)}
+          className="mt-4 flex-row items-center justify-center gap-2 rounded-xl border border-white/10 bg-panel py-4"
+        >
+          <Text className="text-base font-semibold text-ivory">★ Оцени Glovebox</Text>
+        </Pressable>
 
         <Pressable onPress={signOut} className="mt-6 items-center rounded-xl border border-white/10 py-4">
           <Text className="text-base font-semibold text-status-expired">Изход</Text>

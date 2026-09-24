@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { AppStorePromo } from "@/components/AppStorePromo";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PostHogProvider } from "@/components/PostHogProvider";
 
@@ -38,6 +39,8 @@ export const metadata: Metadata = {
   title,
   description,
   applicationName: "Glovebox",
+  // Apple's own smart banner: iOS Safari offers the app at the top of the page, with no UI of ours.
+  itunes: { appId: "6806023587" },
   openGraph: {
     title,
     description,
@@ -62,6 +65,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="bg-ink font-body text-ivory antialiased">
         <PostHogProvider>
           {children}
+          <AppStorePromo />
           <CookieConsent />
         </PostHogProvider>
       </body>
