@@ -5,6 +5,8 @@ import { motion, useReducedMotion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
+import { APP_STORE_URL } from "@/lib/appStore";
+
 import { GaugePanel } from "./GaugePanel";
 import { PlateBadge } from "./PlateBadge";
 import { Wheel } from "./Wheel";
@@ -113,6 +115,20 @@ export function Landing() {
               >
                 Вход
               </Link>
+              {/* Apple's own badge, unaltered, as their marketing guidelines require. */}
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Свали Glovebox от App Store"
+                className="inline-block transition hover:opacity-90"
+              >
+                <img
+                  src="/app-store-badge.svg"
+                  alt="Download on the App Store"
+                  className="h-[50px] w-auto"
+                />
+              </a>
             </motion.div>
 
             <motion.p variants={rise} className="mt-4 font-body text-[13px] text-dim">

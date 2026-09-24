@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-const APP_STORE_URL = "https://apps.apple.com/bg/app/id6806023587";
+import { APP_STORE_URL } from "@/lib/appStore";
+
 const DISMISSED = "glovebox.appPromo.dismissed";
 
 /**
@@ -64,9 +65,11 @@ export function AppStorePromo() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={dismiss}
-          className="mt-3 flex items-center justify-center rounded-xl bg-emerald px-4 py-2.5 font-body font-semibold text-ivory transition hover:bg-emerald/90"
+          aria-label="Свали Glovebox от App Store"
+          className="mt-3 inline-block rounded-lg transition hover:opacity-90"
         >
-          Свали от App Store
+          {/* Apple's own badge, served unaltered as their marketing guidelines require. */}
+          <img src="/app-store-badge.svg" alt="Download on the App Store" className="h-12 w-auto" />
         </a>
       </div>
     </div>
