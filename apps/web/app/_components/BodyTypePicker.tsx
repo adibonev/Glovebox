@@ -1,4 +1,4 @@
-import { BODY_TYPES, BODY_TYPE_LABELS, type BodyType } from "../_lib/bodyType";
+import { BODY_TYPE_LABELS, BODY_TYPE_OPTIONS, type BodyType } from "../_lib/bodyType";
 
 /**
  * Body type chooser: pure-CSS radio chips (name="bodyType") showing each silhouette,
@@ -11,7 +11,7 @@ export function BodyTypePicker({ value = "sedan" }: { value?: BodyType }) {
         Тип каросерия
       </legend>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-        {BODY_TYPES.map((type) => (
+        {BODY_TYPE_OPTIONS.map((type) => (
           <label key={type} className="cursor-pointer">
             <input
               type="radio"

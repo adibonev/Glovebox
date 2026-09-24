@@ -27,7 +27,7 @@ import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
 import { SelectField } from "@/components/SelectField";
 import { useAuth } from "@/lib/auth";
-import { BODY_TYPES, BODY_TYPE_LABELS } from "@/lib/bodyType";
+import { BODY_TYPE_LABELS, BODY_TYPE_OPTIONS } from "@/lib/bodyType";
 import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { SERVICE_TYPE_LABELS } from "@/lib/labels";
@@ -325,7 +325,7 @@ export default function VehicleSetupScreen() {
         <ChipPicker
           label="Каросерия"
           value={bodyType}
-          options={BODY_TYPES.map((type) => ({ value: type, label: BODY_TYPE_LABELS[type] }))}
+          options={BODY_TYPE_OPTIONS.map((type) => ({ value: type, label: BODY_TYPE_LABELS[type] }))}
           onChange={setBodyType}
         />
         <ChipPicker

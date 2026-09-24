@@ -6,13 +6,18 @@ import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { ChipPicker, DangerButton, Field, PrimaryButton } from "@/components/forms";
 import { Screen } from "@/components/Screen";
 import { SelectField } from "@/components/SelectField";
-import { BODY_TYPES, BODY_TYPE_LABELS, parseBodyType, type BodyType } from "@/lib/bodyType";
+import {
+  BODY_TYPE_LABELS,
+  BODY_TYPE_OPTIONS,
+  parseBodyType,
+  type BodyType,
+} from "@/lib/bodyType";
 import { hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { supabase } from "@/lib/supabase";
 
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
-const BODY_OPTIONS = BODY_TYPES.map((b) => ({ value: b, label: BODY_TYPE_LABELS[b] }));
+const BODY_OPTIONS = BODY_TYPE_OPTIONS.map((b) => ({ value: b, label: BODY_TYPE_LABELS[b] }));
 
 export default function EditVehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

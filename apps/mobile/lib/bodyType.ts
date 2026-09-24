@@ -11,6 +11,12 @@ export const BODY_TYPES: BodyType[] = [
   "truck",
 ];
 
+/**
+ * What the pickers offer. The lorry is built and stored Vehicles keep it, but it is held back
+ * until its silhouette is drawn to the standard of the cars — put "truck" back to show it.
+ */
+export const BODY_TYPE_OPTIONS: BodyType[] = BODY_TYPES.filter((type) => type !== "truck");
+
 export const BODY_TYPE_LABELS: Record<BodyType, string> = {
   hatchback: "Хечбек",
   sedan: "Седан",
