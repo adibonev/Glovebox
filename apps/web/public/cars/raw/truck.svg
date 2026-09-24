@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="330" viewBox="0 0 900 330">
+  <!-- Box body -->
+  <path d="M300 44 H862 a10 10 0 0 1 10 10 V240 a8 8 0 0 1 -8 8 H300 Z" fill="#FFFFFF"/>
+  <path d="M300 200 H872 V240 a8 8 0 0 1 -8 8 H300 Z" fill="#F1F2F0"/>
+  <path d="M300 44 H862 a10 10 0 0 1 10 10 V240 a8 8 0 0 1 -8 8 H300 Z" fill="none" stroke="#DCDEDA" stroke-width="3"/>
+  <!-- Panel seams on the box -->
+  <path d="M470 52 V240 M640 52 V240" stroke="#E8E9E6" stroke-width="3"/>
+
+  <!-- Cab -->
+  <path d="M300 248 H52 a14 14 0 0 1 -14 -14 V168 a20 20 0 0 1 14 -19 l46 -15 40 -54 a26 26 0 0 1 21 -11 H300 Z" fill="#FFFFFF"/>
+  <path d="M300 248 H52 a14 14 0 0 1 -14 -14 V206 H300 Z" fill="#F1F2F0"/>
+  <path d="M300 248 H52 a14 14 0 0 1 -14 -14 V168 a20 20 0 0 1 14 -19 l46 -15 40 -54 a26 26 0 0 1 21 -11 H300 Z" fill="none" stroke="#DCDEDA" stroke-width="3"/>
+
+  <!-- Windscreen and door window -->
+  <path d="M112 142 L148 94 a14 14 0 0 1 11 -6 H196 V142 Z" fill="#2E3338"/>
+  <path d="M212 88 H286 V142 H212 Z" fill="#2E3338"/>
+  <!-- Door line and handle -->
+  <path d="M204 88 V248" stroke="#E2E4E0" stroke-width="3"/>
+  <rect x="222" y="164" width="34" height="8" rx="4" fill="#D9DBD7"/>
+
+  <!-- Mirror -->
+  <path d="M104 116 h-16 a5 5 0 0 0 -5 5 v22 a5 5 0 0 0 5 5 h16 Z" fill="#CFD2CB"/>
+
+  <!-- Front bumper and lamp -->
+  <path d="M38 210 h34 v38 H52 a14 14 0 0 1 -14 -14 Z" fill="#E4E6E2"/>
+  <rect x="42" y="176" width="30" height="16" rx="6" fill="#F7F7F5"/>
+
+  <!-- Wheels: one under the cab, twin axle under the box -->
+  <g fill="#23272B">
+    <circle cx="176" cy="248" r="56"/>
+    <circle cx="664" cy="248" r="56"/>
+    <circle cx="790" cy="248" r="56"/>
+  </g>
+  <g fill="#9AA0A6">
+    <circle cx="176" cy="248" r="24"/>
+    <circle cx="664" cy="248" r="24"/>
+    <circle cx="790" cy="248" r="24"/>
+  </g>
+  <g fill="#5C6167">
+    <circle cx="176" cy="248" r="9"/>
+    <circle cx="664" cy="248" r="9"/>
+    <circle cx="790" cy="248" r="9"/>
+  </g>
+
+  <!-- Wheel arches over the tyres, so the body reads in front of them -->
+  <path d="M120 248 a56 56 0 0 1 112 0 Z" fill="#FFFFFF"/>
+  <path d="M608 248 a56 56 0 0 1 112 0 Z" fill="#FFFFFF"/>
+  <path d="M734 248 a56 56 0 0 1 112 0 Z" fill="#FFFFFF"/>
+  <g fill="#23272B">
+    <circle cx="176" cy="248" r="44"/>
+    <circle cx="664" cy="248" r="44"/>
+    <circle cx="790" cy="248" r="44"/>
+  </g>
+  <g fill="#9AA0A6">
+    <circle cx="176" cy="248" r="19"/>
+    <circle cx="664" cy="248" r="19"/>
+    <circle cx="790" cy="248" r="19"/>
+  </g>
+  <g fill="#5C6167">
+    <circle cx="176" cy="248" r="7"/>
+    <circle cx="664" cy="248" r="7"/>
+    <circle cx="790" cy="248" r="7"/>
+  </g>
+</svg>

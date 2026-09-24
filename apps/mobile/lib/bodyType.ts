@@ -1,7 +1,15 @@
 // Vehicle body silhouettes (mirrors apps/web/app/_lib/bodyType.ts; BG labels, i18n-ready).
-export type BodyType = "hatchback" | "sedan" | "wagon" | "suv" | "coupe" | "pickup";
+export type BodyType = "hatchback" | "sedan" | "wagon" | "suv" | "coupe" | "pickup" | "truck";
 
-export const BODY_TYPES: BodyType[] = ["hatchback", "sedan", "wagon", "suv", "coupe", "pickup"];
+export const BODY_TYPES: BodyType[] = [
+  "hatchback",
+  "sedan",
+  "wagon",
+  "suv",
+  "coupe",
+  "pickup",
+  "truck",
+];
 
 export const BODY_TYPE_LABELS: Record<BodyType, string> = {
   hatchback: "Хечбек",
@@ -10,6 +18,7 @@ export const BODY_TYPE_LABELS: Record<BodyType, string> = {
   suv: "Джип",
   coupe: "Купе",
   pickup: "Пикап",
+  truck: "Камион",
 };
 
 /** Coerce a stored `cars.body_type` value to a known silhouette (default: sedan). */

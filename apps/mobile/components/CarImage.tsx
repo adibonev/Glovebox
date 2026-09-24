@@ -6,12 +6,21 @@ import hatchback from "../assets/cars/hatchback.webp";
 import pickup from "../assets/cars/pickup.webp";
 import sedan from "../assets/cars/sedan.webp";
 import suv from "../assets/cars/suv.webp";
+import truck from "../assets/cars/truck.webp";
 import wagon from "../assets/cars/wagon.webp";
 
 import type { BodyType } from "@/lib/bodyType";
 
 // The webp silhouettes are shared with web (static imports → Metro asset ids).
-const CAR_IMAGES: Record<BodyType, number> = { hatchback, sedan, wagon, suv, coupe, pickup };
+const CAR_IMAGES: Record<BodyType, number> = {
+  hatchback,
+  sedan,
+  wagon,
+  suv,
+  coupe,
+  pickup,
+  truck,
+};
 
 /** The vehicle silhouette on a soft emerald halo (mirrors the web VehicleCard look). */
 export function CarImage({ bodyType, height = 160 }: { bodyType: BodyType; height?: number }) {

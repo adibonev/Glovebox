@@ -3,7 +3,7 @@
  * directly on the dark scene by VehicleCard. VIN decoding (NHTSA) comes later —
  * for now bodyType is a data field that defaults to "sedan".
  */
-export type BodyType = "hatchback" | "sedan" | "wagon" | "suv" | "coupe" | "pickup";
+export type BodyType = "hatchback" | "sedan" | "wagon" | "suv" | "coupe" | "pickup" | "truck";
 
 export const BODY_TYPES: BodyType[] = [
   "hatchback",
@@ -12,6 +12,7 @@ export const BODY_TYPES: BodyType[] = [
   "suv",
   "coupe",
   "pickup",
+  "truck",
 ];
 
 /** Bulgarian labels for the body type picker. Centralized / i18n-ready. */
@@ -22,6 +23,7 @@ export const BODY_TYPE_LABELS: Record<BodyType, string> = {
   suv: "Джип",
   coupe: "Купе",
   pickup: "Пикап",
+  truck: "Камион",
 };
 
 /** Coerce a stored `cars.body_type` value to a known silhouette (default: sedan). */
