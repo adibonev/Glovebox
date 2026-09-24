@@ -7,6 +7,7 @@ import {
   SupabaseUserRepository,
   SupabaseVehicleRepository,
   canAddVehicle,
+  exemptFromVehicleTax,
   missingVehicleFields,
   onboardingGaps,
   scanInspectionDocument,
@@ -466,6 +467,23 @@ export default function VehicleSetupScreen() {
               ? "Имаш ли каско за тази кола?"
               : `Кога изтича ${label.toLowerCase()}?`}
         </Text>
+        {/* An electric car owes no Vehicle Tax, and the driver may well not know it. Told, not
+            assumed: the exemption depends on a declaration only they can have filed. */}
+        {serviceType === "tax" && exemptFromVehicleTax(fuelType) && (
+          <>
+            <Notice>
+              Електрическите автомобили не дължат данък МПС (ЗМДТ чл. 58, ал. 2). Освобождаването
+              важи, след като подадеш декларация по чл. 54, ал. 4 в общината по постоянния си
+              адрес — до два месеца от придобиването на колата.
+            </Notice>
+            <Choice
+              title="Не дължа данък"
+              body="Колата е електрическа. Продължаваме напред."
+              tone="plain"
+              onPress={() => nextService()}
+            />
+          </>
+        )}
         {scannable(serviceType) && (
           <Choice
             title="Снимай полицата"

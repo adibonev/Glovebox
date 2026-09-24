@@ -1,6 +1,7 @@
 import {
   SupabaseServiceRecordRepository,
   SupabaseVehicleRepository,
+  exemptFromVehicleTax,
   onboardingGaps,
 } from "@glovebox/core";
 import Link from "next/link";
@@ -50,6 +51,13 @@ export default async function VehicleSetupPage({
   const name = [vehicle.brand, vehicle.model].filter(Boolean).join(" ");
   const done = gaps.serviceTypes.length === 0;
 
+  // For an electric car the tax line would be plain wrong: it owes none. Said rather than
+  // assumed, because the exemption follows a declaration only the owner can have filed.
+  const why = (type: string) =>
+    type === "tax" && exemptFromVehicleTax(vehicle.fuelType)
+      ? "Електрическите автомобили не дължат данък МПС (ЗМДТ чл. 58, ал. 2) — след декларация по чл. 54, ал. 4 в общината."
+      : WHY[type];
+
   return (
     <Shell email={user.email}>
       <section className="anim-up anim-d1 mx-auto mt-2 max-w-xl">
@@ -79,7 +87,7 @@ export default async function VehicleSetupPage({
                       {SERVICE_TYPE_LABELS[type]}
                     </span>
                     <span className="font-body text-[13px] leading-snug text-silver/60">
-                      {WHY[type]}
+                      {why(type)}
                     </span>
                   </span>
                   <span aria-hidden className="ml-auto font-body text-copper">

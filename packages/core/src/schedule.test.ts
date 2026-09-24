@@ -1,11 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  exemptFromVehicleTax,
   inspectionSchedule,
   nextInspectionDate,
   vehicleTaxDeadlines,
   vignetteExpiry,
 } from "./schedule";
+
+describe("exemptFromVehicleTax", () => {
+  it("frees a fully electric car from Vehicle Tax", () => {
+    // ЗМДТ чл. 58, ал. 2.
+    expect(exemptFromVehicleTax("electric")).toBe(true);
+  });
+
+  it("taxes a hybrid like any other car, however far it travels on the battery", () => {
+    expect(exemptFromVehicleTax("hybrid")).toBe(false);
+  });
+
+  it("assumes the tax is owed when no Fuel Type was ever recorded", () => {
+    expect(exemptFromVehicleTax(null)).toBe(false);
+  });
+});
 
 describe("nextInspectionDate", () => {
   it("falls on the third anniversary of first registration for a Vehicle registered new", () => {

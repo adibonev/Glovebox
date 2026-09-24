@@ -147,6 +147,19 @@ export interface VehicleTaxDeadlines {
  * Public holidays are **not** modelled either: a statutory holiday falling on one of these
  * dates would push it one day further than returned here. Erring early is deliberate.
  */
+/**
+ * Whether a Vehicle owes no Vehicle Tax at all, judged by how it is powered.
+ *
+ * ЗМДТ чл. 58, ал. 2 exempts a **fully electric** vehicle. A hybrid is not exempt, however far it
+ * travels on the battery. The exemption is also not automatic — the owner declares the car under
+ * чл. 54, ал. 4 at the municipality of their permanent address, within two months of acquiring
+ * it — so this answers only what the law says about the car, and the app still has to say the
+ * rest to the User rather than quietly dropping the obligation.
+ */
+export function exemptFromVehicleTax(fuelType: string | null | undefined): boolean {
+  return fuelType === "electric";
+}
+
 export function vehicleTaxDeadlines(year: number): VehicleTaxDeadlines {
   return {
     discount: rollToWorkingDay(utcDate(year, 3, 30)),
