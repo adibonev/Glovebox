@@ -246,6 +246,11 @@ const MAKES: Record<string, string> = {
 
 const MAKES_LONGEST_FIRST = Object.keys(MAKES).sort((a, b) => b.length - a.length);
 
+/** The Latin name of a make spelled the way a certificate prints it ("АУДИ" → "Audi"). */
+export function latinMakeName(raw: string): string | null {
+  return MAKES[raw.trim().toUpperCase()] ?? null;
+}
+
 // The 12 Cyrillic letters that look like Latin ones, as used on plates and in model names.
 const LOOKALIKE: Record<string, string> = {
   А: "A", В: "B", Е: "E", К: "K", М: "M", Н: "H",

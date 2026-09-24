@@ -1,5 +1,6 @@
 import { addVehicle } from "../_lib/actions";
 import { BodyTypePicker } from "./BodyTypePicker";
+import { VehicleIdentityFields } from "./VehicleIdentityFields";
 
 const fieldClass =
   "rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60";
@@ -15,9 +16,7 @@ export function AddVehicleForm() {
         Добави колата си, за да започнеш да следиш сроковете.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <input name="brand" required placeholder="Марка (напр. BMW)" className={fieldClass} />
-        <input name="model" required placeholder="Модел (напр. 320d)" className={fieldClass} />
-        <input name="year" type="number" placeholder="Година" className={fieldClass} />
+        <VehicleIdentityFields />
         <input name="plate" placeholder="Рег. номер" className={fieldClass} />
       </div>
       <input

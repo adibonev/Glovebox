@@ -3,6 +3,7 @@ import Link from "next/link";
 import { updateVehicle } from "@/app/_lib/actions";
 
 import { BodyTypePicker } from "../../_components/BodyTypePicker";
+import { VehicleIdentityFields } from "../../_components/VehicleIdentityFields";
 import { parseBodyType } from "../../_lib/bodyType";
 
 const fieldClass =
@@ -27,15 +28,7 @@ export function EditVehicleForm({ vehicle }: { vehicle: EditableVehicle }) {
     >
       <input type="hidden" name="id" value={vehicle.id} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <input name="brand" required defaultValue={vehicle.brand} placeholder="Марка (напр. BMW)" className={fieldClass} />
-        <input name="model" required defaultValue={vehicle.model} placeholder="Модел (напр. 320d)" className={fieldClass} />
-        <input
-          name="year"
-          type="number"
-          defaultValue={vehicle.year ?? ""}
-          placeholder="Година"
-          className={fieldClass}
-        />
+        <VehicleIdentityFields brand={vehicle.brand} model={vehicle.model} year={vehicle.year} />
         <input
           name="plate"
           defaultValue={vehicle.plate ?? ""}

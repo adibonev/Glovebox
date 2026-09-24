@@ -5,7 +5,9 @@ import { ActivityIndicator, Alert, Text, View } from "react-native";
 
 import { ChipPicker, DangerButton, Field, PrimaryButton } from "@/components/forms";
 import { Screen } from "@/components/Screen";
+import { SelectField } from "@/components/SelectField";
 import { BODY_TYPES, BODY_TYPE_LABELS, parseBodyType, type BodyType } from "@/lib/bodyType";
+import { hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { supabase } from "@/lib/supabase";
 
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
@@ -42,6 +44,12 @@ export default function EditVehicleScreen() {
       active = false;
     };
   }, [id]);
+
+  /** Changing the make invalidates the model: an Octavia is not an Audi. */
+  const chooseMake = (make: string) => {
+    setBrand(make);
+    if (!hasModel(make, model)) setModel("");
+  };
 
   const save = async () => {
     if (!brand.trim() || !model.trim()) return;
@@ -94,9 +102,29 @@ export default function EditVehicleScreen() {
 
   return (
     <Screen title="Редакция на автомобил">
-      <Field label="Марка" value={brand} onChangeText={setBrand} />
-      <Field label="Модел" value={model} onChangeText={setModel} />
-      <Field label="Година" value={year} onChangeText={setYear} keyboardType="number-pad" maxLength={4} />
+      <SelectField
+        label="Марка"
+        value={brand}
+        options={makeOptions(brand)}
+        onChange={chooseMake}
+        placeholder="Избери марка"
+      />
+      <SelectField
+        label="Модел"
+        value={model}
+        options={modelOptions(brand, model)}
+        onChange={setModel}
+        placeholder="Избери модел"
+        disabled={!brand}
+        disabledHint="Първо избери марка."
+      />
+      <SelectField
+        label="Година"
+        value={year}
+        options={yearOptions()}
+        onChange={setYear}
+        placeholder="Избери година"
+      />
       <Field label="Регистрационен номер" value={plate} onChangeText={setPlate} autoCapitalize="characters" />
       <Field label="VIN / рама (по избор)" value={vin} onChangeText={setVin} autoCapitalize="characters" maxLength={17} />
       <ChipPicker label="Тип каросерия" value={bodyType} options={BODY_OPTIONS} onChange={setBodyType} />

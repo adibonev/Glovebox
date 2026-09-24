@@ -23,4 +23,6 @@ export * from "./repository";
 export * from "./repository.in-memory";
 export * from "./repository.supabase";
 export * from "./use-cases";
+export * from "./vehicleCatalog";
+export * from "./vehicleCatalog.data";
 export type { Database } from "./database.types";

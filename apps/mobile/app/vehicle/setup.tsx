@@ -22,8 +22,10 @@ import { DocumentCamera } from "@/components/DocumentCamera";
 import { ChipPicker, DateField, Field, PrimaryButton } from "@/components/forms";
 import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
+import { SelectField } from "@/components/SelectField";
 import { useAuth } from "@/lib/auth";
 import { BODY_TYPES, BODY_TYPE_LABELS } from "@/lib/bodyType";
+import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { SERVICE_TYPE_LABELS } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { parseCost } from "@/lib/cost";
@@ -106,6 +108,12 @@ export default function VehicleSetupScreen() {
     setBusy(false);
   };
 
+  /** Changing the make invalidates the model: an Octavia is not an Audi. */
+  const chooseMake = (make: string) => {
+    setBrand(make);
+    if (!hasModel(make, model)) setModel("");
+  };
+
   // ---- the Vehicle -------------------------------------------------------------------------
 
   const readCertificate = async (dataUrl: string) => {
@@ -113,8 +121,10 @@ export default function VehicleSetupScreen() {
     setBusy(true);
     try {
       const scanned = scanInspectionDocument({ text: await recognize(dataUrl) });
-      setBrand(scanned.vehicle.brand ?? "");
-      setModel(scanned.vehicle.model ?? "");
+      // The fields are lists now, so a reading only fills them when the catalogue knows the car.
+      const identity = catalogueVehicle(scanned.vehicle.brand, scanned.vehicle.model);
+      setBrand(identity.brand);
+      setModel(identity.model);
       setYear(scanned.vehicle.year ? String(scanned.vehicle.year) : "");
       setPlate(scanned.vehicle.plate ?? "");
       setVin(scanned.vehicle.vin ?? "");
@@ -122,7 +132,12 @@ export default function VehicleSetupScreen() {
       if (scanned.serviceRecord) setInspectionExpiry(scanned.serviceRecord.expiryDate);
       setMileage(scanned.mileage ? String(scanned.mileage.km) : "");
       setMileageReadOn(scanned.mileage?.readOn ?? null);
-      const missing = missingVehicleFields(scanned.vehicle);
+      // What the catalogue could not place counts as unread: the field is empty either way.
+      const missing = missingVehicleFields({
+        ...scanned.vehicle,
+        brand: identity.brand || null,
+        model: identity.model || null,
+      });
       setNote(missing.length ? "Част от данните не се разчетоха — допълни ги." : null);
     } catch {
       setNote("Разчитането не сработи. Попълни данните ръчно.");
@@ -342,14 +357,28 @@ export default function VehicleSetupScreen() {
       <Screen title="Провери данните">
         {reader}
         {note && <Notice>{note}</Notice>}
-        <Field label="Марка" value={brand} onChangeText={setBrand} placeholder="напр. Audi" />
-        <Field label="Модел" value={model} onChangeText={setModel} placeholder="напр. A6" />
-        <Field
+        <SelectField
+          label="Марка"
+          value={brand}
+          options={makeOptions(brand)}
+          onChange={chooseMake}
+          placeholder="Избери марка"
+        />
+        <SelectField
+          label="Модел"
+          value={model}
+          options={modelOptions(brand, model)}
+          onChange={setModel}
+          placeholder="Избери модел"
+          disabled={!brand}
+          disabledHint="Първо избери марка."
+        />
+        <SelectField
           label="Година"
           value={year}
-          onChangeText={setYear}
-          keyboardType="number-pad"
-          placeholder="напр. 2011"
+          options={yearOptions()}
+          onChange={setYear}
+          placeholder="Избери година"
         />
         <Field label="Рег. номер" value={plate} onChangeText={setPlate} autoCapitalize="characters" />
         <Field
