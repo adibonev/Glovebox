@@ -49,6 +49,7 @@ export class InMemoryVehicleRepository implements VehicleRepository {
       vin: input.vin ?? null,
       bodyType: input.bodyType ?? null,
       fuelType: input.fuelType ?? null,
+      firstRegistration: input.firstRegistration ?? null,
     };
     this.vehicles.push(vehicle);
     return vehicle;
@@ -64,6 +65,7 @@ export class InMemoryVehicleRepository implements VehicleRepository {
     if (changes.vin !== undefined) vehicle.vin = changes.vin;
     if (changes.bodyType !== undefined) vehicle.bodyType = changes.bodyType;
     if (changes.fuelType !== undefined) vehicle.fuelType = changes.fuelType;
+    if (changes.firstRegistration !== undefined) vehicle.firstRegistration = changes.firstRegistration;
     return vehicle;
   }
 

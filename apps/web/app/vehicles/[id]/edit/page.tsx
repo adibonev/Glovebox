@@ -52,6 +52,7 @@ export default async function EditVehiclePage({
             vin: vehicle.vin,
             bodyType: vehicle.bodyType,
             fuelType: vehicle.fuelType,
+            firstRegistration: vehicle.firstRegistration?.toISOString().slice(0, 10) ?? null,
           }}
         />
       </section>

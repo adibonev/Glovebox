@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { writableCarOwner } from "@/app/_lib/access";
 import { SERVICE_TYPE_LABELS } from "@/app/_lib/labels";
 import { currentAuthUser, currentUser } from "@/app/_lib/session";
 import { Shell } from "@/components/Shell";
@@ -22,15 +23,15 @@ export default async function EditServicePage({
   const profile = await currentUser();
   if (!profile) redirect("/login");
 
-  // Scope to the owner explicitly: RLS is not enough, because an Administrator may SELECT
-  // every Service Record. Not found / not theirs → back to the dashboard.
+  // Scope explicitly to the User's car or one shared with them: RLS is not enough, because an
+  // Administrator may SELECT every Service Record. Not found / not theirs → the dashboard.
   const { data: service } = await supabase
     .from("services")
     .select("id, car_id, service_type, expiry_date, notes, cost")
     .eq("id", Number(id))
-    .eq("user_id", Number(profile.id))
     .maybeSingle();
   if (!service || !service.expiry_date) redirect("/");
+  if (!(await writableCarOwner(supabase, Number(profile.id), service.car_id))) redirect("/");
 
   const { data: car } = await supabase
     .from("cars")

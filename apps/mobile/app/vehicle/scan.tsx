@@ -118,7 +118,8 @@ export default function ScanVehicleScreen() {
       // Quota gate: Free is capped at 1 Vehicle (ADR-0003).
       const plan = await getPlan(user.id);
       const existing = await vehicleRepo.listByUser(user.id);
-      if (!canAddVehicle(plan, existing.length)) {
+      // Only the cars the User owns count; one shared with them is someone else's quota.
+      if (!canAddVehicle(plan, existing.filter((v) => v.userId === user.id).length)) {
         setError("Достигна лимита на Free (1 кола). Надгради до Pro от уеб приложението.");
         return;
       }

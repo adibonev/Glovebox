@@ -1,17 +1,25 @@
 import { LegalPage } from "@/components/LegalPage";
+import { OperatorDetails } from "@/components/OperatorDetails";
+import { OPERATOR } from "@/lib/operator";
 
 export const metadata = { title: "Glovebox — Общи условия" };
 
-const OPERATOR = "Adalbert Bonev";
-const CONTACT_EMAIL = "bonev112@gmail.com";
-
 export default function TermsPage() {
   return (
-    <LegalPage title="Общи условия" updated="4 юни 2026 г.">
+    <LegalPage title="Общи условия" updated="25 септември 2026 г.">
       <p>
         Тези условия уреждат ползването на Glovebox („услугата"), предоставяна от{" "}
-        <strong>{OPERATOR}</strong> — физическо лице. Като създадеш акаунт или ползваш услугата, ти
-        приемаш тези условия.
+        <strong>{OPERATOR.name}</strong>, {OPERATOR.kind}. Като създадеш акаунт или ползваш услугата,
+        ти приемаш тези условия.
+      </p>
+
+      <h2>Данни за доставчика</h2>
+      <OperatorDetails />
+      <p>
+        Надзорни органи: Комисия за защита на потребителите (
+        <a href="https://kzp.bg" target="_blank" rel="noopener noreferrer">kzp.bg</a>) и Комисия за
+        защита на личните данни (
+        <a href="https://www.cpdp.bg" target="_blank" rel="noopener noreferrer">cpdp.bg</a>).
       </p>
 
       <h2>Описание на услугата</h2>
@@ -102,7 +110,7 @@ export default function TermsPage() {
 
       <h2>Контакт</h2>
       <p>
-        Въпроси: <strong>{CONTACT_EMAIL}</strong>.
+        Въпроси: <strong>{OPERATOR.email}</strong>.
       </p>
     </LegalPage>
   );

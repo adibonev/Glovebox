@@ -61,12 +61,12 @@ export function ReminderSettings({ userId, onSaved }: { userId: string; onSaved:
         />
       </View>
       <Text className="mt-1 text-xs text-dim">
-        Колко дни преди изтичане да те подсетим — за всеки вид услуга. Push известията в
-        приложението идват автоматично.
+        Колко дни преди изтичане да те подсетим, отделно за всеки вид. Същият срок важи и за
+        първото известие на телефона.
       </Text>
 
-      {config.enabled &&
-        TYPES.map((type) => (
+      {/* Shown with e-mail off too: the same windows time the first notification on the phone. */}
+      {TYPES.map((type) => (
           <View key={type} className="border-t border-white/[0.06] py-2.5">
             <Text className="mb-1.5 text-sm text-ivory">{SERVICE_TYPE_LABELS[type] ?? type}</Text>
             <View className="flex-row flex-wrap items-center gap-1.5">

@@ -28,7 +28,7 @@ export default function DocumentsTab() {
     if (!file) return;
     setBusy(true);
     try {
-      await uploadDocument(session.user.id, userId, serviceId, file);
+      await uploadDocument(session.user.id, serviceId, file);
       await reload();
     } catch (e) {
       Alert.alert("Грешка", e instanceof Error ? e.message : "Качването не успя.");

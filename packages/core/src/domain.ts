@@ -29,6 +29,11 @@ export interface Vehicle {
   bodyType: string | null;
   /** How the Vehicle is powered, when set (`cars.fuel_type`; see {@link FUEL_TYPES}). */
   fuelType: string | null;
+  /**
+   * Date of first registration, field (B) of the registration certificate (`cars.first_registration`).
+   * The statutory Roadworthiness Inspection schedule runs from it ({@link inspectionDue}).
+   */
+  firstRegistration: Date | null;
 }
 
 /**
@@ -146,6 +151,7 @@ export interface NewVehicle {
   vin?: string | null;
   bodyType?: string | null;
   fuelType?: string | null;
+  firstRegistration?: Date | null;
 }
 
 /** Editable Vehicle fields; an omitted key is left unchanged. */
@@ -157,6 +163,7 @@ export interface VehicleChanges {
   vin?: string | null;
   bodyType?: string | null;
   fuelType?: string | null;
+  firstRegistration?: Date | null;
 }
 
 /**

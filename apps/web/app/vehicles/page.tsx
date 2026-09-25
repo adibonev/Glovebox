@@ -9,7 +9,12 @@ import { DeleteVehicleButton } from "./_components/DeleteVehicleButton";
 
 export const metadata = { title: "Glovebox — Автомобили" };
 
-export default async function VehiclesPage() {
+export default async function VehiclesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ share?: string }>;
+}) {
+  const { share } = await searchParams;
   const data = await getGarage();
   if (!data) redirect("/login");
 
@@ -27,6 +32,17 @@ export default async function VehiclesPage() {
         <AddVehicleButton />
       </div>
 
+      {share === "joined" && (
+        <p className="mb-5 rounded-card border border-status-valid/40 bg-status-valid/10 px-4 py-3 font-body text-sm text-ivory">
+          Колата е в гаража ти. Виждаш сроковете ѝ и ще получаваш напомнянията.
+        </p>
+      )}
+      {share === "invalid" && (
+        <p className="mb-5 rounded-card border border-status-expired/40 bg-status-expired/10 px-4 py-3 font-body text-sm text-ivory">
+          Поканата е използвана или е изтекла. Помоли за нова.
+        </p>
+      )}
+
       {vehicles.length === 0 ? (
         <EmptyGarage />
       ) : (
@@ -41,7 +57,7 @@ export default async function VehiclesPage() {
 }
 
 function VehicleGridCard({ vehicle }: { vehicle: GarageVehicle }) {
-  const { id, name, plate, year, bodyType, urgent, counts, serviceCount } = vehicle;
+  const { id, name, plate, year, bodyType, urgent, counts, serviceCount, shared } = vehicle;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2">
@@ -68,23 +84,36 @@ function VehicleGridCard({ vehicle }: { vehicle: GarageVehicle }) {
 
         <div className="flex flex-wrap items-center gap-2">
           {plate && <PlateBadge plate={plate} size="sm" />}
+          {shared && (
+            <span className="rounded-full border border-copper/40 bg-copper/10 px-2.5 py-0.5 font-body text-[12px] text-copper">
+              Споделена с теб
+            </span>
+          )}
         </div>
 
         <StatusLine urgent={urgent} serviceCount={serviceCount} />
         <CountPills counts={counts} />
 
-        <div className="mt-auto flex items-center gap-2 pt-2">
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
           <Link
             href={`/?v=${id}`}
             className="flex-1 rounded-lg bg-emerald/90 px-3 py-2 text-center font-body text-sm font-semibold text-ivory transition hover:bg-emerald"
           >
             Отвори
           </Link>
+          {!shared && (
+            <Link
+              href={`/vehicles/${id}/passport`}
+              className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-copper/50 hover:text-copper"
+            >
+              Паспорт
+            </Link>
+          )}
           <Link
-            href={`/vehicles/${id}/passport`}
+            href={`/vehicles/${id}/share`}
             className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-copper/50 hover:text-copper"
           >
-            Паспорт
+            {shared ? "Семейство" : "Сподели"}
           </Link>
           <Link
             href={`/vehicles/${id}/edit`}
@@ -92,7 +121,7 @@ function VehicleGridCard({ vehicle }: { vehicle: GarageVehicle }) {
           >
             Редакция
           </Link>
-          <DeleteVehicleButton id={id} name={name} />
+          {!shared && <DeleteVehicleButton id={id} name={name} />}
         </div>
       </div>
     </article>

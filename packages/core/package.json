@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./referral": "./src/referral.ts"
+    "./referral": "./src/referral.ts",
+    "./campaign": "./src/campaign.ts",
+    "./schedule": "./src/schedule.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

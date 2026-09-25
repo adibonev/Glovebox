@@ -2,8 +2,8 @@ import {
   DOCUMENT_SCAN_ENABLED,
   SupabaseMileageReadingRepository,
   SupabaseServiceRecordRepository,
-  SupabaseUserRepository,
   SupabaseVehicleRepository,
+  inspectionDue,
   mileageSource,
   renewalMethod,
   scanInspectionDocument,
@@ -26,12 +26,12 @@ import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
 import { SERVICE_TYPE_LABELS, formatCost, formatDateShort } from "@/lib/labels";
 import { parseKm, todayAsDate } from "@/lib/mileage";
+import { recordOwner } from "@/lib/ownership";
 import { useDocumentRecognition } from "@/lib/recognize";
 import { supabase } from "@/lib/supabase";
 
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
-const userRepo = new SupabaseUserRepository(supabase);
 const mileageRepo = new SupabaseMileageReadingRepository(supabase);
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -84,7 +84,15 @@ export default function RenewScreen() {
       const scannable = method === "inspectionScan" || method === "policyScan";
       setStage(scannable && DOCUMENT_SCAN_ENABLED ? "choice" : "form");
       const owner = await vehicleRepo.getById(found.vehicleId);
-      if (active) setVehicle(owner);
+      if (!active) return;
+      setVehicle(owner);
+      // An Inspection renewed today is due again by law: on the next anniversary for a car under
+      // five years old, a year on for an older one. Better than a year after the old date.
+      if (method === "inspectionScan" && owner?.firstRegistration) {
+        const today = todayAsDate();
+        const due = inspectionDue(owner.firstRegistration, today, today);
+        if (due.kind !== "needsLastInspection") setExpiryDate(due.due);
+      }
     })().finally(() => active && setLoading(false));
     return () => {
       active = false;
@@ -173,13 +181,10 @@ export default function RenewScreen() {
     const km = method === "inspectionScan" ? parseKm(mileage) : null;
     if (km !== null && session) {
       try {
-        const user = await userRepo.findOrCreateByAuthId({
-          authUserId: session.user.id,
-          email: session.user.email ?? "",
-        });
         await mileageRepo.record({
           vehicleId: record.vehicleId,
-          userId: user.id,
+          // The owner's, also when a family member renews a shared car.
+          userId: vehicle?.userId ?? (await recordOwner(record.vehicleId)),
           km,
           readOn: mileageReadOn ?? todayAsDate(),
           source: mileageSource(km, kmRead),

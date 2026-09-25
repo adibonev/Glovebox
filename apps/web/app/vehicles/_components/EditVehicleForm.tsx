@@ -4,6 +4,7 @@ import Link from "next/link";
 import { updateVehicle } from "@/app/_lib/actions";
 
 import { BodyTypePicker } from "../../_components/BodyTypePicker";
+import { FirstRegistrationField } from "../../_components/FirstRegistrationField";
 import { FuelTypePicker } from "../../_components/FuelTypePicker";
 import { VehicleIdentityFields } from "../../_components/VehicleIdentityFields";
 import { parseBodyType } from "../../_lib/bodyType";
@@ -20,6 +21,8 @@ export type EditableVehicle = {
   vin: string | null;
   bodyType: string | null;
   fuelType: string | null;
+  /** "YYYY-MM-DD", or null when not known. */
+  firstRegistration: string | null;
 };
 
 /** Edit a Vehicle's identity (brand / model / year / plate). */
@@ -46,6 +49,7 @@ export function EditVehicleForm({ vehicle }: { vehicle: EditableVehicle }) {
         placeholder="VIN / рама (по избор)"
         className={`${fieldClass} uppercase placeholder:normal-case`}
       />
+      <FirstRegistrationField value={vehicle.firstRegistration} />
       <BodyTypePicker value={parseBodyType(vehicle.bodyType)} />
       <FuelTypePicker value={parseFuelType(vehicle.fuelType)} />
       <div className="flex items-center gap-2">

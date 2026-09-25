@@ -4,7 +4,9 @@ import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Field, PrimaryButton } from "@/components/forms";
+import { AnalyticsSetting } from "@/components/AnalyticsConsent";
 import { InviteCard } from "@/components/InviteCard";
+import { PushSettings } from "@/components/PushSettings";
 import {
   deleteAccount,
   getName,
@@ -148,6 +150,11 @@ export default function ProfileTab() {
             </>
           )}
         </View>
+
+        <View className="mt-4">
+          <PushSettings />
+        </View>
+        <AnalyticsSetting />
 
         {userId && <InviteCard userId={userId} />}
 

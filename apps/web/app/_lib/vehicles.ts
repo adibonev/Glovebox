@@ -29,6 +29,8 @@ export type GarageVehicle = {
   plate: string | null;
   year: number | null;
   bodyType: BodyType;
+  /** Someone else's car, shared with this User: they follow it, but do not delete or publish it. */
+  shared: boolean;
   serviceCount: number;
   counts: Counts;
   /** The single most pressing obligation, if any (drives the card's headline). */
@@ -49,13 +51,14 @@ export async function getGarage(): Promise<GarageData | null> {
   const user = await currentUser();
   if (!user) return null;
 
-  const ownedVehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
+  // The User's own Vehicles and those shared with them.
+  const visibleVehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const records = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
   const { windows } = await getReminderConfig(supabase, user.id);
   const today = new Date();
   const window = (serviceType: string) => windows[serviceType] ?? 30;
 
-  const vehicles: GarageVehicle[] = ownedVehicles.map((v) => {
+  const vehicles: GarageVehicle[] = visibleVehicles.map((v) => {
     const enriched = records
       .filter((r) => r.vehicleId === v.id)
       .map((record) => ({
@@ -88,6 +91,7 @@ export async function getGarage(): Promise<GarageData | null> {
       plate: v.plate,
       year: v.year,
       bodyType: parseBodyType(v.bodyType),
+      shared: v.userId !== user.id,
       serviceCount: enriched.length,
       counts,
       urgent,

@@ -27,7 +27,10 @@
         "com.apple.security.application-groups": [
           "group.bg.glovebox.app"
         ]
-      }
+      },
+      "associatedDomains": [
+        "applinks:www.glovebox.bg"
+      ]
     },
     "android": {
       "package": "bg.glovebox.app",
@@ -66,7 +69,8 @@
           "recordAudioAndroid": false
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "expo-localization"
     ]
   }
 }

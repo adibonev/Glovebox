@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PushSettings } from "@/components/PushSettings";
 import { ReminderSettings } from "@/components/ReminderSettings";
 import {
   SERVICE_TYPE_LABELS,
@@ -36,6 +37,7 @@ export default function RemindersTab() {
           contentContainerClassName="px-5 pb-8"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.copper} />}
         >
+          <PushSettings />
           {data?.userId && <ReminderSettings userId={data.userId} onSaved={onRefresh} />}
 
           {due.length === 0 ? (

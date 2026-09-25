@@ -5,11 +5,14 @@ import type { Plan } from "@glovebox/core";
 
 import { getPlan } from "@/app/_lib/plan";
 import { currentAuthUser, currentUser } from "@/app/_lib/session";
-import { INVITE_COOKIE } from "@/lib/invite";
+import { CAMPAIGN_COOKIE } from "@/lib/campaign";
+import { INVITE_COOKIE, SHARE_COOKIE } from "@/lib/invite";
 import { createClient } from "@/lib/supabase/server";
 
-import { InviteClaim } from "./InviteClaim";
+import { AppStorePromo } from "./AppStorePromo";
+import { ArrivalClaim } from "./ArrivalClaim";
 import { PostHogIdentify } from "./PostHogIdentify";
+import { SignupTracker } from "./SignupTracker";
 import { Topbar } from "./Topbar";
 
 /** Shared page chrome: the cinematic scene glows, centered container and Topbar. */
@@ -25,11 +28,16 @@ export async function Shell({ email, children }: { email: string; children: Reac
     plan = await getPlan(await createClient(), profile.id);
   }
 
-  const invitePending = profile !== null && (await cookies()).has(INVITE_COOKIE);
+  const jar = await cookies();
+  // Made within the hour: a sign-up the ad reports should hear about (once, see SignupTracker).
+  const justSignedUp = profile !== null && !!user && Date.now() - Date.parse(user.created_at) < 60 * 60 * 1000;
+  const arrivalPending =
+    profile !== null && (jar.has(INVITE_COOKIE) || jar.has(CAMPAIGN_COOKIE) || jar.has(SHARE_COOKIE));
 
   return (
     <main className="relative min-h-screen">
-      {invitePending && <InviteClaim />}
+      {arrivalPending && <ArrivalClaim />}
+      {justSignedUp && profile && <SignupTracker userId={profile.id} />}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(110%_70%_at_50%_-10%,rgba(20,80,58,0.30),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(80%_45%_at_50%_115%,rgba(196,149,76,0.08),transparent_70%)]" />
@@ -40,6 +48,7 @@ export async function Shell({ email, children }: { email: string; children: Reac
           <PostHogIdentify id={user.id} email={email} />
         )}
         <Topbar email={email} plan={plan} isAdmin={isAdmin} />
+        <AppStorePromo />
         {children}
       </div>
     </main>

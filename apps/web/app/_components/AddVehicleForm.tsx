@@ -1,5 +1,6 @@
 import { addVehicle } from "../_lib/actions";
 import { BodyTypePicker } from "./BodyTypePicker";
+import { FirstRegistrationField } from "./FirstRegistrationField";
 import { FuelTypePicker } from "./FuelTypePicker";
 import { VehicleIdentityFields } from "./VehicleIdentityFields";
 
@@ -26,6 +27,7 @@ export function AddVehicleForm() {
         placeholder="VIN / рама (по избор)"
         className={`${fieldClass} uppercase placeholder:normal-case`}
       />
+      <FirstRegistrationField />
       <BodyTypePicker />
       <FuelTypePicker />
       <button

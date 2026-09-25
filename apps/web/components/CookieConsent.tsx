@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 
 import { getConsent, setConsent, type Consent } from "@/lib/consent";
 
-// Only prompt when analytics is actually enabled; otherwise the app uses just essential
-// (login/session) cookies, which are exempt from consent.
-const ANALYTICS_ENABLED = !!process.env.NEXT_PUBLIC_POSTHOG_KEY;
+// Only prompt when analytics or the ad Pixel is actually enabled; otherwise the app uses just
+// essential (login/session) cookies, which are exempt from consent.
+const ANALYTICS_ENABLED =
+  !!process.env.NEXT_PUBLIC_POSTHOG_KEY || !!process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
 /** GDPR consent banner: essential cookies always; analytics only if the User accepts. */
 export function CookieConsent() {
@@ -29,8 +30,8 @@ export function CookieConsent() {
       <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-white/10 bg-panel/95 px-4 py-3.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.7)] backdrop-blur-md sm:flex-row sm:items-center sm:gap-4">
         <p className="font-body text-[13px] leading-relaxed text-muted">
           Ползваме съществени бисквитки за вход и сесия. С твое съгласие добавяме и{" "}
-          <strong className="text-silver">аналитични</strong>, за да разбираме как се ползва
-          Glovebox и да го подобряваме.{" "}
+          <strong className="text-silver">аналитични и рекламни</strong> (PostHog и Meta), за да
+          разбираме как се ползва Glovebox и коя реклама те е довела.{" "}
           <Link href="/privacy" className="text-copper underline">
             Научи повече
           </Link>

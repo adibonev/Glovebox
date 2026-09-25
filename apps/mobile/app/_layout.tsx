@@ -11,14 +11,18 @@ import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useAnalyticsTracking } from "@/lib/analytics";
 import { useAuthDeepLink } from "@/lib/authLink";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { setMonitoredUser, withMonitoring } from "@/lib/monitoring";
 
 // Paint the native root view dark so there's no white flash before React mounts.
 void SystemUI.setBackgroundColorAsync(colors.ink);
 void SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+export default withMonitoring(RootLayout);
+
+function RootLayout() {
   // Fraunces (display serif) for the wordmark + numerals; UI body stays system (Cyrillic-safe).
   const [fontsLoaded] = useFonts({ Fraunces_600SemiBold });
 
@@ -45,15 +49,22 @@ function RootNavigator() {
   const { session, loading } = useAuth();
   // Confirmation / recovery links land here and become a session.
   useAuthDeepLink();
+  useAnalyticsTracking();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    setMonitoredUser(session?.user.id ?? null);
+  }, [session]);
 
   useEffect(() => {
     if (loading) return;
     // auth-callback counts as an auth screen: a confirmation link lands there with no session
     // yet, and bouncing it to /login would cut the code exchange off mid-flight.
     const onAuthScreen = segments[0] === "login" || segments[0] === "auth-callback";
-    if (!session && !onAuthScreen) router.replace("/login");
+    // An invite or a car invitation decides for itself where to go next, once it has kept it.
+    const onInviteLink = segments[0] === "i" || segments[0] === "s";
+    if (!session && !onAuthScreen && !onInviteLink) router.replace("/login");
     else if (session && onAuthScreen) router.replace("/");
   }, [session, loading, segments, router]);
 

@@ -18,6 +18,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+import { writableCarOwner, writableServiceOwner } from "./access";
 import { BODY_TYPES } from "./bodyType";
 import type { FormState } from "./formState";
 import { DELETE_ACCOUNT_CONFIRMATION, SERVICE_TYPE_ORDER } from "./labels";
@@ -34,6 +35,12 @@ function readBodyType(formData: FormData): string {
 /** Read a Fuel Type from the form; null when nothing was chosen (that is not petrol). */
 function readFuelType(formData: FormData): string | null {
   return parseFuelType(String(formData.get("fuelType") ?? ""));
+}
+
+/** Read the optional date of first registration ("YYYY-MM-DD" from a date input), or null. */
+function readFirstRegistration(formData: FormData): string | null {
+  const value = String(formData.get("firstRegistration") ?? "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
 /** Read an optional cost (EUR) from the form; accepts comma or dot decimals. */
@@ -126,6 +133,7 @@ export async function addVehicle(formData: FormData): Promise<void> {
       vin: vin || null,
       body_type: readBodyType(formData),
       fuel_type: readFuelType(formData),
+      first_registration: readFirstRegistration(formData),
     })
     .select("id")
     .single();
@@ -150,7 +158,8 @@ export async function updateVehicle(formData: FormData): Promise<void> {
   const vin = String(formData.get("vin") ?? "").trim().toUpperCase();
   if (!id || !brand || !model) return;
 
-  // `.eq("user_id")` + RLS ensure a User can only edit their own Vehicle.
+  // Their own car, or one shared with them; checked, not left to RLS (see writableCarOwner).
+  if (!(await writableCarOwner(supabase, userId, id))) return;
   await supabase
     .from("cars")
     .update({
@@ -161,9 +170,9 @@ export async function updateVehicle(formData: FormData): Promise<void> {
       vin: vin || null,
       body_type: readBodyType(formData),
       fuel_type: readFuelType(formData),
+      first_registration: readFirstRegistration(formData),
     })
-    .eq("id", id)
-    .eq("user_id", userId);
+    .eq("id", id);
 
   revalidatePath("/");
   revalidatePath("/vehicles");
@@ -187,16 +196,10 @@ export async function uploadDocument(_prev: FormState, formData: FormData): Prom
   const tooLarge = documentTooLargeMessage(file);
   if (tooLarge) return { error: tooLarge };
 
-  // The Service Record must belong to the User. Scope by `user_id` rather than trusting the
-  // select: an Administrator's RLS policy can read every row, so a bare lookup would let a
-  // Document be attached to somebody else's Service Record.
-  const { data: service } = await supabase
-    .from("services")
-    .select("id")
-    .eq("id", serviceId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (!service) return { error: "Услугата не е намерена." };
+  // The Service Record must be on the User's car or one shared with them; checked, because an
+  // Administrator's RLS policy can read every row. The Document is then the car owner's.
+  const owner = await writableServiceOwner(supabase, userId, serviceId);
+  if (!owner) return { error: "Услугата не е намерена." };
 
   // Quota gate: Free is capped at 1 Document per Service Record → Paywall (ADR-0003).
   const plan = await getPlan(supabase, userId);
@@ -204,7 +207,7 @@ export async function uploadDocument(_prev: FormState, formData: FormData): Prom
     redirect("/paywall?reason=document");
   }
 
-  const stored = await storeDocument(supabase, authUser.id, userId, serviceId, file);
+  const stored = await storeDocument(supabase, authUser.id, owner, serviceId, file);
 
   revalidatePath("/documents");
   revalidatePath("/");
@@ -219,17 +222,17 @@ export async function deleteDocument(formData: FormData): Promise<void> {
   const id = Number(formData.get("id"));
   if (!id) return;
 
-  // Look the path up server-side (don't trust the client); RLS scopes to the owner.
+  // Look the path up server-side (don't trust the client), and only on a car the User may write
+  // to: their own or one shared with them.
   const { data: doc } = await supabase
     .from("documents")
-    .select("path")
+    .select("path, service_id")
     .eq("id", id)
-    .eq("user_id", userId)
     .maybeSingle();
-  if (!doc) return;
+  if (!doc || !(await writableServiceOwner(supabase, userId, doc.service_id))) return;
 
   await supabase.storage.from("documents").remove([doc.path]);
-  await supabase.from("documents").delete().eq("id", id).eq("user_id", userId);
+  await supabase.from("documents").delete().eq("id", id);
 
   revalidatePath("/documents");
   revalidatePath("/");
@@ -422,6 +425,10 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
   const tooLarge = file instanceof File ? documentTooLargeMessage(file) : null;
   if (tooLarge) return { error: tooLarge };
 
+  // The User's car or one shared with them; the Service Record is then the owner's.
+  const owner = await writableCarOwner(supabase, userId, vehicleId);
+  if (!owner) return { error: "Колата не е намерена." };
+
   // Quota gate: Free is capped at 2 Service Records per Vehicle → Paywall (ADR-0003).
   const plan = await getPlan(supabase, userId);
   if (!canAddService(plan, await countServices(supabase, vehicleId))) {
@@ -432,7 +439,7 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
     .from("services")
     .insert({
       car_id: vehicleId,
-      user_id: userId,
+      user_id: owner,
       service_type: serviceType,
       expiry_date: expiryDate,
       notes: notes || null,
@@ -448,7 +455,7 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
 
   // Optionally attach a Document supplied with the form (visible in /documents).
   if (file instanceof File && file.size > 0) {
-    await storeDocument(supabase, authUser.id, userId, created.id, file);
+    await storeDocument(supabase, authUser.id, owner, created.id, file);
   }
 
   revalidatePath("/");
@@ -480,8 +487,9 @@ export async function updateService(formData: FormData): Promise<void> {
   const notes = String(formData.get("notes") ?? "").trim();
   if (!serviceId || !serviceType || !expiryDate) return;
 
-  // `.eq("user_id")` + RLS scope the update to the owner. Editing the Expiry Date (a renewal)
-  // keeps the Service Record's Documents and re-derives reminders.
+  // On the User's car or one shared with them (checked, see writableCarOwner). Editing the Expiry
+  // Date (a renewal) keeps the Service Record's Documents and re-derives reminders.
+  if (!(await writableServiceOwner(supabase, userId, serviceId))) return;
   await supabase
     .from("services")
     .update({
@@ -490,8 +498,7 @@ export async function updateService(formData: FormData): Promise<void> {
       notes: notes || null,
       cost: readCost(formData),
     })
-    .eq("id", serviceId)
-    .eq("user_id", userId);
+    .eq("id", serviceId);
 
   revalidatePath("/");
   revalidatePath("/documents");
@@ -507,9 +514,10 @@ export async function deleteService(formData: FormData): Promise<void> {
   const serviceId = Number(formData.get("serviceId"));
   if (!serviceId) return;
 
-  // `.eq("user_id")` is what actually scopes this — an Administrator's RLS policy allows
-  // deleting *any* Service Record, so RLS alone would let a crafted id remove someone else's.
-  await supabase.from("services").delete().eq("id", serviceId).eq("user_id", userId);
+  // The check is what actually scopes this: an Administrator's RLS policy allows deleting *any*
+  // Service Record, so RLS alone would let a crafted id remove someone else's.
+  if (!(await writableServiceOwner(supabase, userId, serviceId))) return;
+  await supabase.from("services").delete().eq("id", serviceId);
   revalidatePath("/");
 }
 

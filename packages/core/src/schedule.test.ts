@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   exemptFromVehicleTax,
+  inspectionDue,
   inspectionSchedule,
   nextInspectionDate,
   vehicleTaxDeadlines,
@@ -117,5 +118,37 @@ describe("vehicleTaxDeadlines", () => {
   it("rolls a deadline falling on a weekend to the next working day", () => {
     // 31 October 2026 is a Saturday — the deadline moves to Monday 2 November.
     expect(vehicleTaxDeadlines(2026).secondInstalment).toEqual(new Date("2026-11-02"));
+  });
+});
+
+describe("inspectionDue", () => {
+  const firstRegistration = new Date("2023-05-10");
+
+  it("puts a new Vehicle's first Roadworthiness Inspection at the third anniversary of registration", () => {
+    expect(inspectionDue(firstRegistration, null, new Date("2025-01-01"))).toEqual({
+      kind: "first",
+      due: new Date("2026-05-10"),
+    });
+  });
+
+  it("puts the second at the fifth anniversary", () => {
+    expect(inspectionDue(firstRegistration, new Date("2026-05-02"), new Date("2026-09-26"))).toEqual({
+      kind: "second",
+      due: new Date("2028-05-10"),
+    });
+  });
+
+  it("puts every later one a year after the last Inspection, not on the anniversary", () => {
+    // First registered 05.09.2011, inspected 17.08.2026: due by 17.08.2027 (the real certificate).
+    expect(inspectionDue(new Date("2011-09-05"), new Date("2026-08-17"), new Date("2026-09-26"))).toEqual({
+      kind: "annual",
+      due: new Date("2027-08-17"),
+    });
+  });
+
+  it("asks for the last Inspection of a Vehicle over five years old, rather than guess from the anniversary", () => {
+    expect(inspectionDue(new Date("2011-09-05"), null, new Date("2026-09-26"))).toEqual({
+      kind: "needsLastInspection",
+    });
   });
 });

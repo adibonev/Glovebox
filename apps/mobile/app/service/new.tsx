@@ -16,6 +16,7 @@ import { Screen } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
 import { pickDocument, uploadDocument, type PickedFile } from "@/lib/documents";
+import { recordOwner } from "@/lib/ownership";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { supabase } from "@/lib/supabase";
@@ -63,7 +64,8 @@ export default function NewServiceScreen() {
 
       const created = await serviceRepo.create({
         vehicleId,
-        userId: user.id,
+        // The owner's, also when a family member adds it to a shared car.
+        userId: await recordOwner(vehicleId),
         serviceType,
         expiryDate,
         cost: parseCost(cost),
@@ -71,7 +73,7 @@ export default function NewServiceScreen() {
 
       // Attach the picked Document to the new Service Record (visible in „Документи").
       if (doc) {
-        await uploadDocument(session.user.id, user.id, created.id, doc);
+        await uploadDocument(session.user.id, created.id, doc);
       }
       router.back();
     } catch (e) {

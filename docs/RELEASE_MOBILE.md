@@ -77,7 +77,10 @@ eas submit --profile production --platform ios        # иска App Store Conne
 ```
 
 - **Android service account:** Google Play Console → Setup → API access → създай service account →
-  свали JSON. EAS ще го поиска веднъж.
+  свали JSON и го сложи като `apps/mobile/google-play-service-account.json` (в `.gitignore`, не
+  се commit-ва). `eas.json` → `submit.production.android` го чете оттам и качва в **internal**
+  пистата като **draft**: първото приложение в Play Console трябва да е качено веднъж на ръка
+  (.aab) и да мине въпросниците, иначе API-то отказва.
 - **iOS:** App Store Connect → Users and Access → Integrations → App Store Connect API → ключ.
 
 ---

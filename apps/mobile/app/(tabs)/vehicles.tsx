@@ -22,7 +22,9 @@ export default function VehiclesTab() {
   const { data, loading, refreshing, onRefresh, error } = useGarage();
 
   const plan = data?.plan ?? "free";
-  const canAddVehicleNow = canAddVehicle(plan, data?.cards.length ?? 0);
+  // Only the cars the User owns count; one shared with them is someone else's quota.
+  const owned = (data?.cards ?? []).filter(({ vehicle }) => vehicle.userId === data?.userId).length;
+  const canAddVehicleNow = canAddVehicle(plan, owned);
 
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
@@ -63,9 +65,16 @@ export default function VehiclesTab() {
             </View>
           )}
 
-          {data?.cards.map(({ vehicle, items }) => (
+          {data?.cards.map(({ vehicle, items }) => {
+            const mine = vehicle.userId === data.userId;
+            return (
             <View key={vehicle.id} className="mb-5 rounded-2xl border border-white/10 bg-panel p-4">
               <CarImage bodyType={parseBodyType(vehicle.bodyType)} height={130} />
+              {!mine && (
+                <View className="mb-1 self-start rounded-full border border-copper/40 bg-copper/10 px-2.5 py-1">
+                  <Text className="text-[11px] text-copper">Споделена с теб</Text>
+                </View>
+              )}
 
               <Pressable
                 onPress={() => router.push(`/vehicle/${vehicle.id}`)}
@@ -133,15 +142,27 @@ export default function VehiclesTab() {
                 <Text className="text-xs text-dim">Free е до 2 услуги. Pro премахва лимита.</Text>
               )}
 
-              <Pressable
-                onPress={() => router.push(`/passport/${vehicle.id}`)}
-                className="mt-2 flex-row items-center justify-center gap-2 py-2.5"
-              >
-                <Ionicons name="document-text-outline" size={16} color={colors.silver} />
-                <Text className="text-sm text-silver">Паспорт на колата</Text>
-              </Pressable>
+              <View className="mt-2 flex-row">
+                {mine && (
+                  <Pressable
+                    onPress={() => router.push(`/passport/${vehicle.id}`)}
+                    className="flex-1 flex-row items-center justify-center gap-2 py-2.5"
+                  >
+                    <Ionicons name="document-text-outline" size={16} color={colors.silver} />
+                    <Text className="text-sm text-silver">Паспорт</Text>
+                  </Pressable>
+                )}
+                <Pressable
+                  onPress={() => router.push(`/share/${vehicle.id}`)}
+                  className="flex-1 flex-row items-center justify-center gap-2 py-2.5"
+                >
+                  <Ionicons name="people-outline" size={16} color={colors.silver} />
+                  <Text className="text-sm text-silver">{mine ? "Сподели" : "Семейство"}</Text>
+                </Pressable>
+              </View>
             </View>
-          ))}
+            );
+          })}
         </ScrollView>
       )}
     </SafeAreaView>

@@ -1,11 +1,13 @@
-import { SupabaseDocumentRepository } from "@glovebox/core";
+import { SupabaseDocumentRepository, SupabaseServiceRecordRepository } from "@glovebox/core";
 import { decode } from "base64-arraybuffer";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 
+import { recordOwner } from "./ownership";
 import { supabase } from "./supabase";
 
 const documentRepo = new SupabaseDocumentRepository(supabase);
+const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 const BUCKET = "documents";
 
 export type PickedFile = {
@@ -26,13 +28,15 @@ export async function pickDocument(): Promise<PickedFile | null> {
   return { uri: asset.uri, name: asset.name, mimeType: asset.mimeType ?? null, size: asset.size ?? null };
 }
 
-/** Uploads the file bytes to the private bucket and records the Document row (core seam). */
-export async function uploadDocument(
-  authUserId: string,
-  userId: string,
-  serviceId: string,
-  file: PickedFile,
-): Promise<void> {
+/**
+ * Uploads the file bytes to the private bucket and records the Document row (core seam). The row
+ * is the car owner's, also when a family member attaches it (see lib/ownership).
+ */
+export async function uploadDocument(authUserId: string, serviceId: string, file: PickedFile): Promise<void> {
+  const record = await serviceRepo.getById(serviceId);
+  if (!record) throw new Error("Услугата не е намерена.");
+  const userId = await recordOwner(record.vehicleId);
+
   // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
   const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(-120) || "file";
   const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;

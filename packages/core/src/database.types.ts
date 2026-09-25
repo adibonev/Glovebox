@@ -112,6 +112,7 @@ export type Database = {
           created_at: string | null
           engine_type: string | null
           euro_standard: string | null
+          first_registration: string | null
           fuel_type: string | null
           id: number
           license_plate: string | null
@@ -135,6 +136,7 @@ export type Database = {
           created_at?: string | null
           engine_type?: string | null
           euro_standard?: string | null
+          first_registration?: string | null
           fuel_type?: string | null
           id?: number
           license_plate?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           created_at?: string | null
           engine_type?: string | null
           euro_standard?: string | null
+          first_registration?: string | null
           fuel_type?: string | null
           id?: number
           license_plate?: string | null
@@ -600,6 +603,7 @@ export type Database = {
           reminder_days: number | null
           reminder_enabled: boolean | null
           reminder_settings: Json | null
+          signup_campaign: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -617,6 +621,7 @@ export type Database = {
           reminder_days?: number | null
           reminder_enabled?: boolean | null
           reminder_settings?: Json | null
+          signup_campaign?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -634,7 +639,56 @@ export type Database = {
           reminder_days?: number | null
           reminder_enabled?: boolean | null
           reminder_settings?: Json | null
+          signup_campaign?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vehicle_invites: {
+        Row: {
+          car_id: number
+          created_at: string
+          created_by: number
+          expires_at: string
+          token: string
+          used_at: string | null
+          used_by: number | null
+        }
+        Insert: {
+          car_id: number
+          created_at?: string
+          created_by: number
+          expires_at?: string
+          token?: string
+          used_at?: string | null
+          used_by?: number | null
+        }
+        Update: {
+          car_id?: number
+          created_at?: string
+          created_by?: number
+          expires_at?: string
+          token?: string
+          used_at?: string | null
+          used_by?: number | null
+        }
+        Relationships: []
+      }
+      vehicle_members: {
+        Row: {
+          car_id: number
+          created_at: string
+          user_id: number
+        }
+        Insert: {
+          car_id: number
+          created_at?: string
+          user_id: number
+        }
+        Update: {
+          car_id?: number
+          created_at?: string
+          user_id?: number
         }
         Relationships: []
       }
@@ -643,9 +697,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_campaign: { Args: { campaign: Json }; Returns: boolean }
       claim_referral: { Args: { code: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      join_vehicle: { Args: { invite: string }; Returns: number | null }
       referral_count: { Args: never; Returns: number }
+      vehicle_people: {
+        Args: { car: number }
+        Returns: { user_id: number; email: string; name: string | null; is_owner: boolean }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -2,6 +2,7 @@ import { normalizeReferralCode } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Linking from "expo-linking";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,10 +24,12 @@ import { supabase } from "@/lib/supabase";
 type Mode = "signin" | "signup";
 
 export default function LoginScreen() {
-  const [mode, setMode] = useState<Mode>("signin");
+  // Arriving from an invite link: sign-up, with the friend's code already in.
+  const { invite } = useLocalSearchParams<{ invite?: string }>();
+  const [mode, setMode] = useState<Mode>(invite ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(invite ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

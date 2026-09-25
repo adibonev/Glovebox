@@ -79,6 +79,8 @@
 | **Vehicle Passport** | Everything recorded about one Vehicle on one page: Mileage Readings with their source, every Renewal, Repairs and (optionally) costs. Shown on the web and as a PDF | Report, history, export |
 | **Passport Link** | A public, revocable link (`/p/<token>`) to a Vehicle Passport. Its PDF carries a QR code back to it, which is what makes the passport checkable | Share link, public URL |
 | **Mileage Source** | Where a Mileage Reading came from: `certificate` (read off an Inspection certificate and saved unchanged) or `manual` | Origin, provenance |
+| **Vehicle Member** | A User a Vehicle is shared with. Sees and edits its Service Records, Documents and Mileage Readings and gets its Reminders; cannot delete it, share it or publish its passport. Rows they create carry the owner's `user_id` | Co-owner, collaborator |
+| **Car Invitation** | A one-time link (`/s/<token>`, 7 days) the owner sends to make someone a Vehicle Member | Share link (that is the Passport Link) |
 | **Invite Code** | A User's six-character code (no 0/O/1/I/L). The invite link `/i/<code>` carries it; on an iPhone it is typed in at sign-up because the App Store drops the link | Referral code, promo code |
 
 ## People & Access
@@ -124,6 +126,7 @@
 - A **Service Record** has zero or more past periods, each kept by a **Renewal**; a **Vehicle Passport** lists them with the current one.
 - A **Vehicle** has at most one live **Passport Link**; revoking it stops the link and every QR code printed from it.
 - A **User** has one **Invite Code** and may have been invited by one other **User**.
+- A **Vehicle** has one owner and zero or more **Vehicle Members**; every one of them gets its **Reminders**.
 
 ---
 

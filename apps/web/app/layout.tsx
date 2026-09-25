@@ -7,8 +7,8 @@ import {
 } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { AppStorePromo } from "@/components/AppStorePromo";
 import { CookieConsent } from "@/components/CookieConsent";
+import { MetaPixel } from "@/components/MetaPixel";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import { SITE_URL } from "@/lib/site";
 
@@ -75,8 +75,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="bg-ink font-body text-ivory antialiased">
         <PostHogProvider>
           {children}
-          <AppStorePromo />
           <CookieConsent />
+          <MetaPixel />
         </PostHogProvider>
       </body>
     </html>

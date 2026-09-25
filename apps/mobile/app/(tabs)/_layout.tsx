@@ -4,12 +4,14 @@ import { Tabs } from "expo-router";
 
 import { useInviteClaim } from "@/lib/invite";
 import { useNotificationRoutes, usePushRegistration } from "@/lib/push";
+import { usePendingShare } from "@/lib/share";
 
 /** Bottom tab bar — the mobile counterpart of the web's primary nav. */
 export default function TabsLayout() {
   usePushRegistration();
   useNotificationRoutes();
   useInviteClaim();
+  usePendingShare();
   return (
     <Tabs
       screenOptions={{

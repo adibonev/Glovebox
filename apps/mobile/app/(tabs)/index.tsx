@@ -7,7 +7,9 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CarImage } from "@/components/CarImage";
+import { AnalyticsConsentCard } from "@/components/AnalyticsConsent";
 import { GaugePanel } from "@/components/GaugePanel";
+import { PushBanner } from "@/components/PushBanner";
 import { Wordmark } from "@/components/Wordmark";
 import {
   SERVICE_TYPE_LABELS,
@@ -67,6 +69,8 @@ export default function DashboardTab() {
           )}
 
           {pending.length > 0 && <RenewalBanner pending={pending} onPress={(url) => router.push(url)} />}
+          {data && data.cards.length > 0 && <PushBanner />}
+          {data && data.cards.length > 0 && <AnalyticsConsentCard />}
 
           {data?.urgent && <CarImage bodyType={data.urgent.bodyType} />}
 

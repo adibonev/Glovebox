@@ -8,6 +8,7 @@ import {
   SupabaseVehicleRepository,
   canAddVehicle,
   exemptFromVehicleTax,
+  inspectionDue,
   mileageSource,
   missingVehicleFields,
   onboardingGaps,
@@ -24,7 +25,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { Choice, Notice } from "@/components/choices";
 import { DocumentCamera } from "@/components/DocumentCamera";
-import { ChipPicker, DateField, Field, PrimaryButton } from "@/components/forms";
+import { ChipPicker, DateField, Field, OptionalDateField, PrimaryButton } from "@/components/forms";
 import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
 import { SelectField } from "@/components/SelectField";
@@ -32,8 +33,9 @@ import { useAuth } from "@/lib/auth";
 import { BODY_TYPE_LABELS, BODY_TYPE_OPTIONS } from "@/lib/bodyType";
 import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
-import { SERVICE_TYPE_LABELS } from "@/lib/labels";
+import { SERVICE_TYPE_LABELS, formatDateShort } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
+import { offerPush } from "@/lib/push";
 import { maybeAskForReview } from "@/lib/review";
 import { parseCost } from "@/lib/cost";
 import { parseKm, todayAsDate } from "@/lib/mileage";
@@ -74,8 +76,14 @@ function inOneYear(): Date {
   return date;
 }
 
+/**
+ * A policy this step can photograph. The Inspection certificate is scannable too, but it is read
+ * at the Vehicle step (it creates the car); here its photo would go through the policy reader.
+ */
 const scannable = (serviceType: string): boolean =>
-  DOCUMENT_SCAN_ENABLED && (SCANNABLE_SERVICE_TYPES as readonly string[]).includes(serviceType);
+  DOCUMENT_SCAN_ENABLED &&
+  serviceType !== "inspection" &&
+  (SCANNABLE_SERVICE_TYPES as readonly string[]).includes(serviceType);
 
 export default function VehicleSetupScreen() {
   const { session } = useAuth();
@@ -96,6 +104,8 @@ export default function VehicleSetupScreen() {
   const [year, setYear] = useState("");
   const [plate, setPlate] = useState("");
   const [vin, setVin] = useState("");
+  /** Field (B) of the registration certificate; the statutory Inspection schedule runs from it. */
+  const [firstRegistration, setFirstRegistration] = useState<Date | null>(null);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
 
   // The obligations still to ask about, and the one being asked about now.
@@ -139,6 +149,7 @@ export default function VehicleSetupScreen() {
       setYear(scanned.vehicle.year ? String(scanned.vehicle.year) : "");
       setPlate(scanned.vehicle.plate ?? "");
       setVin(scanned.vehicle.vin ?? "");
+      setFirstRegistration(scanned.firstRegistration);
       // The certificate carries the Inspection itself, so that obligation is already answered.
       if (scanned.serviceRecord) setInspectionExpiry(scanned.serviceRecord.expiryDate);
       setMileage(scanned.mileage ? String(scanned.mileage.km) : "");
@@ -171,7 +182,8 @@ export default function VehicleSetupScreen() {
       // Quota gate: Free is capped at 1 Vehicle (ADR-0003).
       const plan = await getPlan(user.id);
       const existing = await vehicleRepo.listByUser(user.id);
-      if (!canAddVehicle(plan, existing.length)) {
+      // Only the cars the User owns count; one shared with them is someone else's quota.
+      if (!canAddVehicle(plan, existing.filter((v) => v.userId === user.id).length)) {
         return fail("Достигна лимита на Free (1 кола). Надгради до Pro от уеб приложението.");
       }
 
@@ -185,6 +197,7 @@ export default function VehicleSetupScreen() {
         vin: vin.trim().toUpperCase() || null,
         bodyType,
         fuelType,
+        firstRegistration,
       });
       setVehicleId(vehicle.id);
 
@@ -266,7 +279,7 @@ export default function VehicleSetupScreen() {
     setCost("");
     setNote(null);
     setStage(left.length ? "serviceChoice" : "serviceForm");
-    if (!left.length) finish();
+    if (!left.length) void finish();
   };
 
   const saveService = async () => {
@@ -294,7 +307,10 @@ export default function VehicleSetupScreen() {
   };
 
   /** The journey ends where the User decides when to be told — the point of recording any of it. */
-  const finish = () => {
+  const finish = async () => {
+    // Notifications are asked for here, not on first launch: with a car in, the dialog makes sense.
+    // Awaited, so the system dialog is answered before the rating one can appear.
+    if (session) await offerPush(session).catch(() => undefined);
     router.replace("/(tabs)/reminders");
     // A car is now fully recorded, which is the moment this app has earned a rating. Asked once
     // the screen has settled rather than mid-navigation, and at most once a quarter.
@@ -436,6 +452,12 @@ export default function VehicleSetupScreen() {
             )}
           </View>
         )}
+        <OptionalDateField
+          label="Дата на първа регистрация"
+          hint="Поле (B) на талона. С нея знаем кога е прегледът на кола под пет години."
+          value={firstRegistration}
+          onChange={setFirstRegistration}
+        />
         <Field
           label="Километри"
           value={mileage}
@@ -466,12 +488,19 @@ export default function VehicleSetupScreen() {
     return (
       <Screen title="Готово">
         <Text className="mb-6 text-base text-silver">Колата е добавена.</Text>
-        <PrimaryButton label="Към напомнянията" onPress={finish} />
+        <PrimaryButton label="Към напомнянията" onPress={() => void finish()} />
       </Screen>
     );
   }
 
   const label = SERVICE_TYPE_LABELS[serviceType] ?? serviceType;
+
+  // A car under five years old has its Inspection date set by law, counted from registration.
+  const statutory =
+    serviceType === "inspection" && firstRegistration
+      ? inspectionDue(firstRegistration, null, todayAsDate())
+      : null;
+  const statutoryDue = statutory && statutory.kind !== "needsLastInspection" ? statutory.due : null;
 
   if (stage === "serviceChoice") {
     return (
@@ -501,6 +530,12 @@ export default function VehicleSetupScreen() {
             />
           </>
         )}
+        {statutoryDue && (
+          <Notice>
+            По закон {statutory?.kind === "first" ? "първият" : "вторият"} преглед на тази кола е до{" "}
+            {formatDateShort(statutoryDue)}, броено от датата на първа регистрация.
+          </Notice>
+        )}
         {scannable(serviceType) && (
           <Choice
             title="Снимай полицата"
@@ -511,9 +546,12 @@ export default function VehicleSetupScreen() {
         )}
         <Choice
           title="Въведи ръчно"
-          body="Избираш датата сам."
+          body={statutoryDue ? "Датата по закон е попълнена. Провери я." : "Избираш датата сам."}
           tone="emerald"
-          onPress={() => setStage("serviceForm")}
+          onPress={() => {
+            if (statutoryDue) setExpiry(statutoryDue);
+            setStage("serviceForm");
+          }}
         />
         {/* Casco is the one obligation a driver may simply not have, and an answer of "no" has to
             be as easy to give as "yes" — otherwise the only way on is a link that reads like

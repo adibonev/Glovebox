@@ -88,15 +88,17 @@ export async function runReminderJob(
     errors: [],
   };
 
-  const [usersRes, carsRes, servicesRes, logsRes, tokensRes] = await Promise.all([
+  const [usersRes, carsRes, servicesRes, logsRes, tokensRes, membersRes] = await Promise.all([
     admin.from("users").select("id, email, reminder_settings, reminder_enabled"),
     admin.from("cars").select("id, user_id, brand, model"),
     admin
       .from("services")
       .select("id, car_id, user_id, service_type, expiry_date")
       .not("expiry_date", "is", null),
-    admin.from("service_logs").select("car_id, service_type, expiry_date, stage"),
+    admin.from("service_logs").select("car_id, user_id, service_type, expiry_date, stage"),
     admin.from("push_tokens").select("user_id, token"),
+    // Missing until the sharing migration is applied: then every car simply has its owner alone.
+    admin.from("vehicle_members").select("car_id, user_id"),
   ]);
 
   // Expo push tokens grouped per User (push goes to any app device that registered one).
@@ -119,18 +121,29 @@ export async function runReminderJob(
   const services = servicesRes.data ?? [];
 
   const carName = new Map<number, string>();
-  for (const c of cars) carName.set(c.id, `${c.brand} ${c.model}`);
+  // Who hears about a car: its owner, then everyone it is shared with.
+  const recipients = new Map<number, number[]>();
+  for (const c of cars) {
+    carName.set(c.id, `${c.brand} ${c.model}`);
+    recipients.set(c.id, [c.user_id]);
+  }
+  for (const m of membersRes.error ? [] : (membersRes.data ?? [])) {
+    recipients.get(m.car_id)?.push(m.user_id);
+  }
 
-  // Each step of the ladder is owed once per (car, service type, expiry date). A renewal moves
+  // Each step of the ladder is owed once per person, car, service type and expiry date. Per
+  // person, so a member added later still hears the step the owner already heard. A renewal moves
   // the Expiry Date, which starts the whole ladder again on its own — no state to reset.
-  const key = (carId: number, serviceType: string, expiry: string, stage: string) =>
-    `${carId}|${serviceType}|${expiry}|${stage}`;
+  const key = (userId: number, carId: number, serviceType: string, expiry: string, stage: string) =>
+    `${userId}|${carId}|${serviceType}|${expiry}|${stage}`;
   const alreadySent = new Set<string>();
   for (const log of logsRes.data ?? []) {
-    if (log.car_id != null && log.service_type && log.expiry_date) {
-      // Rows written before the ladder existed were the single warning, which is the first step.
-      alreadySent.add(key(log.car_id, log.service_type, log.expiry_date, log.stage ?? "window"));
-    }
+    if (log.car_id == null || !log.service_type || !log.expiry_date) continue;
+    // Old rows may lack the person; those were always the owner's.
+    const userId = log.user_id ?? recipients.get(log.car_id)?.[0];
+    if (userId == null) continue;
+    // Rows written before the ladder existed were the single warning, which is the first step.
+    alreadySent.add(key(userId, log.car_id, log.service_type, log.expiry_date, log.stage ?? "window"));
   }
 
   // Raw rows by id (to recover car_id + the exact expiry string after dueReminders).
@@ -139,19 +152,26 @@ export async function runReminderJob(
   for (const s of services) {
     if (s.expiry_date == null) continue;
     rowById.set(String(s.id), s);
-    const list = recordsByUser.get(s.user_id) ?? [];
-    list.push({
+    const record: ServiceRecord = {
       id: String(s.id),
       vehicleId: String(s.car_id),
       serviceType: s.service_type,
       expiryDate: new Date(s.expiry_date),
       cost: null, // not needed for reminders
-    });
-    recordsByUser.set(s.user_id, list);
+    };
+    for (const userId of recipients.get(s.car_id) ?? [s.user_id]) {
+      const list = recordsByUser.get(userId) ?? [];
+      list.push(record);
+      recordsByUser.set(userId, list);
+    }
   }
 
   for (const user of users) {
-    if (user.reminder_enabled === false || !user.email) continue;
+    // The e-mail switch is for e-mail only; notifications have their own switch on the phone,
+    // which removes the device's token. A User with neither gets nothing.
+    const emailOn = user.reminder_enabled !== false && !!user.email;
+    const tokens = tokensByUser.get(user.id) ?? [];
+    if (!emailOn && tokens.length === 0) continue;
     result.usersProcessed += 1;
 
     const windows = parseWindows(user.reminder_settings);
@@ -166,7 +186,7 @@ export async function runReminderJob(
     for (const reminder of due) {
       const row = rowById.get(reminder.serviceRecordId);
       if (!row || row.expiry_date == null) continue;
-      if (alreadySent.has(key(row.car_id, reminder.serviceType, row.expiry_date, reminder.stage))) {
+      if (alreadySent.has(key(user.id, row.car_id, reminder.serviceType, row.expiry_date, reminder.stage))) {
         result.skippedAlreadySent += 1;
         continue;
       }
@@ -187,14 +207,12 @@ export async function runReminderJob(
 
     if (byStage.size === 0) continue;
 
-    const tokens = tokensByUser.get(user.id) ?? [];
-
     for (const [stage, group] of byStage) {
       const lines = group.map((item) => item.line);
 
       // The e-mail carries the opening step only, and a failure must not mark it as sent —
       // it is the step the User set the timing of, so it is worth retrying tomorrow.
-      if (remindByEmail(stage)) {
+      if (emailOn && remindByEmail(stage)) {
         const { subject, html } = renderReminderEmail(lines);
         const sent = await mailer({ to: user.email, subject, html });
         if (!sent.ok) {
@@ -228,7 +246,7 @@ export async function runReminderJob(
       if (logError) result.errors.push(`log user ${user.id}: ${logError.message}`);
       else {
         for (const item of group) {
-          alreadySent.add(key(item.carId, item.line.serviceType, item.expiry, stage));
+          alreadySent.add(key(user.id, item.carId, item.line.serviceType, item.expiry, stage));
         }
       }
     }

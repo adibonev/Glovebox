@@ -13,6 +13,7 @@ const vehicle: Vehicle = {
   vin: "WBA8E31000K123456",
   bodyType: "sedan",
   fuelType: "diesel",
+  firstRegistration: new Date("2016-03-14"),
 };
 
 const civilLiability: ServiceRecord = {

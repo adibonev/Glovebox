@@ -128,6 +128,89 @@ export function DateField({
   );
 }
 
+/** The picked calendar day as UTC midnight, the domain's date convention (see lib/mileage). */
+const asDay = (date: Date) => new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+
+/**
+ * A date that may be left out: shows "Не е въведена" until picked, and can be cleared. For facts
+ * the User may not have to hand, like the date of first registration. Returns the day as UTC
+ * midnight, so a date picked just after local midnight is not saved as the day before.
+ */
+export function OptionalDateField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: Date | null;
+  onChange: (date: Date | null) => void;
+}) {
+  const [show, setShow] = useState(false);
+  const [temp, setTemp] = useState(value ?? new Date());
+
+  const open = () => {
+    setTemp(value ?? new Date());
+    setShow(true);
+  };
+
+  return (
+    <View className="mb-4">
+      <Text className="mb-1.5 text-sm text-muted">{label}</Text>
+      <View className="flex-row items-center gap-2">
+        <Pressable onPress={open} className="flex-1 rounded-xl border border-white/10 bg-panel px-4 py-3.5">
+          <Text className={`text-base ${value ? "text-ivory" : "text-dim"}`}>
+            {value ? formatDateShort(value) : "Не е въведена"}
+          </Text>
+        </Pressable>
+        {value && (
+          <Pressable onPress={() => onChange(null)} hitSlop={8} className="px-2 py-3">
+            <Text className="text-sm text-dim">Изчисти</Text>
+          </Pressable>
+        )}
+      </View>
+      {hint && <Text className="mt-1.5 text-xs leading-4 text-dim">{hint}</Text>}
+
+      {Platform.OS === "android" && show && (
+        <DateTimePicker
+          value={value ?? new Date()}
+          mode="date"
+          maximumDate={new Date()}
+          onChange={(event, date) => {
+            setShow(false);
+            if (event.type === "set" && date) onChange(asDay(date));
+          }}
+        />
+      )}
+
+      {Platform.OS === "ios" && (
+        <Modal visible={show} transparent animationType="fade">
+          <View className="flex-1 justify-end bg-black/50">
+            <View className="rounded-t-3xl border-t border-white/10 bg-panel2 p-4">
+              <DateTimePicker
+                value={temp}
+                mode="date"
+                display="spinner"
+                themeVariant="dark"
+                maximumDate={new Date()}
+                onChange={(_event, date) => date && setTemp(date)}
+              />
+              <PrimaryButton
+                label="Готово"
+                onPress={() => {
+                  onChange(asDay(temp));
+                  setShow(false);
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+    </View>
+  );
+}
+
 /** Primary (emerald) action button. */
 export function PrimaryButton({
   label,

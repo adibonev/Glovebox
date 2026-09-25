@@ -86,6 +86,36 @@ export function inspectionSchedule(firstRegistration: Date, count: number): Date
   );
 }
 
+/**
+ * When the next Roadworthiness Inspection is due, and on what grounds.
+ *
+ * - `first` / `second`: a Vehicle under five years old runs on the statutory anniversaries of
+ *   its first registration (the third, then the fifth), however early it was inspected.
+ * - `annual`: after that, each certificate is valid for a year from the day of the Inspection
+ *   ("подлежи на преглед до …" is that day a year on), so the anniversary says nothing.
+ * - `needsLastInspection`: a Vehicle over five years old whose last Inspection is not known.
+ *   The date cannot be worked out, and guessing the anniversary would be wrong by months.
+ */
+export type InspectionDue =
+  | { kind: "first" | "second" | "annual"; due: Date }
+  | { kind: "needsLastInspection" };
+
+export function inspectionDue(
+  firstRegistration: Date,
+  lastInspection: Date | null,
+  today: Date,
+): InspectionDue {
+  const first = addYears(firstRegistration, FIRST_INSPECTION_YEAR);
+  if (today.getTime() <= first.getTime()) return { kind: "first", due: first };
+
+  const second = addYears(firstRegistration, SECOND_INSPECTION_YEAR);
+  if (today.getTime() <= second.getTime()) return { kind: "second", due: second };
+
+  return lastInspection
+    ? { kind: "annual", due: addYears(lastInspection, 1) }
+    : { kind: "needsLastInspection" };
+}
+
 // --- Vignette ---------------------------------------------------------------------------
 
 /** The Vignette durations sold by the Road Infrastructure Agency. */

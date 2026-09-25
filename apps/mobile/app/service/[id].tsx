@@ -2,7 +2,6 @@ import {
   DOCUMENT_SCAN_ENABLED,
   SupabaseMileageReadingRepository,
   SupabaseServiceRecordRepository,
-  SupabaseUserRepository,
   isExpiringServiceType,
   mileageSource,
   scanInspectionDocument,
@@ -27,11 +26,11 @@ import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "@/lib/labels";
 import { parseKm, todayAsDate } from "@/lib/mileage";
+import { recordOwner } from "@/lib/ownership";
 import { useDocumentRecognition } from "@/lib/recognize";
 import { supabase } from "@/lib/supabase";
 
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
-const userRepo = new SupabaseUserRepository(supabase);
 const mileageRepo = new SupabaseMileageReadingRepository(supabase);
 const TYPE_OPTIONS = SERVICE_TYPE_ORDER.map((t) => ({ value: t, label: SERVICE_TYPE_LABELS[t] }));
 
@@ -117,13 +116,10 @@ export default function EditServiceScreen() {
     const km = inspection ? parseKm(mileage) : null;
     if (km !== null && vehicleId && session) {
       try {
-        const user = await userRepo.findOrCreateByAuthId({
-          authUserId: session.user.id,
-          email: session.user.email ?? "",
-        });
         await mileageRepo.record({
           vehicleId,
-          userId: user.id,
+          // The owner's, also when a family member edits a shared car.
+          userId: await recordOwner(vehicleId),
           km,
           readOn: mileageReadOn ?? todayAsDate(),
           source: mileageSource(km, kmRead),

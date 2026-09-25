@@ -67,6 +67,7 @@ function vehicleFromRow(
     | "vin"
     | "body_type"
     | "fuel_type"
+    | "first_registration"
   >,
 ): Vehicle {
   return {
@@ -78,6 +79,7 @@ function vehicleFromRow(
     plate: row.license_plate,
     vin: row.vin,
     bodyType: row.body_type,
+    firstRegistration: row.first_registration ? new Date(row.first_registration) : null,
     fuelType: row.fuel_type,
   };
 }
@@ -135,16 +137,41 @@ function rowsOrThrow<Row>(
   return result.data ?? [];
 }
 
-const CAR_COLUMNS = "id, user_id, brand, model, year, license_plate, vin, body_type, fuel_type";
+/**
+ * The cars shared with this User (they are a Vehicle Member of them). Empty, not an error, while
+ * the sharing migration is not applied, so every "visible to the User" list falls back to their
+ * own rows instead of failing.
+ */
+async function sharedCarIds(client: SupabaseClient<Database>, userId: string): Promise<number[]> {
+  const { data, error } = await client
+    .from("vehicle_members")
+    .select("car_id")
+    .eq("user_id", Number(userId));
+  return error ? [] : (data ?? []).map((row) => row.car_id);
+}
+
+/**
+ * PostgREST `or` filter for "the User's own rows, or rows on a shared car". Rows a member creates
+ * on a shared car carry the owner's user_id, so for the owner `user_id` alone is complete.
+ */
+function ownOrShared(userId: string, shared: number[], column: string): string {
+  const own = `user_id.eq.${Number(userId)}`;
+  return shared.length ? `${own},${column}.in.(${shared.join(",")})` : own;
+}
+
+const CAR_COLUMNS =
+  "id, user_id, brand, model, year, license_plate, vin, body_type, fuel_type, first_registration";
 
 export class SupabaseVehicleRepository implements VehicleRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
+  /** The User's own Vehicles and those shared with them (`vehicle.userId` tells which is which). */
   async listByUser(userId: string): Promise<Vehicle[]> {
+    const shared = await sharedCarIds(this.client, userId);
     const result = await this.client
       .from("cars")
       .select(CAR_COLUMNS)
-      .eq("user_id", Number(userId))
+      .or(ownOrShared(userId, shared, "id"))
       .order("id");
     return rowsOrThrow(result, "cars.listByUser").map(vehicleFromRow);
   }
@@ -171,6 +198,7 @@ export class SupabaseVehicleRepository implements VehicleRepository {
         vin: input.vin ?? null,
         body_type: input.bodyType ?? null,
         fuel_type: input.fuelType ?? null,
+        first_registration: input.firstRegistration ? toISODate(input.firstRegistration) : null,
       })
       .select(CAR_COLUMNS)
       .single();
@@ -187,6 +215,9 @@ export class SupabaseVehicleRepository implements VehicleRepository {
     if (changes.vin !== undefined) patch.vin = changes.vin;
     if (changes.bodyType !== undefined) patch.body_type = changes.bodyType;
     if (changes.fuelType !== undefined) patch.fuel_type = changes.fuelType;
+    if (changes.firstRegistration !== undefined) {
+      patch.first_registration = changes.firstRegistration ? toISODate(changes.firstRegistration) : null;
+    }
 
     // Ownership is enforced by RLS (a User can only update their own `cars`).
     const { data, error } = await this.client
@@ -211,11 +242,13 @@ const SERVICE_COLUMNS = "id, car_id, service_type, expiry_date, cost";
 export class SupabaseServiceRecordRepository implements ServiceRecordRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
+  /** Service Records on the User's own Vehicles and on those shared with them. */
   async listByUser(userId: string): Promise<ServiceRecord[]> {
+    const shared = await sharedCarIds(this.client, userId);
     const result = await this.client
       .from("services")
       .select(SERVICE_COLUMNS)
-      .eq("user_id", Number(userId))
+      .or(ownOrShared(userId, shared, "car_id"))
       .not("expiry_date", "is", null);
     return rowsOrThrow(result, "services.listByUser").map(serviceRecordFromRow);
   }
@@ -283,11 +316,18 @@ const DOCUMENT_COLUMNS = "id, service_id, path, name, mime_type, created_at";
 export class SupabaseDocumentRepository implements DocumentRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
+  /** Documents on the User's own Vehicles and on those shared with them. */
   async listByUser(userId: string): Promise<Document[]> {
+    const shared = await sharedCarIds(this.client, userId);
+    let sharedServices: number[] = [];
+    if (shared.length) {
+      const services = await this.client.from("services").select("id").in("car_id", shared);
+      sharedServices = (services.data ?? []).map((row) => row.id);
+    }
     const result = await this.client
       .from("documents")
       .select(DOCUMENT_COLUMNS)
-      .eq("user_id", Number(userId))
+      .or(ownOrShared(userId, sharedServices, "service_id"))
       .order("created_at", { ascending: false });
     return rowsOrThrow(result, "documents.listByUser").map(documentFromRow);
   }
@@ -397,11 +437,13 @@ export class SupabaseMileageReadingRepository implements MileageReadingRepositor
     return rowsOrThrow(result, "mileage_readings.listByVehicle").map(mileageReadingFromRow);
   }
 
+  /** Mileage Readings of the User's own Vehicles and of those shared with them. */
   async listByUser(userId: string): Promise<MileageReading[]> {
+    const shared = await sharedCarIds(this.client, userId);
     const result = await this.client
       .from("mileage_readings")
       .select(MILEAGE_COLUMNS)
-      .eq("user_id", Number(userId))
+      .or(ownOrShared(userId, shared, "car_id"))
       .order("read_on");
     return rowsOrThrow(result, "mileage_readings.listByUser").map(mileageReadingFromRow);
   }

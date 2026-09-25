@@ -59,6 +59,41 @@ Variables**), после redeploy.
 
 ---
 
+## Meta Pixel (реклами, уеб)
+
+| Име | Къде | Стойност |
+| --- | --- | --- |
+| `NEXT_PUBLIC_META_PIXEL_ID` | local + Vercel | ID на Pixel-а от Meta Events Manager |
+
+Зарежда се **само след съгласие** в банера (същото съгласие като PostHog). Праща `PageView` на
+всяка страница и `CompleteRegistration` веднъж за нов акаунт (`components/SignupTracker.tsx`).
+Кампанията, от която идва регистрацията (utm етикетите), се пази отделно в
+`users.signup_campaign`, без съгласие, защото не съдържа нищо идентифициращо.
+
+---
+
+## Мобилно приложение (Sentry + PostHog)
+
+Env променливи в **EAS** (`eas env:create --environment production`), не в `.env.local`:
+
+| Име | Стойност |
+| --- | --- |
+| `EXPO_PUBLIC_SENTRY_DSN` | DSN на **отделен** Sentry проект (Platform: React Native), напр. `glovebox-mobile` |
+| `EXPO_PUBLIC_POSTHOG_KEY` | същият `phc_...` като на уеба (един човек = един профил) |
+| `EXPO_PUBLIC_POSTHOG_HOST` | `https://eu.i.posthog.com` |
+
+- **Sentry** (`lib/monitoring.ts`) тръгва без съгласие, като на уеба: легитимен интерес, без
+  имейл и IP, само id на акаунта. За четими stack traces добави плъгина
+  `["@sentry/react-native/expo", { "organization": "...", "project": "glovebox-mobile" }]` в
+  `app.json` и `SENTRY_AUTH_TOKEN` като EAS secret. **Без токена не добавяй плъгина**: стъпката
+  му за качване на символи чупи iOS билда.
+- **PostHog** (`lib/analytics.ts`) не праща нищо, докато човекът не натисне „Разреши“ (карта на
+  Таблото; превключвател „Анонимна статистика“ в Профил). Идентифицира се само с id на акаунта.
+- След включване обнови **App Privacy** в App Store Connect: Crash Data и Product Interaction,
+  свързани с потребителя, без проследяване.
+
+---
+
 ## Бърза проверка след включване
 1. Добави ключовете в `apps/web/.env.local`, рестартирай `pnpm --filter web dev`.
 2. **Sentry:** хвърли тестова грешка (напр. бутон с `throw new Error("sentry test")`) → виж я

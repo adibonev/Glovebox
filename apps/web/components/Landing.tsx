@@ -6,6 +6,7 @@ import { APP_STORE_URL } from "@/lib/appStore";
 
 import { GaugePanel } from "./GaugePanel";
 import { FAQ } from "./landing/faq";
+import { InspectionCalculator } from "./landing/InspectionCalculator";
 import { InspectionCertificate } from "./landing/InspectionCertificate";
 import { Pricing } from "./landing/Pricing";
 import { PlateBadge } from "./PlateBadge";
@@ -234,22 +235,25 @@ export function Landing() {
       </div>
 
       <div className="mx-auto w-full max-w-[1180px] px-5 sm:px-6">
-        <section className="flex flex-col items-start gap-6 py-20 sm:flex-row sm:items-end sm:justify-between">
+        <section id="pregled" className="grid gap-8 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:gap-10">
           <div>
             <h2 className="font-display text-[clamp(34px,4.4vw,52px)] font-extrabold leading-[1] text-ivory">
               Кога ти изтича прегледът?
             </h2>
-            <p className="mt-3 font-body text-[17px] text-muted">Разбираш за две минути.</p>
+            <p className="mt-4 max-w-md font-body text-[17px] leading-relaxed text-muted">
+              Въведи датата от талона и ще видиш. Без регистрация.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href="/login?mode=signup"
+                className="rounded-lg border border-white/12 px-5 py-3 font-body text-[15px] font-semibold text-ivory transition hover:border-white/30"
+              >
+                Започни безплатно
+              </Link>
+              <AppStoreBadge />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/login?mode=signup"
-              className="rounded-lg bg-emerald px-6 py-3 font-body text-[15px] font-semibold text-ivory transition hover:bg-emerald/90"
-            >
-              Започни безплатно
-            </Link>
-            <AppStoreBadge />
-          </div>
+          <InspectionCalculator />
         </section>
 
         {BILLING_ENABLED && <Pricing />}
@@ -260,6 +264,9 @@ export function Landing() {
             <a href="#chzv" className="transition hover:text-ivory">
               Въпроси
             </a>
+            <Link href="/za-nas" className="transition hover:text-ivory">
+              За нас
+            </Link>
             <Link href="/privacy" className="transition hover:text-ivory">
               Поверителност
             </Link>

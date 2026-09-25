@@ -10,7 +10,8 @@ export function LegalPage({
   children,
 }: {
   title: string;
-  updated: string;
+  /** The legal pages show when they last changed; an ordinary page leaves it out. */
+  updated?: string;
   children: ReactNode;
 }) {
   return (
@@ -37,9 +38,11 @@ export function LegalPage({
         <h1 className="mt-4 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           {title}
         </h1>
-        <p className="mt-2 font-mono text-[12px] uppercase tracking-[0.14em] text-dim">
-          Последна актуализация: {updated}
-        </p>
+        {updated && (
+          <p className="mt-2 font-mono text-[12px] uppercase tracking-[0.14em] text-dim">
+            Последна актуализация: {updated}
+          </p>
+        )}
 
         <div
           className="mt-8 space-y-4 font-body text-[15px] leading-relaxed text-muted
@@ -52,6 +55,9 @@ export function LegalPage({
         </div>
 
         <footer className="mt-12 flex items-center gap-4 border-t border-white/[0.06] pt-6 font-body text-[13px] text-dim">
+          <Link href="/za-nas" className="transition hover:text-ivory">
+            За нас
+          </Link>
           <Link href="/privacy" className="transition hover:text-ivory">
             Поверителност
           </Link>
