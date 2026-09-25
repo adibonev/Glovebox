@@ -35,6 +35,7 @@ import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } fr
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { SERVICE_TYPE_LABELS, formatDateShort } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
+import { correctedFields, track } from "@/lib/analytics";
 import { offerPush } from "@/lib/push";
 import { maybeAskForReview } from "@/lib/review";
 import { parseCost } from "@/lib/cost";
@@ -118,6 +119,10 @@ export default function VehicleSetupScreen() {
   const [mileageReadOn, setMileageReadOn] = useState<Date | null>(null);
   /** What the certificate said, to tell a read number from one the User then changed. */
   const [kmRead, setKmRead] = useState<number | null>(null);
+  /** What the certificate scan filled in, to count the fields the User then corrected. */
+  const [vehicleRead, setVehicleRead] = useState<Record<string, string | null> | null>(null);
+  /** The same for a policy photographed at the current step. */
+  const [policyRead, setPolicyRead] = useState<Record<string, string | null> | null>(null);
   const [expiry, setExpiry] = useState<Date>(inOneYear);
   const [cost, setCost] = useState("");
 
@@ -162,7 +167,17 @@ export default function VehicleSetupScreen() {
         model: identity.model || null,
       });
       setNote(missing.length ? "Част от данните не се разчетоха — допълни ги." : null);
+      setVehicleRead({
+        brand: identity.brand || null,
+        model: identity.model || null,
+        year: scanned.vehicle.year ? String(scanned.vehicle.year) : null,
+        plate: scanned.vehicle.plate,
+        vin: scanned.vehicle.vin,
+        km: scanned.mileage ? String(scanned.mileage.km) : null,
+      });
+      if (missing.length === 5 && !scanned.serviceRecord) track("scan_failed", { document: "inspection" });
     } catch {
+      track("scan_failed", { document: "inspection" });
       setNote("Разчитането не сработи. Попълни данните ръчно.");
     } finally {
       setBusy(false);
@@ -200,6 +215,13 @@ export default function VehicleSetupScreen() {
         firstRegistration,
       });
       setVehicleId(vehicle.id);
+      if (vehicleRead) {
+        track("scan_succeeded", {
+          document: "inspection",
+          corrected: correctedFields(vehicleRead, { brand, model, year, plate, vin, km: mileage }),
+        });
+      }
+      track("vehicle_saved", { source: vehicleRead ? "scan" : "manual" });
 
       // The Inspection came off the certificate; record it before asking for anything else.
       const recorded: string[] = [];
@@ -255,6 +277,14 @@ export default function VehicleSetupScreen() {
       );
       if (draft.serviceRecord) setExpiry(draft.serviceRecord.expiryDate);
       setCost(draft.serviceRecord?.cost != null ? String(draft.serviceRecord.cost) : "");
+      if (draft.serviceRecord) {
+        setPolicyRead({
+          expiry: draft.serviceRecord.expiryDate.toISOString().slice(0, 10),
+          cost: draft.serviceRecord.cost != null ? String(draft.serviceRecord.cost) : null,
+        });
+      } else {
+        track("scan_failed", { document: serviceType });
+      }
 
       // A policy written for another car is the one error a confirmation form cannot show.
       const insured = draft.insuredVehicle.plate;
@@ -266,6 +296,7 @@ export default function VehicleSetupScreen() {
             : "Срокът не се разчете — въведи го ръчно.",
       );
     } catch {
+      track("scan_failed", { document: serviceType });
       setNote("Разчитането не сработи. Въведи данните ръчно.");
     } finally {
       setBusy(false);
@@ -298,6 +329,13 @@ export default function VehicleSetupScreen() {
         expiryDate: expiry,
         cost: parseCost(cost),
       });
+      if (policyRead) {
+        track("scan_succeeded", {
+          document: serviceType,
+          corrected: correctedFields(policyRead, { expiry: expiry.toISOString().slice(0, 10), cost }),
+        });
+        setPolicyRead(null);
+      }
       nextService(serviceType);
     } catch {
       fail("Услугата не беше записана. Опитай пак.");
@@ -385,7 +423,10 @@ export default function VehicleSetupScreen() {
             title="Снимай талона за технически преглед"
             body="Данните се попълват сами, а ти ги проверяваш."
             tone="copper"
-            onPress={() => setStage("vehicleCamera")}
+            onPress={() => {
+              track("scan_started", { document: "inspection" });
+              setStage("vehicleCamera");
+            }}
           />
         )}
         <Choice
@@ -541,7 +582,10 @@ export default function VehicleSetupScreen() {
             title="Снимай полицата"
             body="Срокът и премията се попълват сами."
             tone="copper"
-            onPress={() => setStage("serviceCamera")}
+            onPress={() => {
+              track("scan_started", { document: serviceType });
+              setStage("serviceCamera");
+            }}
           />
         )}
         <Choice

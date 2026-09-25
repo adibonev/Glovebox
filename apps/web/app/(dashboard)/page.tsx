@@ -6,10 +6,10 @@ import { PlateBadge } from "@/components/PlateBadge";
 import { Shell } from "@/components/Shell";
 import { VehicleCard } from "@/components/VehicleCard";
 
-import { AddVehicleForm } from "./_components/AddVehicleForm";
-import { ServiceList } from "./_components/ServiceList";
-import { VehicleSwitcher } from "./_components/VehicleSwitcher";
-import { getDashboardData } from "./_lib/dashboard";
+import { AddVehicleForm } from "../_components/AddVehicleForm";
+import { ServiceList } from "../_components/ServiceList";
+import { VehicleSwitcher } from "../_components/VehicleSwitcher";
+import { getDashboardData } from "../_lib/dashboard";
 
 export default async function DashboardPage({
   searchParams,

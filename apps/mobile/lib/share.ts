@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Alert } from "react-native";
 
+import { track } from "./analytics";
 import { useAuth } from "./auth";
 import { supabase } from "./supabase";
 
@@ -24,6 +25,7 @@ export async function rememberShareToken(token: string): Promise<void> {
 export async function acceptShare(authUserId: string, email: string, token: string): Promise<boolean> {
   await users.findOrCreateByAuthId({ authUserId, email });
   const vehicleId = await sharing.join(token);
+  if (vehicleId) track("vehicle_joined");
   Alert.alert(
     vehicleId ? "Колата е в гаража ти" : "Поканата не важи",
     vehicleId

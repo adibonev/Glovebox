@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { StoreBadge } from "@/components/StoreBadge";
 import { Wheel } from "@/components/Wheel";
 import { APP_STORE_URL } from "@/lib/appStore";
 
@@ -71,7 +72,7 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
               >
                 Започни безплатно
               </Link>
-              <AppStoreBadge />
+              <StoreBadge source="invite" />
             </>
           )}
         </div>

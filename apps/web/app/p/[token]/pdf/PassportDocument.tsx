@@ -249,6 +249,10 @@ export function PassportDocument({
             <Text style={[s.footnote, { marginTop: 6, fontFamily: "JetBrains Mono" }]}>
               Към {passportDate(passport.generatedOn)} · {url}
             </Text>
+            {/* Whoever reads a passport has a car too. */}
+            <Text style={[s.footnote, { marginTop: 6, color: paper.ink, fontWeight: 700 }]}>
+              Направено с Glovebox. Следи сроковете и на своята кола: www.glovebox.bg
+            </Text>
           </View>
           <View>
             <Image src={qrDataUrl} style={s.qr} />

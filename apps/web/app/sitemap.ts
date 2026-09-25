@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   });
   return [
     page("/", 1, "weekly"),
+    page("/tehnicheski-pregled", 0.8, "monthly"),
     page("/za-nas", 0.6, "monthly"),
     page("/login", 0.4, "yearly"),
     page("/privacy", 0.3, "yearly"),

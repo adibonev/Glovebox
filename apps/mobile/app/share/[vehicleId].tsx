@@ -12,6 +12,7 @@ import { ActivityIndicator, Alert, Pressable, Share, Text, View } from "react-na
 
 import { PrimaryButton } from "@/components/forms";
 import { Screen } from "@/components/Screen";
+import { track } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
 import { SITE_URL } from "@/lib/config";
 import { sharing } from "@/lib/share";
@@ -78,10 +79,11 @@ export default function ShareScreen() {
     setError(null);
     try {
       const link = shareLink(SITE_URL, await sharing.invite(vehicle.id, me));
-      await Share.share({
+      const result = await Share.share({
         message: `Сподели с мен ${name} в Glovebox, за да следим сроковете заедно: ${link}`,
         url: link,
       });
+      if (result.action === Share.sharedAction) track("vehicle_shared");
     } catch {
       setError("Поканата не беше създадена. Опитай пак.");
     } finally {

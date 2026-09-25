@@ -2,6 +2,7 @@ import {
   DOCUMENT_SCAN_ENABLED,
   SupabaseMileageReadingRepository,
   SupabaseServiceRecordRepository,
+  SupabaseUserRepository,
   SupabaseVehicleRepository,
   inspectionDue,
   mileageSource,
@@ -22,9 +23,11 @@ import { DocumentCamera } from "@/components/DocumentCamera";
 import { DateField, Field, PrimaryButton, VignettePresets } from "@/components/forms";
 import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
+import { correctedFields, track } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
 import { SERVICE_TYPE_LABELS, formatCost, formatDateShort } from "@/lib/labels";
+import { maybeOfferInvite } from "@/lib/invite";
 import { parseKm, todayAsDate } from "@/lib/mileage";
 import { recordOwner } from "@/lib/ownership";
 import { useDocumentRecognition } from "@/lib/recognize";
@@ -33,6 +36,7 @@ import { supabase } from "@/lib/supabase";
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const mileageRepo = new SupabaseMileageReadingRepository(supabase);
+const userRepo = new SupabaseUserRepository(supabase);
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -53,7 +57,8 @@ type Stage = "choice" | "camera" | "reading" | "form";
  * date is asked for straight away. Typing it in by hand is always one tap away.
  */
 export default function RenewScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `from=push` when a notification opened this screen (lib/push).
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const router = useRouter();
   const { session } = useAuth();
   const { recognize, reader, engineLabel } = useDocumentRecognition();
@@ -69,6 +74,8 @@ export default function RenewScreen() {
   const [mileageReadOn, setMileageReadOn] = useState<Date | null>(null);
   /** What the certificate said, to tell a read number from one the User then changed. */
   const [kmRead, setKmRead] = useState<number | null>(null);
+  /** What a scan filled in, to count the fields the User then corrected. */
+  const [scanRead, setScanRead] = useState<Record<string, string | null> | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,10 +144,26 @@ export default function RenewScreen() {
             ? `Разчетено с ${engineLabel}. Провери срока и километрите.`
             : "Срокът не се разчете. Въведи го ръчно.",
         );
+        if (draft.serviceRecord) {
+          setScanRead({
+            expiry: draft.serviceRecord.expiryDate.toISOString().slice(0, 10),
+            km: draft.mileage ? String(draft.mileage.km) : null,
+          });
+        } else {
+          track("scan_failed", { document: record.serviceType });
+        }
       } else {
         const draft = scanPolicyDocument({ text }, record.serviceType as "civil_liability" | "casco");
         if (draft.serviceRecord) setExpiryDate(draft.serviceRecord.expiryDate);
         if (draft.serviceRecord?.cost != null) setCost(String(draft.serviceRecord.cost));
+        if (draft.serviceRecord) {
+          setScanRead({
+            expiry: draft.serviceRecord.expiryDate.toISOString().slice(0, 10),
+            cost: draft.serviceRecord.cost != null ? String(draft.serviceRecord.cost) : null,
+          });
+        } else {
+          track("scan_failed", { document: record.serviceType });
+        }
         // A policy for another car is the one mistake a confirmation form cannot show.
         const insured = draft.insuredVehicle.plate;
         const plate = vehicle?.plate?.replace(/\s/g, "").toUpperCase();
@@ -153,6 +176,7 @@ export default function RenewScreen() {
         );
       }
     } catch {
+      track("scan_failed", { document: record.serviceType });
       setNote("Разчитането не сработи. Въведи данните ръчно.");
     } finally {
       setStage("form");
@@ -196,7 +220,28 @@ export default function RenewScreen() {
         return;
       }
     }
+    if (scanRead) {
+      track("scan_succeeded", {
+        document: record.serviceType,
+        corrected: correctedFields(scanRead, {
+          expiry: expiryDate.toISOString().slice(0, 10),
+          km: mileage,
+          cost,
+        }),
+      });
+    }
+    track("renewal_saved", {
+      service_type: record.serviceType,
+      via: from === "push" ? "push" : "app",
+      scanned: scanRead !== null,
+    });
     close();
+    if (session) {
+      void userRepo
+        .findOrCreateByAuthId({ authUserId: session.user.id, email: session.user.email ?? "" })
+        .then((user) => maybeOfferInvite(user.id))
+        .catch(() => undefined);
+    }
   };
 
   const confirmLetGo = () => {
@@ -260,7 +305,10 @@ export default function RenewScreen() {
                 : "Новият срок и сумата се попълват сами."
             }
             tone="copper"
-            onPress={() => setStage("camera")}
+            onPress={() => {
+              track("scan_started", { document: record.serviceType });
+              setStage("camera");
+            }}
           />
           <Choice
             title="Въведи ръчно"

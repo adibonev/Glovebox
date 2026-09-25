@@ -165,6 +165,14 @@ export function PassportSheet({ passport, pdfHref }: { passport: VehiclePassport
           </a>
         </footer>
       </article>
+
+      {/* Whoever reads a passport has a car too. */}
+      <p className="mx-auto mt-6 max-w-[760px] text-center font-body text-[14px] text-paper-muted">
+        Направено с Glovebox. Следи сроковете и на своята кола.{" "}
+        <Link href="/" className="font-semibold text-paper-copper underline">
+          Започни безплатно
+        </Link>
+      </p>
     </main>
   );
 }

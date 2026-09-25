@@ -3,14 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * The layout is drawn for a laptop (a 1180px column). On a large monitor at 100% it came out
+   * small and lost in the middle, so wide screens scale the whole page up. `zoom` rather than a
+   * bigger root font: most sizes here are in px, which a font-size change would not touch.
+   */
   html {
     color-scheme: dark;
+    --ui-zoom: 1;
+    zoom: var(--ui-zoom);
+  }
+  @media (min-width: 1680px) {
+    html {
+      --ui-zoom: 1.12;
+    }
+  }
+  @media (min-width: 1920px) {
+    html {
+      --ui-zoom: 1.25;
+    }
+  }
+  @media (min-width: 2400px) {
+    html {
+      --ui-zoom: 1.4;
+    }
   }
 
   /* Smooth cinematic scene: a soft emerald-ink glow at the top fading into ink,
      plus a fixed vignette — so the dark background never looks banded or "torn". */
   body {
-    min-height: 100vh;
+    min-height: calc(100vh / var(--ui-zoom));
     background:
       radial-gradient(125% 90% at 50% -12%, theme("colors.glow") 0%, theme("colors.ink") 56%),
       theme("colors.ink");
@@ -56,4 +78,9 @@
     animation: none;
     opacity: 1;
   }
+}
+
+/* Chrome multiplies vh by `zoom` (see html above), so a full-height page is divided back. */
+.min-h-screen {
+  min-height: calc(100vh / var(--ui-zoom));
 }

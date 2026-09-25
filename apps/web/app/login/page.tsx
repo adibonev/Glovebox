@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 
+import { rememberFirstRegistration } from "@/lib/firstRegistration";
+
 import { authenticate, signInWithGoogle, type AuthState } from "./actions";
 
 const initialState: AuthState = {};
@@ -33,6 +35,9 @@ export default function LoginPage() {
     if (params.get("mode") === "signup") setMode("signup");
     if (params.get("error") === "google") setGoogleError(true);
     if (params.get("deleted") === "1") setDeleted(true);
+    // From the inspection calculator: the date comes back in the first car's form.
+    const fr = params.get("fr");
+    if (fr) rememberFirstRegistration(fr);
   }, []);
 
   return (

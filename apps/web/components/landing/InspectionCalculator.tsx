@@ -2,7 +2,10 @@
 
 import { inspectionDue, type InspectionDue } from "@glovebox/core/schedule";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { APP_STORE_URL } from "@/lib/appStore";
+import { rememberFirstRegistration } from "@/lib/firstRegistration";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -38,6 +41,11 @@ const inputClass =
 export function InspectionCalculator() {
   const [registered, setRegistered] = useState("");
   const [lastInspection, setLastInspection] = useState("");
+  const [iPhone, setIPhone] = useState(false);
+
+  useEffect(() => {
+    setIPhone(/iPhone|iPad|iPod/.test(navigator.userAgent));
+  }, []);
 
   const firstRegistration = parseDay(registered);
   // Read at render, not at build: the page is prebuilt, and today is the visitor's day.
@@ -54,7 +62,11 @@ export function InspectionCalculator() {
         <input
           type="date"
           value={registered}
-          onChange={(event) => setRegistered(event.target.value)}
+          onChange={(event) => {
+            setRegistered(event.target.value);
+            // Kept for the first car's form, so the answer is not typed twice.
+            rememberFirstRegistration(event.target.value);
+          }}
           className={inputClass}
         />
       </label>
@@ -76,13 +88,25 @@ export function InspectionCalculator() {
       )}
 
       {result && result.kind !== "needsLastInspection" && (
-        <Answer due={result.due} why={WHY[result.kind]} now={now} />
+        <Answer due={result.due} why={WHY[result.kind]} now={now} registered={registered} iPhone={iPhone} />
       )}
     </div>
   );
 }
 
-function Answer({ due, why, now }: { due: Date; why: string; now: Date }) {
+function Answer({
+  due,
+  why,
+  now,
+  registered,
+  iPhone,
+}: {
+  due: Date;
+  why: string;
+  now: Date;
+  registered: string;
+  iPhone: boolean;
+}) {
   const days = Math.round((due.getTime() - now.getTime()) / MS_PER_DAY);
   const tone = days < 0 ? "text-status-expired" : days <= 30 ? "text-status-expiring" : "text-status-valid";
 
@@ -99,12 +123,24 @@ function Answer({ due, why, now }: { due: Date; why: string; now: Date }) {
             : `Остават ${days} ${days === 1 ? "ден" : "дни"}.`}
       </p>
       <p className="mt-2 font-body text-[14px] text-muted">{why}</p>
-      <Link
-        href="/login?mode=signup"
-        className="mt-5 inline-block rounded-lg bg-emerald px-5 py-3 font-body text-[15px] font-semibold text-ivory transition hover:bg-emerald/90"
-      >
-        Напомни ми преди него
-      </Link>
+      {/* On an iPhone the reminder that matters is the app's; elsewhere, sign up with the date kept. */}
+      {iPhone ? (
+        <a
+          href={APP_STORE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-block rounded-lg bg-emerald px-5 py-3 font-body text-[15px] font-semibold text-ivory transition hover:bg-emerald/90"
+        >
+          Напомни ми преди него
+        </a>
+      ) : (
+        <Link
+          href={`/login?mode=signup&fr=${registered}`}
+          className="mt-5 inline-block rounded-lg bg-emerald px-5 py-3 font-body text-[15px] font-semibold text-ivory transition hover:bg-emerald/90"
+        >
+          Напомни ми преди него
+        </Link>
+      )}
     </div>
   );
 }

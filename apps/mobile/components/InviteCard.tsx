@@ -3,6 +3,7 @@ import { colors } from "@glovebox/ui";
 import { useEffect, useState } from "react";
 import { Pressable, Share, Text, TextInput, View } from "react-native";
 
+import { track } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/config";
 import { supabase } from "@/lib/supabase";
 
@@ -40,6 +41,8 @@ export function InviteCard({ userId }: { userId: string }) {
     void Share.share({
       message: `Пробвай Glovebox. Помни кога изтичат гражданската, прегледът и винетката, и пише навреме. Ако се регистрираш от iPhone, въведи кода ${code}. ${link}`,
       url: link,
+    }).then((result) => {
+      if (result.action === Share.sharedAction) track("invite_sent", { from: "profile" });
     });
 
   const claim = async () => {

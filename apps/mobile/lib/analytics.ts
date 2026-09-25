@@ -78,3 +78,36 @@ export function useAnalyticsTracking() {
     previous.current = userId;
   }, [userId]);
 }
+
+/** The moments worth knowing about, named once so a typo cannot start a new event. */
+export type AppEvent =
+  | "scan_started"
+  | "scan_succeeded"
+  | "scan_failed"
+  | "vehicle_saved"
+  | "push_granted"
+  | "push_denied"
+  | "renewal_from_push"
+  | "renewal_saved"
+  | "vehicle_shared"
+  | "vehicle_joined"
+  | "invite_sent";
+
+/** Record one. Dropped by PostHog while the User has not said yes, like everything else. */
+export function track(event: AppEvent, properties?: Record<string, string | number | boolean>) {
+  posthog?.capture(event, properties);
+}
+
+/**
+ * How many of the fields a scan read the User then changed before saving: the measure of how
+ * well scanning works. A field the scan left empty is not counted; filling it in is not a fix.
+ */
+export function correctedFields(
+  read: Record<string, string | null>,
+  saved: Record<string, string | null>,
+): number {
+  return Object.keys(read).filter((key) => {
+    const before = read[key]?.trim();
+    return !!before && before !== (saved[key] ?? "").trim();
+  }).length;
+}

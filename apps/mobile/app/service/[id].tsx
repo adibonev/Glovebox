@@ -22,6 +22,7 @@ import {
 } from "@/components/forms";
 import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
+import { track } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
 import { parseCost } from "@/lib/cost";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_ORDER } from "@/lib/labels";
@@ -94,7 +95,9 @@ export default function EditServiceScreen() {
           ? `Разчетено с ${engineLabel}. Провери срока и километрите.`
           : "Срокът не се разчете — въведи го ръчно.",
       );
+      track(draft.serviceRecord ? "scan_succeeded" : "scan_failed", { document: "inspection", screen: "edit" });
     } catch {
+      track("scan_failed", { document: "inspection", screen: "edit" });
       setNote("Разчитането не сработи. Въведи данните ръчно.");
     } finally {
       setStage("form");
@@ -189,7 +192,10 @@ export default function EditServiceScreen() {
       {reader}
       {inspection && DOCUMENT_SCAN_ENABLED && (
         <Pressable
-          onPress={() => setStage("camera")}
+          onPress={() => {
+            track("scan_started", { document: "inspection", screen: "edit" });
+            setStage("camera");
+          }}
           className="mb-4 rounded-2xl border border-copper/60 bg-copper/15 p-5"
         >
           <Text className="text-lg font-semibold text-ivory">Снимай новия талон</Text>

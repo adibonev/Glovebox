@@ -2,14 +2,13 @@ import { BILLING_ENABLED } from "@glovebox/core";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { APP_STORE_URL } from "@/lib/appStore";
-
 import { GaugePanel } from "./GaugePanel";
 import { FAQ } from "./landing/faq";
 import { InspectionCalculator } from "./landing/InspectionCalculator";
 import { InspectionCertificate } from "./landing/InspectionCertificate";
 import { Pricing } from "./landing/Pricing";
 import { PlateBadge } from "./PlateBadge";
+import { StoreBadge } from "./StoreBadge";
 import { Wheel } from "./Wheel";
 
 // A static sample so the hero previews the real product (the same GaugePanel the app uses).
@@ -106,7 +105,7 @@ export function Landing() {
               >
                 Започни безплатно
               </Link>
-              <AppStoreBadge />
+              <StoreBadge source="landing" />
             </div>
 
             <p className="mt-4 font-body text-[13px] text-dim">
@@ -243,6 +242,9 @@ export function Landing() {
             <p className="mt-4 max-w-md font-body text-[17px] leading-relaxed text-muted">
               Въведи датата от талона и ще видиш. Без регистрация.
             </p>
+            <Link href="/tehnicheski-pregled" className="mt-2 inline-block font-body text-[14px] text-copper underline">
+              Как се брои срокът на прегледа
+            </Link>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
                 href="/login?mode=signup"
@@ -250,7 +252,7 @@ export function Landing() {
               >
                 Започни безплатно
               </Link>
-              <AppStoreBadge />
+              <StoreBadge source="landing" />
             </div>
           </div>
           <InspectionCalculator />
@@ -285,21 +287,6 @@ function Eyebrow({ children }: { children: ReactNode }) {
     <p className="font-mono text-[11px] font-bold uppercase tracking-[0.28em] text-paper-copper">
       {children}
     </p>
-  );
-}
-
-/** Apple's own badge, unaltered, as their marketing guidelines require. */
-function AppStoreBadge() {
-  return (
-    <a
-      href={APP_STORE_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Свали Glovebox от App Store"
-      className="inline-block transition hover:opacity-90"
-    >
-      <img src="/app-store-badge.svg" alt="Download on the App Store" className="h-[50px] w-auto" />
-    </a>
   );
 }
 

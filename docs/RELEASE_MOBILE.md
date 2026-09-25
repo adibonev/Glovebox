@@ -78,9 +78,10 @@ eas submit --profile production --platform ios        # иска App Store Conne
 
 - **Android service account:** Google Play Console → Setup → API access → създай service account →
   свали JSON и го сложи като `apps/mobile/google-play-service-account.json` (в `.gitignore`, не
-  се commit-ва). `eas.json` → `submit.production.android` го чете оттам и качва в **internal**
-  пистата като **draft**: първото приложение в Play Console трябва да е качено веднъж на ръка
-  (.aab) и да мине въпросниците, иначе API-то отказва.
+  се commit-ва). `eas.json` → `submit.production.android` го чете оттам и качва в **затворения тест** (`alpha`)
+  като **draft**: първото приложение в Play Console трябва да е качено веднъж на ръка
+  (.aab) и да мине въпросниците, иначе API-то отказва. Личен акаунт в Play иска затворен тест с
+  поне 12 тестери за 14 поредни дни, преди приложението да излезе публично; вътрешният тест не се брои.
 - **iOS:** App Store Connect → Users and Access → Integrations → App Store Connect API → ключ.
 
 ---

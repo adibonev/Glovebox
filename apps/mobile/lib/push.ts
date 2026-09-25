@@ -8,6 +8,7 @@ import { useRouter, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 
+import { track } from "./analytics";
 import { useAuth } from "./auth";
 import { supabase } from "./supabase";
 
@@ -86,6 +87,7 @@ export async function enablePush(session: Session): Promise<PushPermission> {
   if (allowed === "undetermined") {
     const answer = await Notifications.requestPermissionsAsync();
     allowed = answer.granted ? "granted" : "denied";
+    track(allowed === "granted" ? "push_granted" : "push_denied");
   }
   if (allowed === "granted") await registerDevice(session).catch(() => undefined);
   return allowed;
@@ -182,7 +184,9 @@ export function useNotificationRoutes() {
       const url = response?.notification.request.content.data?.url;
       if (typeof url !== "string" || !NOTIFICATION_ROUTE.test(url)) return;
       Notifications.clearLastNotificationResponse();
-      router.push(url as Href);
+      track("renewal_from_push", { list: url === "/renew" });
+      // Marked, so the renewal saved there is counted as one a notification brought about.
+      router.push(`${url}?from=push` as Href);
     };
     open(Notifications.getLastNotificationResponse());
     const subscription = Notifications.addNotificationResponseReceivedListener(open);
