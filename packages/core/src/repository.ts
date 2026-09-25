@@ -3,7 +3,10 @@ import type {
   MileageReading,
   NewDocument,
   NewMileageReading,
+  NewPassportLink,
   NewServiceRecord,
+  PassportLink,
+  Renewal,
   NewVehicle,
   ServiceRecord,
   ServiceRecordChanges,
@@ -61,6 +64,28 @@ export interface MileageReadingRepository {
   listByVehicle(vehicleId: string): Promise<MileageReading[]>;
   listByUser(userId: string): Promise<MileageReading[]>;
   record(input: NewMileageReading): Promise<MileageReading>;
+}
+
+/**
+ * The periods a Vehicle's obligations covered before each renewal, oldest first. Read-only: the
+ * database writes them itself whenever an Expiry Date moves on (see the renewals migration).
+ */
+export interface RenewalRepository {
+  listByVehicle(vehicleId: string): Promise<Renewal[]>;
+}
+
+/**
+ * Passport Links. The owner creates and revokes them through RLS; `findActiveByToken` is how a
+ * stranger's request is resolved, so on the server it runs with the service role, and with a
+ * User's own client it only ever finds that User's links.
+ */
+export interface PassportLinkRepository {
+  /** The Vehicle's link that still works, if there is one. */
+  activeForVehicle(vehicleId: string): Promise<PassportLink | null>;
+  /** The link a token opens, unless it has been revoked. */
+  findActiveByToken(token: string): Promise<PassportLink | null>;
+  create(input: NewPassportLink): Promise<PassportLink>;
+  revoke(id: string): Promise<void>;
 }
 
 /**

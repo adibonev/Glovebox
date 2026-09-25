@@ -11,7 +11,7 @@ const ARC = C * 0.75; // a 270° gauge, open at the bottom
 /** Glass panel: the instrument gauge for the nearest deadline + the three status counts. */
 export function GaugePanel({ urgent, counts }: { urgent: GaugeView | null; counts: Counts }) {
   return (
-    <div className="flex flex-col rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
+    <div className="flex flex-col rounded-card border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Най-близък срок</p>
 
       {urgent ? <Gauge urgent={urgent} /> : <AllClear />}
@@ -65,7 +65,7 @@ function Gauge({ urgent }: { urgent: GaugeView }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
-          className="font-display text-[62px] font-semibold leading-none"
+          className="font-brand text-[62px] font-semibold leading-none"
           style={{ color: urgent.color }}
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -126,7 +126,7 @@ function Stat({
 }) {
   return (
     <div className="text-center">
-      <div className={`font-display text-[26px] font-semibold leading-none ${TONE[tone].num}`}>{n}</div>
+      <div className={`font-brand text-[26px] font-semibold leading-none ${TONE[tone].num}`}>{n}</div>
       <div className="mt-1.5 flex items-center justify-center gap-1.5 font-body text-[11px] text-muted">
         <span className={`h-[7px] w-[7px] rounded-full ${TONE[tone].dot}`} />
         {label}

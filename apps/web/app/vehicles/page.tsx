@@ -20,7 +20,7 @@ export default async function VehiclesPage() {
       <div className="mb-6 mt-2 flex items-end justify-between gap-4">
         <div className="anim-up anim-d1">
           <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Гараж</p>
-          <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+          <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
             Моите автомобили
           </h1>
         </div>
@@ -60,7 +60,7 @@ function VehicleGridCard({ vehicle }: { vehicle: GarageVehicle }) {
 
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="font-display text-[22px] font-semibold leading-tight tracking-tight text-ivory">
+          <h2 className="font-display text-[22px] font-bold leading-tight tracking-tight text-ivory">
             {name}
           </h2>
           {year && <span className="font-body text-sm text-dim">{year}</span>}
@@ -79,6 +79,12 @@ function VehicleGridCard({ vehicle }: { vehicle: GarageVehicle }) {
             className="flex-1 rounded-lg bg-emerald/90 px-3 py-2 text-center font-body text-sm font-semibold text-ivory transition hover:bg-emerald"
           >
             Отвори
+          </Link>
+          <Link
+            href={`/vehicles/${id}/passport`}
+            className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-copper/50 hover:text-copper"
+          >
+            Паспорт
           </Link>
           <Link
             href={`/vehicles/${id}/edit`}

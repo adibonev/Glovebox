@@ -47,6 +47,8 @@
 | **Reminder Window** | The number of days before Expiry Date at which a Reminder fires (7/14/30/60/90), set per Service Type | Reminder days, threshold, lead time |
 | **Email Reminder** | A Reminder delivered by email (available on the Free Plan) | Mail alert |
 | **Push Notification** | A Reminder delivered to the mobile app (Pro Plan only) | Push, notification |
+| **Renewal** | Replacing a Service Record's Expiry Date with a later one once the obligation is paid for again. The period it replaces is kept (`renewals` table, written by a trigger) | Update, extension, re-entry |
+| **Pending Renewal** | A Service Record whose Expiry Date has passed with no new one entered; the app keeps asking (dashboard banner) until it gets one | Overdue item, stale record |
 
 ---
 
@@ -69,6 +71,15 @@
 | **Avatar** | A User's profile image | Profile photo, picture |
 
 ---
+
+## Passport & Invites
+
+| Term | Definition | Aliases to avoid |
+| ---- | ---------- | ---------------- |
+| **Vehicle Passport** | Everything recorded about one Vehicle on one page: Mileage Readings with their source, every Renewal, Repairs and (optionally) costs. Shown on the web and as a PDF | Report, history, export |
+| **Passport Link** | A public, revocable link (`/p/<token>`) to a Vehicle Passport. Its PDF carries a QR code back to it, which is what makes the passport checkable | Share link, public URL |
+| **Mileage Source** | Where a Mileage Reading came from: `certificate` (read off an Inspection certificate and saved unchanged) or `manual` | Origin, provenance |
+| **Invite Code** | A User's six-character code (no 0/O/1/I/L). The invite link `/i/<code>` carries it; on an iPhone it is typed in at sign-up because the App Store drops the link | Referral code, promo code |
 
 ## People & Access
 
@@ -110,6 +121,9 @@
 - A **Subscription** has exactly one **Billing Period** and originates from exactly one **Billing Channel**; **Entitlements** are unified across channels server-side (Stripe + RevenueCat webhooks → Supabase).
 - An **Entitlement** is granted by the active **Plan** and enforced at each **Quota** and **Paywall**.
 - A **User** authenticates through one **Auth Identity** and one or more **Linked Providers**.
+- A **Service Record** has zero or more past periods, each kept by a **Renewal**; a **Vehicle Passport** lists them with the current one.
+- A **Vehicle** has at most one live **Passport Link**; revoking it stops the link and every QR code printed from it.
+- A **User** has one **Invite Code** and may have been invited by one other **User**.
 
 ---
 

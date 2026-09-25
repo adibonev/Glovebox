@@ -15,7 +15,7 @@ export default async function AnalysisPage() {
     <Shell email={data.userEmail}>
       <div className="anim-up anim-d1 mb-6 mt-2">
         <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Анализ</p>
-        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Къде отиват парите
         </h1>
         <p className="mt-2 font-body text-muted">

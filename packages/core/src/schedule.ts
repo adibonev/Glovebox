@@ -27,7 +27,7 @@ function utcDate(year: number, month: number, day: number): Date {
  * `date` shifted by whole years, clamping 29 February to 28 February in a non-leap year
  * (a legal anniversary never rolls into the next month).
  */
-function addYears(date: Date, years: number): Date {
+export function addYears(date: Date, years: number): Date {
   return utcDate(date.getUTCFullYear() + years, date.getUTCMonth(), date.getUTCDate());
 }
 

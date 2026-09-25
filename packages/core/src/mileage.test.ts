@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { distanceDriven } from "./mileage";
+import { distanceDriven, mileageSource } from "./mileage";
 
 describe("distanceDriven", () => {
   it("has nothing to show for a single Mileage Reading", () => {
@@ -48,5 +48,19 @@ describe("distanceDriven", () => {
     expect(intervals).toEqual([
       { from: new Date("2024-08-17"), to: new Date("2026-08-17"), km: 40000, kmPerYear: 20000 },
     ]);
+  });
+});
+
+describe("mileageSource", () => {
+  it("marks kilometres saved exactly as read off the certificate as coming from it", () => {
+    expect(mileageSource(184_312, 184_312)).toBe("certificate");
+  });
+
+  it("marks kilometres the User changed after the scan as entered by hand", () => {
+    expect(mileageSource(184_300, 184_312)).toBe("manual");
+  });
+
+  it("marks kilometres typed in with no certificate read as entered by hand", () => {
+    expect(mileageSource(184_312, null)).toBe("manual");
   });
 });

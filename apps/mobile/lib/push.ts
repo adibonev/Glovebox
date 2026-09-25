@@ -2,6 +2,7 @@ import { SupabaseUserRepository } from "@glovebox/core";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import { useRouter, type Href } from "expo-router";
 import { useEffect } from "react";
 import { Platform } from "react-native";
 
@@ -70,4 +71,34 @@ export function usePushRegistration() {
       active = false;
     };
   }, [session]);
+}
+
+/**
+ * Routes a notification may open. The reminder job only ever sends renewal links; anything else
+ * in a payload is ignored rather than followed.
+ */
+const NOTIFICATION_ROUTE = /^\/renew(\/\d+)?$/;
+
+/**
+ * Opens the screen a tapped notification points at (`data.url`, set by the reminder job): the
+ * renewal of the obligation it was about.
+ *
+ * A tap arrives two ways. With the app running, the listener gets it. With the app closed, the tap
+ * is what launches it, before any listener exists, so the last response is read once on mount.
+ * That one is cleared after use, or the same notification would reopen the renewal on every
+ * launch. Mount in the signed-in area, where the navigator is ready.
+ */
+export function useNotificationRoutes() {
+  const router = useRouter();
+  useEffect(() => {
+    const open = (response: Notifications.NotificationResponse | null) => {
+      const url = response?.notification.request.content.data?.url;
+      if (typeof url !== "string" || !NOTIFICATION_ROUTE.test(url)) return;
+      Notifications.clearLastNotificationResponse();
+      router.push(url as Href);
+    };
+    open(Notifications.getLastNotificationResponse());
+    const subscription = Notifications.addNotificationResponseReceivedListener(open);
+    return () => subscription.remove();
+  }, [router]);
 }

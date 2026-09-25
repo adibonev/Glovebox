@@ -45,7 +45,7 @@ export default async function EditServicePage({
         <Link href="/" className="font-body text-sm text-muted transition hover:text-ivory">
           ← Назад към таблото
         </Link>
-        <h1 className="mb-1 mt-4 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mb-1 mt-4 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           {SERVICE_TYPE_LABELS[service.service_type] ?? "Услуга"}
         </h1>
         {vehicleName && <p className="mb-6 font-body text-muted">{vehicleName}</p>}

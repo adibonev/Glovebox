@@ -2,6 +2,8 @@
  * Mileage — the distance a Vehicle is driven, worked out from its Mileage Readings. Pure, no I/O.
  */
 
+import type { MileageSource } from "./domain";
+
 /** The distance driven between two consecutive Mileage Readings. */
 export interface DistanceDriven {
   from: Date;
@@ -58,4 +60,13 @@ export function distanceDriven(
     });
   }
   return driven;
+}
+
+/**
+ * Where the kilometres being saved came from. Only a number saved exactly as it was read off a
+ * certificate counts as coming from it: once the User changes a digit, it is their number, and
+ * the passport has to say so.
+ */
+export function mileageSource(km: number, readOffCertificate: number | null): MileageSource {
+  return readOffCertificate !== null && km === readOffCertificate ? "certificate" : "manual";
 }

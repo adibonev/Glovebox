@@ -4,6 +4,7 @@ import {
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   isExpiringServiceType,
+  mileageSource,
   scanInspectionDocument,
 } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
@@ -48,6 +49,8 @@ export default function EditServiceScreen() {
   const [mileage, setMileage] = useState("");
   /** The Inspection date off a scanned certificate. Kilometres typed in by hand are today's. */
   const [mileageReadOn, setMileageReadOn] = useState<Date | null>(null);
+  /** What the certificate said, to tell a read number from one the User then changed. */
+  const [kmRead, setKmRead] = useState<number | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +88,7 @@ export default function EditServiceScreen() {
       if (draft.mileage) {
         setMileage(String(draft.mileage.km));
         setMileageReadOn(draft.mileage.readOn);
+        setKmRead(draft.mileage.km);
       }
       setNote(
         draft.serviceRecord
@@ -122,6 +126,7 @@ export default function EditServiceScreen() {
           userId: user.id,
           km,
           readOn: mileageReadOn ?? todayAsDate(),
+          source: mileageSource(km, kmRead),
         });
       } catch {
         // The Expiry Date is saved by now; say so, rather than suggest that nothing was.

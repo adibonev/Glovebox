@@ -45,7 +45,7 @@ export default async function AddServicePage({
           >
             ← Назад
           </Link>
-          <h1 className="font-display text-4xl text-ivory">Нова услуга</h1>
+          <h1 className="font-display text-4xl font-bold text-ivory">Нова услуга</h1>
         </header>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-md">

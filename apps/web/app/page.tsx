@@ -43,7 +43,7 @@ export default async function DashboardPage({
               <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">
                 Табло на автомобила
               </p>
-              <h1 className="mt-3 font-display text-[clamp(34px,4.6vw,52px)] font-semibold leading-[1.02] tracking-tight text-ivory">
+              <h1 className="mt-3 font-display text-[clamp(34px,4.6vw,52px)] font-bold leading-[1.02] tracking-tight text-ivory">
                 {vehicle.name}
               </h1>
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -65,7 +65,7 @@ export default async function DashboardPage({
 
           <section className="mt-9">
             <div className="mb-4 flex items-center justify-between gap-4">
-              <h2 className="font-display text-[22px] font-semibold tracking-tight text-ivory">
+              <h2 className="font-display text-[22px] font-bold tracking-tight text-ivory">
                 Услуги и документи
               </h2>
               <AddServiceButton vehicleId={vehicle.id} />
@@ -118,7 +118,7 @@ function EmptyHero() {
       <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">
         Табло на автомобила
       </p>
-      <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ivory">
+      <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ivory">
         Добре дошъл в Glovebox
       </h1>
       <p className="mb-6 mt-2 font-body text-muted">

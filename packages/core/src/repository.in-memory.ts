@@ -3,7 +3,10 @@ import type {
   MileageReading,
   NewDocument,
   NewMileageReading,
+  NewPassportLink,
   NewServiceRecord,
+  PassportLink,
+  Renewal,
   NewVehicle,
   ServiceRecord,
   ServiceRecordChanges,
@@ -14,6 +17,8 @@ import type {
 import type {
   DocumentRepository,
   MileageReadingRepository,
+  PassportLinkRepository,
+  RenewalRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
@@ -236,6 +241,7 @@ export class InMemoryMileageReadingRepository implements MileageReadingRepositor
     );
     if (sameDay) {
       sameDay.km = input.km;
+      sameDay.source = input.source ?? null;
       return sameDay;
     }
 
@@ -244,9 +250,64 @@ export class InMemoryMileageReadingRepository implements MileageReadingRepositor
       vehicleId: input.vehicleId,
       km: input.km,
       readOn: input.readOn,
+      source: input.source ?? null,
     };
     this.readings.push(reading);
     return reading;
+  }
+}
+
+/** In-memory RenewalRepository for tests. */
+export class InMemoryRenewalRepository implements RenewalRepository {
+  constructor(private readonly renewals: Renewal[]) {}
+
+  async listByVehicle(vehicleId: string): Promise<Renewal[]> {
+    return this.renewals
+      .filter((renewal) => renewal.vehicleId === vehicleId)
+      .sort((a, b) => a.previousExpiryDate.getTime() - b.previousExpiryDate.getTime());
+  }
+}
+
+/** In-memory PassportLinkRepository for tests. */
+export class InMemoryPassportLinkRepository implements PassportLinkRepository {
+  private seq = 0;
+  private readonly links: (PassportLink & { revoked: boolean })[] = [];
+
+  async activeForVehicle(vehicleId: string): Promise<PassportLink | null> {
+    return this.visible(this.links.find((link) => link.vehicleId === vehicleId && !link.revoked));
+  }
+
+  async findActiveByToken(token: string): Promise<PassportLink | null> {
+    return this.visible(this.links.find((link) => link.token === token && !link.revoked));
+  }
+
+  async create(input: NewPassportLink): Promise<PassportLink> {
+    const hex = () => Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, "0");
+    const link = {
+      id: `mem-p-${++this.seq}`,
+      vehicleId: input.vehicleId,
+      token: hex() + hex() + hex() + hex(),
+      includeCosts: input.includeCosts,
+      createdAt: new Date(),
+      revoked: false,
+    };
+    this.links.push(link);
+    return this.visible(link)!;
+  }
+
+  async revoke(id: string): Promise<void> {
+    for (const link of this.links) if (link.id === id) link.revoked = true;
+  }
+
+  private visible(link: (PassportLink & { revoked: boolean }) | undefined): PassportLink | null {
+    if (!link) return null;
+    return {
+      id: link.id,
+      vehicleId: link.vehicleId,
+      token: link.token,
+      includeCosts: link.includeCosts,
+      createdAt: link.createdAt,
+    };
   }
 }
 

@@ -2,6 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import { supabase } from "./supabase";
+import { clearDeadlines } from "./widget";
 
 type AuthState = {
   session: Session | null;
@@ -24,8 +25,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, next) => {
+    } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
+      // Signing out and deleting the account both end here; the lock screen must not keep
+      // showing someone's deadlines after either.
+      if (event === "SIGNED_OUT") clearDeadlines();
     });
 
     return () => subscription.unsubscribe();

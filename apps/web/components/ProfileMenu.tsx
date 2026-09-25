@@ -34,7 +34,7 @@ export function ProfileMenu({ email, isAdmin = false }: { email: string; isAdmin
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Профил"
-        className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-emerald to-panel2 font-display text-[15px] font-semibold text-ivory transition hover:border-copper/50"
+        className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-emerald to-panel2 font-display text-[15px] font-bold text-ivory transition hover:border-copper/50"
       >
         {initial}
       </button>

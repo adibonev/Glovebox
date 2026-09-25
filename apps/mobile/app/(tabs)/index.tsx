@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@glovebox/ui";
+import { pendingRenewals, renewalLink } from "@glovebox/core";
+import { colors, statusColors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
@@ -15,7 +16,7 @@ import {
   formatCost,
   formatDaysRemaining,
 } from "@/lib/labels";
-import { useGarage } from "@/lib/useGarage";
+import { useGarage, type FlatItem } from "@/lib/useGarage";
 
 export default function DashboardTab() {
   const router = useRouter();
@@ -36,6 +37,9 @@ export default function DashboardTab() {
   }, [data, loading, router]);
 
   const attention = (data?.flat ?? []).filter((f) => f.status !== "Valid");
+  // Lapsed with no new date: the question the app keeps asking until it has an answer.
+  const pendingIds = new Set(pendingRenewals(attention.map((f) => f.record), new Date()).map((r) => r.id));
+  const pending = attention.filter((f) => pendingIds.has(f.record.id));
   const top = attention.slice(0, 4);
   const totalSpend = (data?.cards ?? [])
     .flatMap((c) => c.items)
@@ -61,6 +65,8 @@ export default function DashboardTab() {
               <Text className="text-sm text-status-expired">{error}</Text>
             </View>
           )}
+
+          {pending.length > 0 && <RenewalBanner pending={pending} onPress={(url) => router.push(url)} />}
 
           {data?.urgent && <CarImage bodyType={data.urgent.bodyType} />}
 
@@ -90,7 +96,7 @@ export default function DashboardTab() {
               {top.map((item) => (
                 <Pressable
                   key={item.record.id}
-                  onPress={() => router.push(`/service/${item.record.id}`)}
+                  onPress={() => router.push(`/renew/${item.record.id}`)}
                   className="mb-2 flex-row items-center gap-3 rounded-xl border border-white/10 bg-panel px-4 py-3"
                 >
                   <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] }} />
@@ -129,5 +135,36 @@ export default function DashboardTab() {
         </ScrollView>
       )}
     </SafeAreaView>
+  );
+}
+
+/**
+ * The banner that stays until a lapsed obligation has its new Expiry Date. A notification can be
+ * swiped away; this cannot, and it leads to the same renewal screen the notification does.
+ */
+function RenewalBanner({ pending, onPress }: { pending: FlatItem[]; onPress: (url: string) => void }) {
+  const first = pending[0];
+  if (!first) return null;
+  const single = pending.length === 1;
+  const label = SERVICE_TYPE_LABELS[first.record.serviceType] ?? first.record.serviceType;
+
+  return (
+    <Pressable
+      onPress={() => onPress(renewalLink(pending.map((item) => item.record.id)))}
+      className="mb-4 flex-row items-center gap-3 rounded-2xl border border-status-expired/50 bg-status-expired/10 px-4 py-4"
+    >
+      <Ionicons name="alert-circle" size={24} color={statusColors.expired} />
+      <View className="flex-1">
+        <Text className="text-base font-semibold text-ivory">
+          {single
+            ? `${label} на ${first.vehicle.brand} ${first.vehicle.model} изтече.`
+            : `${pending.length} срока изтекоха.`}
+        </Text>
+        <Text className="mt-0.5 text-sm text-silver">
+          {single ? "Въведи новия срок." : "Въведи новите дати."}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.silver} />
+    </Pressable>
   );
 }

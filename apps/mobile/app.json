@@ -4,7 +4,7 @@
     "slug": "glovebox",
     "owner": "adibonev",
     "scheme": "glovebox",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#07100C",
@@ -21,6 +21,12 @@
       "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "appleTeamId": "TUVMJC4VMX",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.bg.glovebox.app"
+        ]
       }
     },
     "android": {
@@ -59,7 +65,8 @@
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "@bacons/apple-targets"
     ]
   }
 }

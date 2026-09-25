@@ -39,7 +39,7 @@ export default async function PaywallPage({
     <Shell email={user.email ?? ""}>
       <section className="anim-up anim-d1 mx-auto mt-4 max-w-xl text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-copper">Glovebox Pro</p>
-        <h1 className="mt-3 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mt-3 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Време е за повече
         </h1>
         <p className="mt-3 font-body text-muted">

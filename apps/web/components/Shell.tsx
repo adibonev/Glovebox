@@ -1,11 +1,14 @@
+import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
 import type { Plan } from "@glovebox/core";
 
 import { getPlan } from "@/app/_lib/plan";
 import { currentAuthUser, currentUser } from "@/app/_lib/session";
+import { INVITE_COOKIE } from "@/lib/invite";
 import { createClient } from "@/lib/supabase/server";
 
+import { InviteClaim } from "./InviteClaim";
 import { PostHogIdentify } from "./PostHogIdentify";
 import { Topbar } from "./Topbar";
 
@@ -22,8 +25,11 @@ export async function Shell({ email, children }: { email: string; children: Reac
     plan = await getPlan(await createClient(), profile.id);
   }
 
+  const invitePending = profile !== null && (await cookies()).has(INVITE_COOKIE);
+
   return (
     <main className="relative min-h-screen">
+      {invitePending && <InviteClaim />}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(110%_70%_at_50%_-10%,rgba(20,80,58,0.30),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(80%_45%_at_50%_115%,rgba(196,149,76,0.08),transparent_70%)]" />

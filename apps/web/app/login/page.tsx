@@ -46,7 +46,7 @@ export default function LoginPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-copper">
             Glovebox
           </p>
-          <h1 className="mt-1.5 font-display text-3xl text-ivory">
+          <h1 className="mt-1.5 font-display text-3xl font-bold text-ivory">
             {isSignup ? "Създай акаунт" : "Вход"}
           </h1>
         </div>
@@ -156,6 +156,11 @@ export default function LoginPage() {
           С продължаване приемаш{" "}
           <a href="/terms" className="text-copper hover:underline">Общите условия</a> и{" "}
           <a href="/privacy" className="text-copper hover:underline">Поверителността</a>.
+        </p>
+
+        <p className="text-center font-body text-[12px] text-dim">
+          Имаш въпрос преди това?{" "}
+          <a href="/#chzv" className="text-copper hover:underline">Честите въпроси</a>
         </p>
       </div>
     </main>

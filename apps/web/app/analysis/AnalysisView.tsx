@@ -140,7 +140,7 @@ export function AnalysisView({ vehicles, records }: Props) {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">Общо</span>
-                  <span className="font-display text-[24px] font-semibold leading-none tracking-tight text-ivory">
+                  <span className="font-display text-[24px] font-bold leading-none tracking-tight text-ivory">
                     {formatCostCompact(total)}
                   </span>
                 </div>
@@ -148,7 +148,7 @@ export function AnalysisView({ vehicles, records }: Props) {
             </div>
 
             <div className="rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
-              <h2 className="mb-3 font-display text-[18px] font-semibold text-ivory">
+              <h2 className="mb-3 font-display text-[18px] font-bold text-ivory">
                 {groupByCar ? "По автомобил" : "По вид услуга"}
               </h2>
               <ul className="flex flex-col">
@@ -162,7 +162,7 @@ export function AnalysisView({ vehicles, records }: Props) {
                       <span className="truncate font-body text-[15px] text-ivory">{s.label}</span>
                     </div>
                     <div className="flex shrink-0 items-baseline gap-2">
-                      <span className="font-display text-[15px] font-semibold text-ivory">{formatCost(s.total)}</span>
+                      <span className="font-display text-[15px] font-bold text-ivory">{formatCost(s.total)}</span>
                       <span className="font-mono text-[12px] text-dim">{s.percent}%</span>
                     </div>
                   </li>
@@ -172,7 +172,7 @@ export function AnalysisView({ vehicles, records }: Props) {
           </section>
 
           <section className="mt-6 rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
-            <h2 className="mb-1 font-display text-[18px] font-semibold text-ivory">Натрупан разход във времето</h2>
+            <h2 className="mb-1 font-display text-[18px] font-bold text-ivory">Натрупан разход във времето</h2>
             <SpendTimeline series={series} minT={minT} maxT={maxT} maxY={maxY} />
           </section>
         </>

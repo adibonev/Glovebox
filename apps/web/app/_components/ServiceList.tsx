@@ -74,7 +74,7 @@ function Row({ item, index }: { item: ServiceItem; index: number }) {
           <>
             <div className="min-w-[78px] text-right">
               <div
-                className={`font-display text-[17px] font-semibold leading-none ${
+                className={`font-display text-[17px] font-bold leading-none ${
                   item.status === "Valid" ? "text-ivory" : ""
                 }`}
                 style={item.status === "Valid" ? undefined : { color: item.color }}

@@ -24,7 +24,7 @@ export default async function RemindersPage() {
     <Shell email={data.userEmail}>
       <div className="anim-up anim-d1 mb-6 mt-2">
         <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Напомняния</p>
-        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Кога да те подсетим
         </h1>
         <p className="mt-2 font-body text-muted">
@@ -91,7 +91,7 @@ export default async function RemindersPage() {
       </form>
 
       <section className="mt-9">
-        <h2 className="mb-4 font-display text-[22px] font-semibold tracking-tight text-ivory">
+        <h2 className="mb-4 font-display text-[22px] font-bold tracking-tight text-ivory">
           Предстоящи напомняния
         </h2>
         {upcoming.length > 0 ? (

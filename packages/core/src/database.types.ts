@@ -239,6 +239,7 @@ export type Database = {
           id: number
           km: number
           read_on: string
+          source: string | null
           user_id: number
         }
         Insert: {
@@ -247,6 +248,7 @@ export type Database = {
           id?: number
           km: number
           read_on: string
+          source?: string | null
           user_id: number
         }
         Update: {
@@ -255,6 +257,7 @@ export type Database = {
           id?: number
           km?: number
           read_on?: string
+          source?: string | null
           user_id?: number
         }
         Relationships: [
@@ -267,6 +270,51 @@ export type Database = {
           },
           {
             foreignKeyName: "mileage_readings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passport_links: {
+        Row: {
+          car_id: number
+          created_at: string
+          id: number
+          include_costs: boolean
+          revoked_at: string | null
+          token: string
+          user_id: number
+        }
+        Insert: {
+          car_id: number
+          created_at?: string
+          id?: number
+          include_costs?: boolean
+          revoked_at?: string | null
+          token?: string
+          user_id: number
+        }
+        Update: {
+          car_id?: number
+          created_at?: string
+          id?: number
+          include_costs?: boolean
+          revoked_at?: string | null
+          token?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passport_links_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passport_links_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -305,6 +353,54 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewals: {
+        Row: {
+          car_id: number
+          id: number
+          previous_cost: number | null
+          previous_expiry_date: string
+          renewed_at: string
+          service_id: number | null
+          service_type: string
+          user_id: number
+        }
+        Insert: {
+          car_id: number
+          id?: number
+          previous_cost?: number | null
+          previous_expiry_date: string
+          renewed_at?: string
+          service_id?: number | null
+          service_type: string
+          user_id: number
+        }
+        Update: {
+          car_id?: number
+          id?: number
+          previous_cost?: number | null
+          previous_expiry_date?: string
+          renewed_at?: string
+          service_id?: number | null
+          service_type?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewals_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewals_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -499,6 +595,8 @@ export type Database = {
           is_admin: boolean | null
           name: string | null
           password: string | null
+          referral_code: string | null
+          referred_by: number | null
           reminder_days: number | null
           reminder_enabled: boolean | null
           reminder_settings: Json | null
@@ -514,6 +612,8 @@ export type Database = {
           is_admin?: boolean | null
           name?: string | null
           password?: string | null
+          referral_code?: string | null
+          referred_by?: number | null
           reminder_days?: number | null
           reminder_enabled?: boolean | null
           reminder_settings?: Json | null
@@ -529,6 +629,8 @@ export type Database = {
           is_admin?: boolean | null
           name?: string | null
           password?: string | null
+          referral_code?: string | null
+          referred_by?: number | null
           reminder_days?: number | null
           reminder_enabled?: boolean | null
           reminder_settings?: Json | null
@@ -541,7 +643,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_referral: { Args: { code: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      referral_count: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never

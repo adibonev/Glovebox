@@ -76,6 +76,52 @@ export interface MileageReading {
   km: number;
   /** The day it showed it — the date of the Inspection when read off a certificate. */
   readOn: Date;
+  /** How the number got here. Null for readings recorded before sources were kept. */
+  source: MileageSource | null;
+}
+
+/**
+ * Where a Mileage Reading came from. `certificate`: read off a photographed Roadworthiness
+ * Inspection certificate and saved as read. `manual`: typed in, or a read number the User changed.
+ */
+export type MileageSource = "certificate" | "manual";
+
+/**
+ * A public, revocable link to a Vehicle's passport (Passport Link, UBIQUITOUS_LANGUAGE.md).
+ *
+ * Whoever holds the token can read the passport, so the token is the whole secret: long,
+ * random, and dead the moment the owner revokes it.
+ */
+export interface PassportLink {
+  id: string;
+  vehicleId: string;
+  token: string;
+  /** Whether the amounts paid are shown to whoever opens it. */
+  includeCosts: boolean;
+  createdAt: Date;
+}
+
+export interface NewPassportLink {
+  vehicleId: string;
+  userId: string;
+  includeCosts: boolean;
+}
+
+/**
+ * One period an obligation covered before it was renewed (Renewal, UBIQUITOUS_LANGUAGE.md).
+ *
+ * Renewing moves a Service Record's Expiry Date in place; the database keeps what it replaced.
+ * Belongs to the Vehicle: it outlives the Service Record it came from.
+ */
+export interface Renewal {
+  id: string;
+  vehicleId: string;
+  serviceType: string;
+  /** The Expiry Date that period ran to. */
+  previousExpiryDate: Date;
+  /** What that period cost, in EUR, when it was recorded. */
+  previousCost: number | null;
+  renewedAt: Date;
 }
 
 /** The authenticated person who owns Vehicles; bridges the Supabase Auth Identity. */
@@ -152,4 +198,6 @@ export interface NewMileageReading {
   userId: string;
   km: number;
   readOn: Date;
+  /** Unset means unknown, which is stored as null — never guessed as either source. */
+  source?: MileageSource;
 }

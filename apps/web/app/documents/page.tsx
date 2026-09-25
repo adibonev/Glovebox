@@ -20,7 +20,7 @@ export default async function DocumentsPage() {
     <Shell email={data.userEmail}>
       <div className="anim-up anim-d1 mb-6 mt-2">
         <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Документи</p>
-        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Дигиталната жабка
         </h1>
         <p className="mt-2 font-body text-muted">
@@ -36,7 +36,7 @@ export default async function DocumentsPage() {
         <div className="anim-up anim-d2 flex flex-col gap-8">
           {vehicles.map((group) => (
             <section key={group.vehicleId}>
-              <h2 className="mb-3 font-display text-[20px] font-semibold tracking-tight text-ivory">
+              <h2 className="mb-3 font-display text-[20px] font-bold tracking-tight text-ivory">
                 {group.name}
               </h2>
               <div className="flex flex-col gap-3">

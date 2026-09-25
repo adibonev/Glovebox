@@ -21,14 +21,20 @@ documents and deadlines. Feel: **cinematic premium** (luxury-automotive), trustw
 
 Status (functional, separate from brand): valid `#5FCF9A` · expiring `#E3A93A` · expired `#E0705C`.
 
-## Type
-- **Fraunces** — display, headlines, numerics, the logo wordmark.
-- **Hanken Grotesk** — UI/body.
-- **JetBrains Mono** — small labels, spec-style metadata.
+## Type (ADR-0009)
+- **Sofia Sans Condensed** 700–800 — headings. Bulgarian letterforms by default.
+- **Sofia Sans** — UI/body text on the web.
+- **JetBrains Mono** — plates, dates, small labels, spec-style metadata.
+- **Fraunces** — the logo wordmark and bare figures only (it has no Cyrillic).
+- Mobile keeps the iOS system font for text, which already sets Bulgarian correctly.
 
-Avoid generic system fonts. Use shadcn primitives only when re-themed to these tokens.
+Use shadcn primitives only when re-themed to these tokens.
+
+## Surfaces
+Dark ink for the app and the dashboard. **Paper** (`paper` tokens, ivory base) wherever the
+page shows documents. One radius for cards, nearly square corners for documents.
 
 ## Motion
-Restrained and "expensive": staggered reveals, slow Ken-Burns on hero imagery, a light sweep,
-and a gauge that fills. Framer Motion (web) / Reanimated (mobile).
+One idea, not ten effects: the gauge fills. No breathing glows, floating cards, light sweeps
+or word-by-word headlines. Framer Motion (web) / Reanimated (mobile).
 EOF

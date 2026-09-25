@@ -1,3 +1,4 @@
+import { normalizeReferralCode } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Linking from "expo-linking";
@@ -15,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Wordmark } from "@/components/Wordmark";
 import { SITE_URL } from "@/lib/config";
+import { rememberInviteCode } from "@/lib/invite";
 import { signInWithApple, signInWithProvider } from "@/lib/oauth";
 import { supabase } from "@/lib/supabase";
 
@@ -24,6 +26,7 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -37,9 +40,25 @@ export default function LoginScreen() {
       .catch(() => setAppleAvailable(false));
   }, []);
 
+  /**
+   * On sign-up, keep a friend's Invite Code for the account about to exist. False (with the
+   * reason shown) when something was typed that cannot be a code.
+   */
+  const keepInviteCode = async (): Promise<boolean> => {
+    if (mode !== "signup" || !inviteCode.trim()) return true;
+    const code = normalizeReferralCode(inviteCode);
+    if (!code) {
+      setError("Кодът от приятел е 6 знака, например K7Q2MX.");
+      return false;
+    }
+    await rememberInviteCode(code);
+    return true;
+  };
+
   const submit = async () => {
     setError(null);
     setNotice(null);
+    if (!(await keepInviteCode())) return;
     setLoading(true);
     try {
       if (mode === "signin") {
@@ -68,6 +87,7 @@ export default function LoginScreen() {
   const continueWithGoogle = async () => {
     setError(null);
     setNotice(null);
+    if (!(await keepInviteCode())) return;
     setLoading(true);
     try {
       await signInWithProvider("google");
@@ -82,6 +102,7 @@ export default function LoginScreen() {
   const continueWithApple = async () => {
     setError(null);
     setNotice(null);
+    if (!(await keepInviteCode())) return;
     setLoading(true);
     try {
       await signInWithApple();
@@ -151,6 +172,18 @@ export default function LoginScreen() {
               secureTextEntry
               className="rounded-xl border border-white/10 bg-panel px-4 py-3.5 text-base text-ivory"
             />
+            {mode === "signup" && (
+              <TextInput
+                value={inviteCode}
+                onChangeText={setInviteCode}
+                placeholder="Код от приятел (по избор)"
+                placeholderTextColor={colors.dim}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={8}
+                className="rounded-xl border border-white/10 bg-panel px-4 py-3.5 text-base text-ivory"
+              />
+            )}
           </View>
 
           {error && <Text className="mt-4 text-sm text-status-expired">{error}</Text>}

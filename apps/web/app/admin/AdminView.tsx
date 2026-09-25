@@ -12,7 +12,7 @@ export function AdminView({
   return (
     <section className="anim-up anim-d1 mx-auto mt-2 max-w-xl">
       <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Админ</p>
-      <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+      <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
         Pro пасове
       </h1>
       <p className="mt-2 font-body text-muted">

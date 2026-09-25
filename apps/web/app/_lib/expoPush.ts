@@ -1,4 +1,5 @@
-type ExpoPushMessage = { to: string; title: string; body: string };
+/** `data.url` is the app route a tap on the notification opens (see the mobile push handler). */
+export type ExpoPushMessage = { to: string; title: string; body: string; data?: { url: string } };
 
 /**
  * Best-effort delivery of Expo push notifications (https://docs.expo.dev/push-notifications/).

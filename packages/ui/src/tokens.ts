@@ -19,6 +19,25 @@ export const colors = {
   dim: "#69736A",
 } as const;
 
+/**
+ * The light "paper" surface, for sections that show documents. Documents are paper, so that is
+ * where the site turns light. The status and copper hues are darkened here: the dark-scene ones
+ * are too pale to read as text on ivory.
+ */
+export const paper = {
+  base: "#F4F1EA",
+  raised: "#FBF9F4",
+  ink: "#07100C",
+  muted: "#4F5A52",
+  rule: "#DDD8CC",
+  copper: "#8A6428",
+  valid: "#1F7A52",
+  expiring: "#946510",
+  expired: "#B4432F",
+  /** The blue the state prints its forms in (the Inspection certificate, the talon). */
+  form: "#1F4E8C",
+} as const;
+
 /** Functional Expiry Status colors (separate from the brand palette). */
 export const statusColors = {
   valid: "#5FCF9A",
@@ -40,19 +59,30 @@ export const chartColors = [
 
 /** Font families (loaded by each app's platform; names only here). */
 export const fonts = {
-  display: "Fraunces",
-  body: "Hanken Grotesk",
+  display: "Sofia Sans Condensed",
+  body: "Sofia Sans",
   mono: "JetBrains Mono",
+  /** Latin only: the wordmark and bare figures. */
+  brand: "Fraunces",
+} as const;
+
+/** Corner radii. One for cards; documents are paper and keep nearly square corners. */
+export const radii = {
+  card: "14px",
+  doc: "3px",
 } as const;
 
 export const tokens = {
   colors,
+  paper,
+  radii,
   statusColors,
   chartColors,
   fonts,
 } as const;
 
 export type Colors = typeof colors;
+export type Paper = typeof paper;
 export type StatusColors = typeof statusColors;
 export type ChartColors = typeof chartColors;
 export type Fonts = typeof fonts;

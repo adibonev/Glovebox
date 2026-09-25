@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-import { colors, statusColors } from "@glovebox/ui";
+import { colors, paper, radii, statusColors } from "@glovebox/ui";
 
 const config: Config = {
   content: [
@@ -24,14 +24,17 @@ const config: Config = {
         muted: colors.muted,
         dim: colors.dim,
         status: statusColors,
+        paper,
       },
+      borderRadius: radii,
       fontFamily: {
-        // CSS variables come from next/font (see app/layout.tsx). Fraunces (Latin
-        // display/numerals) and Hanken Grotesk (UI) have no Cyrillic, so Manrope
-        // (--font-cyr) covers Bulgarian glyphs; JetBrains Mono ships Cyrillic.
-        display: ["var(--font-display)", "var(--font-cyr)", "serif"],
-        body: ["var(--font-body)", "var(--font-cyr)", "sans-serif"],
+        // CSS variables come from next/font (see app/layout.tsx). Sofia Sans Condensed for
+        // headings, Sofia Sans for text, JetBrains Mono for plates and dates. `brand` is
+        // Fraunces, which has no Cyrillic: only the wordmark and bare figures may use it.
+        display: ["var(--font-display)", "sans-serif"],
+        body: ["var(--font-body)", "sans-serif"],
         mono: ["var(--font-mono)", "monospace"],
+        brand: ["var(--font-brand)", "serif"],
       },
     },
   },

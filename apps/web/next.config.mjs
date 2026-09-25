@@ -8,6 +8,12 @@ const nextConfig = {
     // The whole monorepo is linted from the root flat config via `pnpm lint`.
     ignoreDuringBuilds: true,
   },
+  // The passport PDF is drawn by @react-pdf/renderer, which runs as plain Node rather than
+  // through the bundler, and reads its fonts off disk: ship those files with that one route.
+  serverExternalPackages: ["@react-pdf/renderer"],
+  outputFileTracingIncludes: {
+    "/p/[token]/pdf": ["./assets/fonts/**/*"],
+  },
   experimental: {
     // Documents are photos/scans of real paperwork, so a submit that carries one is almost
     // always over Next's 1 MB default — which rejected the whole Server Action and left the

@@ -8,6 +8,7 @@ import {
   SupabaseVehicleRepository,
   canAddVehicle,
   exemptFromVehicleTax,
+  mileageSource,
   missingVehicleFields,
   onboardingGaps,
   scanInspectionDocument,
@@ -21,6 +22,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
+import { Choice, Notice } from "@/components/choices";
 import { DocumentCamera } from "@/components/DocumentCamera";
 import { ChipPicker, DateField, Field, PrimaryButton } from "@/components/forms";
 import { RegistryCheckLink } from "@/components/RegistryCheckLink";
@@ -104,6 +106,8 @@ export default function VehicleSetupScreen() {
   const [mileage, setMileage] = useState("");
   /** The Inspection date those kilometres were read on. Typed in by hand, they are today's. */
   const [mileageReadOn, setMileageReadOn] = useState<Date | null>(null);
+  /** What the certificate said, to tell a read number from one the User then changed. */
+  const [kmRead, setKmRead] = useState<number | null>(null);
   const [expiry, setExpiry] = useState<Date>(inOneYear);
   const [cost, setCost] = useState("");
 
@@ -139,6 +143,7 @@ export default function VehicleSetupScreen() {
       if (scanned.serviceRecord) setInspectionExpiry(scanned.serviceRecord.expiryDate);
       setMileage(scanned.mileage ? String(scanned.mileage.km) : "");
       setMileageReadOn(scanned.mileage?.readOn ?? null);
+      setKmRead(scanned.mileage?.km ?? null);
       // What the catalogue could not place counts as unread: the field is empty either way.
       const missing = missingVehicleFields({
         ...scanned.vehicle,
@@ -200,7 +205,13 @@ export default function VehicleSetupScreen() {
       const km = parseKm(mileage);
       if (km !== null) {
         await mileageRepo
-          .record({ vehicleId: vehicle.id, userId: user.id, km, readOn: mileageReadOn ?? todayAsDate() })
+          .record({
+            vehicleId: vehicle.id,
+            userId: user.id,
+            km,
+            readOn: mileageReadOn ?? todayAsDate(),
+            source: mileageSource(km, kmRead),
+          })
           .catch(() => undefined);
       }
 
@@ -544,38 +555,5 @@ export default function VehicleSetupScreen() {
         <Text className="text-sm text-dim">Добави по-късно</Text>
       </Pressable>
     </Screen>
-  );
-}
-
-function Choice({
-  title,
-  body,
-  tone,
-  onPress,
-}: {
-  title: string;
-  body: string;
-  tone: "copper" | "emerald" | "plain";
-  onPress: () => void;
-}) {
-  const TONES = {
-    copper: "border-copper/60 bg-copper/15",
-    emerald: "border-emerald/60 bg-emerald/15",
-    plain: "border-white/15 bg-white/[0.04]",
-  };
-
-  return (
-    <Pressable onPress={onPress} className={`mb-3 rounded-2xl border p-5 ${TONES[tone]}`}>
-      <Text className="text-lg font-semibold text-ivory">{title}</Text>
-      <Text className="mt-1.5 text-sm leading-5 text-silver">{body}</Text>
-    </Pressable>
-  );
-}
-
-function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <View className="mb-4 rounded-xl border border-copper/40 bg-panel p-4">
-      <Text className="text-sm leading-5 text-silver">{children}</Text>
-    </View>
   );
 }

@@ -44,7 +44,7 @@ export function AppStorePromo() {
       <div className="anim-up rounded-2xl border border-white/10 bg-ink/95 p-4 shadow-2xl backdrop-blur-md">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className="font-display text-[17px] font-semibold text-ivory">
+            <p className="font-display text-[17px] font-bold text-ivory">
               Glovebox и в телефона
             </p>
             <p className="mt-1 font-body text-[13px] leading-snug text-silver/70">

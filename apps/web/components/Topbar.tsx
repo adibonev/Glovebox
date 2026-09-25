@@ -20,7 +20,7 @@ export function Topbar({
     <header className="flex items-center gap-4 py-6">
       <Link
         href="/"
-        className="flex items-baseline font-display text-[25px] font-semibold leading-none tracking-tight"
+        className="flex items-baseline font-brand text-[25px] font-semibold leading-none tracking-tight"
       >
         <span className="text-ivory">Glove</span>
         <span className="flex items-baseline text-copper">

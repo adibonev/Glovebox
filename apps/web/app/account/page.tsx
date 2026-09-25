@@ -2,9 +2,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { BILLING_ENABLED, hasPassword, signInProviders } from "@glovebox/core";
+import {
+  BILLING_ENABLED,
+  SupabaseReferralRepository,
+  hasPassword,
+  inviteLink,
+  signInProviders,
+} from "@glovebox/core";
 
+import { CopyLink } from "@/components/CopyLink";
 import { Shell } from "@/components/Shell";
+import { SITE_URL } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -47,6 +55,7 @@ export default async function AccountPage({
     .eq("auth_user_id", user.id)
     .maybeSingle();
   const plan = profile ? await getPlan(supabase, profile.id) : "free";
+  const invite = profile ? await loadInvite(supabase, String(profile.id)) : null;
 
   // A User who only ever signed in with Google has no password to change.
   const providers = signInProviders(user.app_metadata?.providers ?? []);
@@ -57,7 +66,7 @@ export default async function AccountPage({
     <Shell email={user.email ?? ""}>
       <section className="anim-up anim-d1 mx-auto mt-2 max-w-xl">
         <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Акаунт</p>
-        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Настройки
         </h1>
 
@@ -67,7 +76,7 @@ export default async function AccountPage({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-dim">План</span>
-                  <p className="mt-1 font-display text-xl font-semibold text-ivory">
+                  <p className="mt-1 font-display text-xl font-bold text-ivory">
                     Glovebox {PLAN_LABEL[plan] ?? "Безплатен"}
                   </p>
                 </div>
@@ -96,6 +105,30 @@ export default async function AccountPage({
             </div>
           )}
 
+          {invite && (
+            <div className={cardClass}>
+              <div>
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-dim">Покани приятел</span>
+                <p className="mt-1 font-display text-xl font-bold text-ivory">
+                  Прати Glovebox на някого с кола
+                </p>
+                <p className="mt-2 font-body text-[13px] leading-relaxed text-muted">
+                  Връзката води към приложението в App Store, а на компютър към сайта. Ако се
+                  регистрира от iPhone, приятелят ти въвежда кода{" "}
+                  <span className="font-mono font-bold text-copper">{invite.code}</span>.
+                </p>
+              </div>
+              <CopyLink url={inviteLink(SITE_URL, invite.code)} />
+              <p className="font-body text-[13px] text-silver">
+                {invite.count === 0
+                  ? "Още никой не се е регистрирал с твоя код."
+                  : invite.count === 1
+                    ? "1 човек се регистрира с твоя код."
+                    : `${invite.count} души се регистрираха с твоя код.`}
+              </p>
+            </div>
+          )}
+
           <form action={updateUserName} className={cardClass}>
             <Field label="Име">
               <input
@@ -115,7 +148,7 @@ export default async function AccountPage({
             <div className={cardClass}>
               <div>
                 <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-dim">Вход</span>
-                <p className="mt-1 font-display text-xl font-semibold text-ivory">
+                <p className="mt-1 font-display text-xl font-bold text-ivory">
                   Влизаш с {providerLabel}
                 </p>
                 <p className="mt-2 font-body text-[13px] leading-relaxed text-muted">
@@ -226,4 +259,21 @@ function Note({ children, ok }: { children: ReactNode; ok?: boolean }) {
       {children}
     </p>
   );
+}
+
+/**
+ * The User's Invite Code and how many signed up with it. Null rather than an error while the
+ * invites migration is not applied, so the rest of the page still works.
+ */
+async function loadInvite(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<{ code: string; count: number } | null> {
+  try {
+    const repo = new SupabaseReferralRepository(supabase);
+    const [code, count] = await Promise.all([repo.codeFor(userId), repo.invitedCount()]);
+    return code ? { code, count } : null;
+  } catch {
+    return null;
+  }
 }

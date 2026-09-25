@@ -72,6 +72,8 @@ public interface, not implementation details.
 </important>
 
 ## Brand
-Cinematic premium: ink `#07100C` + emerald `#14503A` + copper `#C4954C`; Fraunces (display) +
-Hanken Grotesk (UI) + JetBrains Mono (labels). Logo = the "Glovebox" wordmark with a
+Cinematic premium: ink `#07100C` + emerald `#14503A` + copper `#C4954C`; Sofia Sans Condensed
+(headings) + Sofia Sans (text) + JetBrains Mono (plates, dates, labels); Fraunces only for the
+wordmark and bare figures (ADR-0009). Paper surfaces where documents are shown; one animation
+(the gauge). Logo = the "Glovebox" wordmark with a
 steering-wheel "o"; app icon = `brand/glovebox-wheel.svg`. Details in `@brand/BRAND.md`.

@@ -6,7 +6,10 @@ import type {
   MileageReading,
   NewDocument,
   NewMileageReading,
+  NewPassportLink,
   NewServiceRecord,
+  PassportLink,
+  Renewal,
   NewVehicle,
   ServiceRecord,
   ServiceRecordChanges,
@@ -17,6 +20,8 @@ import type {
 import type {
   DocumentRepository,
   MileageReadingRepository,
+  PassportLinkRepository,
+  RenewalRepository,
   ServiceRecordRepository,
   UserRepository,
   VehicleRepository,
@@ -108,13 +113,14 @@ function documentFromRow(
 type MileageRow = Database["public"]["Tables"]["mileage_readings"]["Row"];
 
 function mileageReadingFromRow(
-  row: Pick<MileageRow, "id" | "car_id" | "km" | "read_on">,
+  row: Pick<MileageRow, "id" | "car_id" | "km" | "read_on" | "source">,
 ): MileageReading {
   return {
     id: String(row.id),
     vehicleId: String(row.car_id),
     km: row.km,
     readOn: new Date(row.read_on),
+    source: row.source === "certificate" || row.source === "manual" ? row.source : null,
   };
 }
 
@@ -377,7 +383,7 @@ export class SupabaseUserRepository implements UserRepository {
   }
 }
 
-const MILEAGE_COLUMNS = "id, car_id, km, read_on";
+const MILEAGE_COLUMNS = "id, car_id, km, read_on, source";
 
 export class SupabaseMileageReadingRepository implements MileageReadingRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
@@ -411,6 +417,7 @@ export class SupabaseMileageReadingRepository implements MileageReadingRepositor
           user_id: Number(input.userId),
           km: input.km,
           read_on: toISODate(input.readOn),
+          source: input.source ?? null,
         },
         { onConflict: "car_id,read_on" },
       )
@@ -418,5 +425,104 @@ export class SupabaseMileageReadingRepository implements MileageReadingRepositor
       .single();
     if (error) throw new Error(`Supabase mileage_readings.record failed: ${error.message}`);
     return mileageReadingFromRow(data);
+  }
+}
+
+type RenewalRow = Database["public"]["Tables"]["renewals"]["Row"];
+
+const RENEWAL_COLUMNS = "id, car_id, service_type, previous_expiry_date, previous_cost, renewed_at";
+
+function renewalFromRow(
+  row: Pick<
+    RenewalRow,
+    "id" | "car_id" | "service_type" | "previous_expiry_date" | "previous_cost" | "renewed_at"
+  >,
+): Renewal {
+  return {
+    id: String(row.id),
+    vehicleId: String(row.car_id),
+    serviceType: row.service_type,
+    previousExpiryDate: new Date(row.previous_expiry_date),
+    previousCost: row.previous_cost,
+    renewedAt: new Date(row.renewed_at),
+  };
+}
+
+export class SupabaseRenewalRepository implements RenewalRepository {
+  constructor(private readonly client: SupabaseClient<Database>) {}
+
+  async listByVehicle(vehicleId: string): Promise<Renewal[]> {
+    const result = await this.client
+      .from("renewals")
+      .select(RENEWAL_COLUMNS)
+      .eq("car_id", Number(vehicleId))
+      .order("previous_expiry_date");
+    return rowsOrThrow(result, "renewals.listByVehicle").map(renewalFromRow);
+  }
+}
+
+type PassportLinkRow = Database["public"]["Tables"]["passport_links"]["Row"];
+
+const PASSPORT_LINK_COLUMNS = "id, car_id, token, include_costs, created_at";
+
+function passportLinkFromRow(
+  row: Pick<PassportLinkRow, "id" | "car_id" | "token" | "include_costs" | "created_at">,
+): PassportLink {
+  return {
+    id: String(row.id),
+    vehicleId: String(row.car_id),
+    token: row.token,
+    includeCosts: row.include_costs,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+export class SupabasePassportLinkRepository implements PassportLinkRepository {
+  constructor(private readonly client: SupabaseClient<Database>) {}
+
+  async activeForVehicle(vehicleId: string): Promise<PassportLink | null> {
+    const result = await this.client
+      .from("passport_links")
+      .select(PASSPORT_LINK_COLUMNS)
+      .eq("car_id", Number(vehicleId))
+      .is("revoked_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const row = rowsOrThrow(result, "passport_links.activeForVehicle")[0];
+    return row ? passportLinkFromRow(row) : null;
+  }
+
+  async findActiveByToken(token: string): Promise<PassportLink | null> {
+    const result = await this.client
+      .from("passport_links")
+      .select(PASSPORT_LINK_COLUMNS)
+      .eq("token", token)
+      .is("revoked_at", null)
+      .limit(1);
+    const row = rowsOrThrow(result, "passport_links.findActiveByToken")[0];
+    return row ? passportLinkFromRow(row) : null;
+  }
+
+  async create(input: NewPassportLink): Promise<PassportLink> {
+    // The token is the database's to mint (a random default), never the client's.
+    const { data, error } = await this.client
+      .from("passport_links")
+      .insert({
+        car_id: Number(input.vehicleId),
+        user_id: Number(input.userId),
+        include_costs: input.includeCosts,
+      })
+      .select(PASSPORT_LINK_COLUMNS)
+      .single();
+    if (error) throw new Error(`Supabase passport_links.create failed: ${error.message}`);
+    return passportLinkFromRow(data);
+  }
+
+  async revoke(id: string): Promise<void> {
+    const { error } = await this.client
+      .from("passport_links")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", Number(id));
+    if (error) throw new Error(`Supabase passport_links.revoke failed: ${error.message}`);
   }
 }

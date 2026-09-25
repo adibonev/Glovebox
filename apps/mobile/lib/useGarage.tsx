@@ -18,6 +18,7 @@ import { SERVICE_TYPE_LABELS, STATUS_COLORS } from "./labels";
 import { getPlan } from "./plan";
 import { DEFAULT_WINDOW, loadReminderConfig } from "./reminderSettings";
 import { supabase } from "./supabase";
+import { publishDeadlines } from "./widget";
 
 const CRITICAL_DAYS = 3;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -113,6 +114,7 @@ export function useGarage() {
       }
 
       flat.sort((a, b) => a.days - b.days);
+      publishDeadlines(flat, windowFor);
       const head = flat[0];
       const urgent: UrgentView = head
         ? {

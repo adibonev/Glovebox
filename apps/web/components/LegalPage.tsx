@@ -21,7 +21,7 @@ export function LegalPage({
 
       <div className="relative z-[1] mx-auto w-full max-w-2xl px-5 pb-16 sm:px-6">
         <header className="flex items-center justify-between py-6">
-          <Link href="/" className="flex items-baseline font-display text-[22px] font-semibold leading-none tracking-tight">
+          <Link href="/" className="flex items-baseline font-brand text-[22px] font-semibold leading-none tracking-tight">
             <span className="text-ivory">Glove</span>
             <span className="flex items-baseline text-copper">
               b
@@ -34,7 +34,7 @@ export function LegalPage({
           </Link>
         </header>
 
-        <h1 className="mt-4 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mt-4 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           {title}
         </h1>
         <p className="mt-2 font-mono text-[12px] uppercase tracking-[0.14em] text-dim">
@@ -44,7 +44,7 @@ export function LegalPage({
         <div
           className="mt-8 space-y-4 font-body text-[15px] leading-relaxed text-muted
             [&_a]:text-copper [&_a]:underline
-            [&_h2]:mt-9 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ivory
+            [&_h2]:mt-9 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-ivory
             [&_li]:marker:text-dim [&_strong]:text-ivory
             [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5"
         >

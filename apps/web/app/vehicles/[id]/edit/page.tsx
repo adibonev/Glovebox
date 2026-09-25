@@ -39,7 +39,7 @@ export default async function EditVehiclePage({
         <Link href="/vehicles" className="font-body text-sm text-muted transition hover:text-ivory">
           ← Назад към гаража
         </Link>
-        <h1 className="mb-6 mt-4 font-display text-[clamp(28px,4vw,40px)] font-semibold tracking-tight text-ivory">
+        <h1 className="mb-6 mt-4 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           {vehicle.brand} {vehicle.model}
         </h1>
         <EditVehicleForm

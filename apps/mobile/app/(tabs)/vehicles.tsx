@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { canAddService, canAddVehicle } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
@@ -131,6 +132,14 @@ export default function VehiclesTab() {
               ) : (
                 <Text className="text-xs text-dim">Free е до 2 услуги. Pro премахва лимита.</Text>
               )}
+
+              <Pressable
+                onPress={() => router.push(`/passport/${vehicle.id}`)}
+                className="mt-2 flex-row items-center justify-center gap-2 py-2.5"
+              >
+                <Ionicons name="document-text-outline" size={16} color={colors.silver} />
+                <Text className="text-sm text-silver">Паспорт на колата</Text>
+              </Pressable>
             </View>
           ))}
         </ScrollView>

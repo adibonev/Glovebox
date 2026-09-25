@@ -1,6 +1,7 @@
 import {
   dueReminders,
   remindByEmail,
+  renewalLink,
   type ReminderStage,
   type ServiceRecord,
 } from "@glovebox/core";
@@ -8,7 +9,7 @@ import {
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 import { renderReminderEmail, type EmailMessage, type ReminderLine, type SendResult } from "./email";
-import { sendExpoPush } from "./expoPush";
+import { sendExpoPush, type ExpoPushMessage } from "./expoPush";
 import { SERVICE_TYPE_LABELS, formatDaysRemaining } from "./labels";
 import { parseWindows } from "./reminderSettings";
 
@@ -105,7 +106,7 @@ export async function runReminderJob(
     list.push(t.token);
     tokensByUser.set(t.user_id, list);
   }
-  const pushMessages: { to: string; title: string; body: string }[] = [];
+  const pushMessages: ExpoPushMessage[] = [];
 
   if (usersRes.error || carsRes.error || servicesRes.error) {
     result.errors.push(
@@ -158,7 +159,10 @@ export async function runReminderJob(
 
     // Group what is owed by step: each goes out as its own notification, and only the first
     // step also goes by e-mail.
-    const byStage = new Map<ReminderStage, { line: ReminderLine; carId: number; expiry: string }[]>();
+    const byStage = new Map<
+      ReminderStage,
+      { line: ReminderLine; carId: number; expiry: string; serviceRecordId: string }[]
+    >();
     for (const reminder of due) {
       const row = rowById.get(reminder.serviceRecordId);
       if (!row || row.expiry_date == null) continue;
@@ -176,6 +180,7 @@ export async function runReminderJob(
         },
         carId: row.car_id,
         expiry: row.expiry_date,
+        serviceRecordId: reminder.serviceRecordId,
       });
       byStage.set(reminder.stage, group);
     }
@@ -204,7 +209,9 @@ export async function runReminderJob(
 
       if (tokens.length > 0) {
         const { title, body } = pushContent(stage, lines);
-        for (const to of tokens) pushMessages.push({ to, title, body });
+        // A tap goes where the notification asks the driver to act: entering the new date.
+        const data = { url: renewalLink(group.map((item) => item.serviceRecordId)) };
+        for (const to of tokens) pushMessages.push({ to, title, body, data });
       }
 
       const { error: logError } = await admin.from("service_logs").insert(

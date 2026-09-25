@@ -1,38 +1,48 @@
 import type { Metadata } from "next";
 import {
   Fraunces,
-  Hanken_Grotesk,
   JetBrains_Mono,
-  Manrope,
+  Sofia_Sans,
+  Sofia_Sans_Condensed,
 } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { AppStorePromo } from "@/components/AppStorePromo";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PostHogProvider } from "@/components/PostHogProvider";
+import { SITE_URL } from "@/lib/site";
 
 import "./globals.css";
 
-// Fraunces — display/numerals/logo; Hanken Grotesk — UI body; JetBrains Mono — labels.
-// Manrope carries the Cyrillic glyphs Fraunces/Hanken lack. Exposed as CSS variables.
-const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-display", display: "swap" });
-const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-body", display: "swap" });
-const manrope = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-cyr", display: "swap" });
+// Sofia Sans is by Lettersoup, a Bulgarian studio, and its plain Cyrillic *is* the Bulgarian
+// alphabet (the Russian letterforms are the alternates), so д, л and ж come out the way they are
+// written here. Condensed for headings, regular for text, JetBrains Mono for plates and dates.
+const sofiaCondensed = Sofia_Sans_Condensed({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-display",
+  display: "swap",
+});
+const sofia = Sofia_Sans({ subsets: ["latin", "cyrillic"], variable: "--font-body", display: "swap" });
+// Fraunces has no Cyrillic, so it only sets the wordmark and bare figures. Its metric-matched
+// fallback is Times New Roman, which *does* have Cyrillic: left on, it quietly set every
+// Bulgarian heading in Times before any other font in the stack was asked.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-brand",
+  display: "swap",
+  adjustFontFallback: false,
+});
 const jetbrains = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
   variable: "--font-mono",
   display: "swap",
 });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "http://localhost:3000");
+const siteUrl = SITE_URL;
 
 const title = "Glovebox — Следи сроковете на колата си";
 const description =
-  "Гражданска отговорност, Каско, Винетка, Технически преглед, Данък и още — на едно място, с напомняния преди да изтекат.";
+  "Гражданска отговорност, Каско, Винетка, Технически преглед и Данък МПС. Снимаш талона, а Glovebox ти напомня преди всеки срок.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -60,7 +70,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="bg"
-      className={`${fraunces.variable} ${hanken.variable} ${manrope.variable} ${jetbrains.variable}`}
+      className={`${sofiaCondensed.variable} ${sofia.variable} ${fraunces.variable} ${jetbrains.variable}`}
     >
       <body className="bg-ink font-body text-ivory antialiased">
         <PostHogProvider>
