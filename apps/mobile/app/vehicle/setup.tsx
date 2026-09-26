@@ -36,6 +36,7 @@ import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { SERVICE_TYPE_LABELS, formatDateShort } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { correctedFields, track } from "@/lib/analytics";
+import { earliestFirstRegistration, firstRegistrationError } from "@/lib/firstRegistration";
 import { offerPush } from "@/lib/push";
 import { maybeAskForReview } from "@/lib/review";
 import { parseCost } from "@/lib/cost";
@@ -194,6 +195,9 @@ export default function VehicleSetupScreen() {
         email: session.user.email ?? "",
       });
 
+      const dateError = firstRegistrationError(firstRegistration, year);
+      if (dateError) return fail(dateError);
+
       // Quota gate: Free is capped at 1 Vehicle (ADR-0003).
       const plan = await getPlan(user.id);
       const existing = await vehicleRepo.listByUser(user.id);
@@ -349,7 +353,8 @@ export default function VehicleSetupScreen() {
     // Notifications are asked for here, not on first launch: with a car in, the dialog makes sense.
     // Awaited, so the system dialog is answered before the rating one can appear.
     if (session) await offerPush(session).catch(() => undefined);
-    router.replace("/(tabs)/reminders");
+    // `setup` makes saving the reminders the last step: it then lands on the dashboard.
+    router.replace("/(tabs)/reminders?setup=1");
     // A car is now fully recorded, which is the moment this app has earned a rating. Asked once
     // the screen has settled rather than mid-navigation, and at most once a quarter.
     setTimeout(() => void maybeAskForReview(), 1500);
@@ -498,6 +503,7 @@ export default function VehicleSetupScreen() {
           hint="Поле (B) на талона. С нея знаем кога е прегледът на кола под пет години."
           value={firstRegistration}
           onChange={setFirstRegistration}
+          minimumDate={earliestFirstRegistration(year)}
         />
         <Field
           label="Километри"
@@ -614,6 +620,7 @@ export default function VehicleSetupScreen() {
             <Text className="text-sm text-dim">Добави по-късно</Text>
           </Pressable>
         )}
+        <FinishForNow onPress={() => void finish()} />
       </Screen>
     );
   }
@@ -637,5 +644,18 @@ export default function VehicleSetupScreen() {
         <Text className="text-sm text-dim">Добави по-късно</Text>
       </Pressable>
     </Screen>
+  );
+}
+
+/**
+ * A way out of the walk through every obligation, one screen each. Without it, someone who wanted
+ * only their civil liability in left with the back button, and the end of the setup (the question
+ * about notifications, the reminders, the confirmation) never came.
+ */
+function FinishForNow({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} className="mt-1 items-center py-3">
+      <Text className="text-sm text-copper">Приключи засега</Text>
+    </Pressable>
   );
 }

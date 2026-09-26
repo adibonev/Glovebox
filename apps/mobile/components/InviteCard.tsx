@@ -53,10 +53,15 @@ export function InviteCard({ userId }: { userId: string }) {
     }
     try {
       const ok = await referrals.claim(normalized);
+      // A refusal is either a code nobody has, or one that cannot count for this account (their
+      // own, a second inviter, an account older than 30 days): worth telling apart.
+      const known = ok || (await referrals.codeExists(normalized).catch(() => true));
       setAnswer(
         ok
           ? { ok: true, text: "Записано. Благодарим на приятеля ти." }
-          : { ok: false, text: "Кодът не важи за този акаунт." },
+          : known
+            ? { ok: false, text: "Кодът не важи за този акаунт." }
+            : { ok: false, text: "Няма такъв код. Провери го." },
       );
       if (ok) setFriendCode("");
     } catch {

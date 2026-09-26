@@ -211,7 +211,7 @@ export default function EditServiceScreen() {
       )}
       <ChipPicker label="Вид услуга" value={serviceType} options={TYPE_OPTIONS} onChange={setServiceType} />
       <DateField label={expiring ? "Валидна до" : "Дата на разход"} value={expiryDate} onChange={setExpiryDate} />
-      {serviceType === "vignette" && <VignettePresets onPick={setExpiryDate} />}
+      {serviceType === "vignette" && <VignettePresets value={expiryDate} onPick={setExpiryDate} />}
       <RegistryCheckLink serviceType={serviceType} />
       {inspection && (
         <>

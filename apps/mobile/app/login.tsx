@@ -1,4 +1,4 @@
-import { normalizeReferralCode } from "@glovebox/core";
+import { SupabaseReferralRepository, normalizeReferralCode } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Linking from "expo-linking";
@@ -23,6 +23,8 @@ import { supabase } from "@/lib/supabase";
 
 type Mode = "signin" | "signup";
 
+const referrals = new SupabaseReferralRepository(supabase);
+
 export default function LoginScreen() {
   // Arriving from an invite link: sign-up, with the friend's code already in.
   const { invite } = useLocalSearchParams<{ invite?: string }>();
@@ -45,13 +47,18 @@ export default function LoginScreen() {
 
   /**
    * On sign-up, keep a friend's Invite Code for the account about to exist. False (with the
-   * reason shown) when something was typed that cannot be a code.
+   * reason shown) when what was typed cannot be a code, or is nobody's code. When the check itself
+   * cannot run (offline), the code is kept and the claim after sign-in settles it.
    */
   const keepInviteCode = async (): Promise<boolean> => {
     if (mode !== "signup" || !inviteCode.trim()) return true;
     const code = normalizeReferralCode(inviteCode);
     if (!code) {
       setError("Кодът от приятел е 6 знака, например K7Q2MX.");
+      return false;
+    }
+    if (!(await referrals.codeExists(code).catch(() => true))) {
+      setError("Няма такъв код. Провери го или остави полето празно.");
       return false;
     }
     await rememberInviteCode(code);

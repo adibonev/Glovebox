@@ -325,7 +325,7 @@ export default function RenewScreen() {
             value={expiryDate}
             onChange={setExpiryDate}
           />
-          {method === "vignette" && <VignettePresets onPick={setExpiryDate} />}
+          {method === "vignette" && <VignettePresets value={expiryDate} onPick={setExpiryDate} />}
           <RegistryCheckLink serviceType={record.serviceType} />
           {method === "inspectionScan" && (
             <Field

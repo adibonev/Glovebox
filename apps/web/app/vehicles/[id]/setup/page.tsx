@@ -100,14 +100,15 @@ export default async function VehicleSetupPage({
         )}
 
         <div className="flex flex-col gap-3">
+          {/* Carries the car along, so saving the reminders ends the setup on the dashboard. */}
           <Link
-            href="/reminders"
+            href={`/reminders?setup=${vehicle.id}`}
             className="rounded-xl bg-emerald px-4 py-2.5 text-center font-body font-semibold text-ivory transition hover:bg-emerald/90"
           >
             Настрой напомнянията
           </Link>
           <Link
-            href={`/?v=${vehicle.id}`}
+            href={`/?v=${vehicle.id}&added=1`}
             className="text-center font-body text-sm text-muted transition hover:text-ivory"
           >
             {done ? "Към таблото" : "Ще ги добавя по-късно"}

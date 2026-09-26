@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 
 import { APP_STORE_URL } from "@/lib/appStore";
 
-const DISMISSED = "glovebox.appPromo.dismissed";
+// Its own key: the floating card this strip replaced used "glovebox.appPromo.dismissed", and
+// everyone who had closed that card never saw the strip at all.
+const DISMISSED = "glovebox.appStrip.dismissed";
 
 /**
  * A quiet invitation to the phone app, for signed-in people using Glovebox on the web.

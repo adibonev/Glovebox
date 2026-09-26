@@ -116,6 +116,21 @@ export function inspectionDue(
     : { kind: "needsLastInspection" };
 }
 
+/**
+ * What is wrong with a date of first registration, if anything: a car is not registered before
+ * the year it was made (`beforeYear`), nor after today (`inFuture`). Dates are calendar days
+ * (UTC midnight). With no year recorded, only the future is ruled out.
+ */
+export function firstRegistrationProblem(
+  firstRegistration: Date,
+  vehicleYear: number | null,
+  today: Date,
+): "beforeYear" | "inFuture" | null {
+  if (vehicleYear !== null && firstRegistration.getUTCFullYear() < vehicleYear) return "beforeYear";
+  if (firstRegistration.getTime() > today.getTime()) return "inFuture";
+  return null;
+}
+
 // --- Vignette ---------------------------------------------------------------------------
 
 /** The Vignette durations sold by the Road Infrastructure Agency. */

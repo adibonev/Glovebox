@@ -1,8 +1,10 @@
 import { ExtensionStorage } from "@bacons/apple-targets";
 import type { ServiceRecord, Vehicle } from "@glovebox/core";
+import { requireOptionalNativeModule } from "expo";
 import { Platform } from "react-native";
 
 import { SERVICE_TYPE_LABELS } from "./labels";
+import { reportProblem } from "./monitoring";
 
 /** Shared with the widget extension (targets/widget); both sides must name the same group. */
 const APP_GROUP = "group.bg.glovebox.app";
@@ -36,6 +38,22 @@ type WidgetDeadline = {
 const storage = Platform.OS === "ios" ? new ExtensionStorage(APP_GROUP) : null;
 
 /**
+ * ExtensionStorage turns into silent no-ops when its native module is missing from the build.
+ * That is how build 19 shipped: Expo autolinking skips a pod whose minimum iOS is above the app's
+ * (the pod said 16.4, the app 15.1; patched in patches/), and the widget sat on "no deadlines".
+ * Say so once, instead of letting it pass unnoticed again.
+ */
+let missingReported = false;
+function nativeStoragePresent(): boolean {
+  const present = requireOptionalNativeModule("ExtensionStorage") != null;
+  if (!present && !missingReported) {
+    missingReported = true;
+    reportProblem("Widget: the ExtensionStorage native module is missing from this build");
+  }
+  return present;
+}
+
+/**
  * Hand the widget the most urgent obligations, overdue first then soonest. Called whenever the
  * garage loads, which covers a renewal, a new car and a new day. A no-op off iOS and in builds
  * without the widget's native module.
@@ -44,7 +62,7 @@ export function publishDeadlines(
   items: readonly { record: ServiceRecord; vehicle: Vehicle; days: number }[],
   windowFor: (serviceType: string) => number,
 ): void {
-  if (!storage) return;
+  if (!storage || !nativeStoragePresent()) return;
   const deadlines: WidgetDeadline[] = [...items]
     .sort((a, b) => a.days - b.days)
     .slice(0, 3)

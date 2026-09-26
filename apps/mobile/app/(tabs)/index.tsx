@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { pendingRenewals, renewalLink } from "@glovebox/core";
 import { colors, statusColors } from "@glovebox/ui";
-import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -24,6 +24,8 @@ export default function DashboardTab() {
   const router = useRouter();
   const { data, loading, refreshing, onRefresh, error } = useGarage();
   const offeredAddVehicle = useRef(false);
+  const { added } = useLocalSearchParams<{ added?: string }>();
+  const clearAdded = useCallback(() => router.setParams({ added: undefined }), [router]);
 
   /**
    * A brand-new User lands on a dashboard with nothing on it, so send them straight into adding
@@ -68,6 +70,7 @@ export default function DashboardTab() {
             </View>
           )}
 
+          {added === "1" && <AddedNotice onDone={clearAdded} />}
           {pending.length > 0 && <RenewalBanner pending={pending} onPress={(url) => router.push(url)} />}
           {data && data.cards.length > 0 && <PushBanner />}
           {data && data.cards.length > 0 && <AnalyticsConsentCard />}
@@ -139,6 +142,27 @@ export default function DashboardTab() {
         </ScrollView>
       )}
     </SafeAreaView>
+  );
+}
+
+/**
+ * The end of a new car's setup (vehicle/setup, then its reminders). Shown for a few seconds, then
+ * the flag leaves the route, so coming back to this tab later does not say it again.
+ */
+function AddedNotice({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onDone, 6000);
+    return () => clearTimeout(timer);
+  }, [onDone]);
+
+  return (
+    <View className="mb-4 flex-row items-center gap-3 rounded-2xl border border-status-valid/50 bg-status-valid/10 px-4 py-4">
+      <Ionicons name="checkmark-circle" size={24} color={statusColors.valid} />
+      <View className="flex-1">
+        <Text className="text-base font-semibold text-ivory">Автомобилът е добавен успешно.</Text>
+        <Text className="mt-0.5 text-sm text-silver">Ще ти напомним, преди да изтече някой срок.</Text>
+      </View>
+    </View>
   );
 }
 

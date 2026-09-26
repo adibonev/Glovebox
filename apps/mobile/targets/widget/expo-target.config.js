@@ -5,6 +5,11 @@
  *
  * The colours mirror packages/ui tokens; this file is CommonJS and cannot import them.
  *
+ * Every file in this folder joins the widget target, which is how PrivacyInfo.xcprivacy ships
+ * inside the widget. Apple checks each binary on its own, so the app's privacy manifest does not
+ * cover the widget: without its own, App Store Connect drops the build after upload (ITMS-91053,
+ * build 18). The widget reads the App Group's UserDefaults, declared as reason 1C8F.1.
+ *
  * @type {import('@bacons/apple-targets/app.plugin').ConfigFunction}
  */
 module.exports = (config) => ({

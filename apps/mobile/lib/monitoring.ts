@@ -32,3 +32,8 @@ export function withMonitoring(
 export function setMonitoredUser(authUserId: string | null) {
   if (DSN) Sentry.setUser(authUserId ? { id: authUserId } : null);
 }
+
+/** Report a fault that fails quietly by design, so it shows up somewhere other than a tester. */
+export function reportProblem(message: string) {
+  if (DSN) Sentry.captureMessage(message, "warning");
+}

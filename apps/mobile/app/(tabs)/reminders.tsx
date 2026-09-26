@@ -1,5 +1,5 @@
 import { colors } from "@glovebox/ui";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -18,6 +18,15 @@ import { useGarage } from "@/lib/useGarage";
 export default function RemindersTab() {
   const router = useRouter();
   const { data, loading, refreshing, onRefresh } = useGarage();
+  // Arrived from a new car's setup (vehicle/setup): saving is its last step, and ends on the
+  // dashboard with the car confirmed. The flag is cleared first, or every later save would too.
+  const { setup } = useLocalSearchParams<{ setup?: string }>();
+  const onSaved = () => {
+    onRefresh();
+    if (setup !== "1") return;
+    router.setParams({ setup: undefined });
+    router.replace("/?added=1");
+  };
 
   // Everything not "Valid" — the obligations you'll be reminded about, soonest first.
   const due = (data?.flat ?? []).filter((f) => f.status !== "Valid");
@@ -26,6 +35,11 @@ export default function RemindersTab() {
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
       <View className="px-5 pb-3 pt-2">
         <Text className="text-2xl font-semibold text-ivory">Напомняния</Text>
+        {setup === "1" && (
+          <Text className="mt-1 text-sm text-silver">
+            Последна стъпка. Избери кога да ти напомняме и натисни „Запази“.
+          </Text>
+        )}
       </View>
 
       {loading ? (
@@ -38,7 +52,7 @@ export default function RemindersTab() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.copper} />}
         >
           <PushSettings />
-          {data?.userId && <ReminderSettings userId={data.userId} onSaved={onRefresh} />}
+          {data?.userId && <ReminderSettings userId={data.userId} onSaved={onSaved} />}
 
           {due.length === 0 ? (
             <View className="mt-12 items-center">

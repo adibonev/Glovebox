@@ -43,8 +43,17 @@ Leave `REMINDER_TEST_TO` **unset** in production.
   `customer.subscription.updated`, `customer.subscription.deleted`. Copy the **Signing secret**
   → set `STRIPE_WEBHOOK_SECRET` in Vercel → redeploy.
 - **Resend:** verify your domain, set `REMINDER_FROM` to a sender on it.
-- **Google sign-in** already works through Supabase's provider; no extra redirect needed
-  beyond the Supabase allowlist above.
+- **Google sign-in** works through Supabase's provider with no extra setup, but then Google's
+  account chooser says "continue to xclqfebkmebageqnamvp.supabase.co". To have it say
+  glovebox.bg, the login page can use Google's own button instead (`components/GoogleSignIn.tsx`):
+  1. Google Cloud Console → APIs & Services → Credentials → the OAuth client Supabase uses
+     (`527569771820-tnq0….apps.googleusercontent.com`) → **Authorized JavaScript origins**: add
+     `https://www.glovebox.bg`, `https://glovebox.bg` and, for local work, `http://localhost:3000`
+     and `http://localhost`.
+  2. Vercel: `NEXT_PUBLIC_GOOGLE_CLIENT_ID` = that client id (Config, not Sensitive) → redeploy.
+  Without the variable the page keeps the redirect flow; set it only after step 1, or Google
+  refuses the button with `origin_mismatch`. Supabase needs nothing new: the id is already its
+  client, and Supabase accepts ID tokens issued to it.
 
 ## 5. Reminders cron
 `apps/web/vercel.json` runs `GET /api/cron/send-reminders` daily at 08:00 UTC. With

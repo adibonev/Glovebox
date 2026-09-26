@@ -14,11 +14,18 @@ import { WINDOW_OPTIONS } from "../_lib/reminderSettings";
 
 export const metadata = { title: "Glovebox — Напомняния" };
 
-export default async function RemindersPage() {
+export default async function RemindersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ setup?: string; saved?: string }>;
+}) {
   const data = await getRemindersData();
   if (!data) redirect("/login");
 
   const { config, upcoming } = data;
+  // Arriving from a new car's setup: saving finishes it and goes to the dashboard.
+  const { setup, saved } = await searchParams;
+  const setupVehicleId = setup && /^\d+$/.test(setup) ? setup : null;
 
   return (
     <Shell email={data.userEmail}>
@@ -36,6 +43,7 @@ export default async function RemindersPage() {
         action={saveReminderSettings}
         className="anim-up anim-d2 rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6 sm:p-7"
       >
+        {setupVehicleId && <input type="hidden" name="setup" value={setupVehicleId} />}
         <label className="relative flex cursor-pointer items-center gap-3 pb-5">
           <input
             type="checkbox"
@@ -80,7 +88,8 @@ export default async function RemindersPage() {
           ))}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex items-center justify-end gap-4">
+          {saved === "1" && <p className="font-body text-sm text-status-valid">Запазено.</p>}
           <button
             type="submit"
             className="rounded-xl bg-emerald px-5 py-2.5 font-body font-semibold text-ivory transition hover:bg-emerald/90"

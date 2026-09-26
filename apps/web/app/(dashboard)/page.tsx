@@ -14,9 +14,9 @@ import { getDashboardData } from "../_lib/dashboard";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string; upgraded?: string }>;
+  searchParams: Promise<{ v?: string; upgraded?: string; added?: string }>;
 }) {
-  const { v, upgraded } = await searchParams;
+  const { v, upgraded, added } = await searchParams;
   const data = await getDashboardData(v);
   if (!data) return <Landing />;
 
@@ -24,6 +24,20 @@ export default async function DashboardPage({
 
   return (
     <Shell email={userEmail}>
+      {/* The end of a new car's setup (/vehicles/[id]/setup, then its reminders). */}
+      {added === "1" && vehicle && (
+        <div
+          role="status"
+          className="anim-up mb-4 flex items-center gap-3 rounded-2xl border border-status-valid/40 bg-status-valid/[0.08] px-5 py-3.5"
+        >
+          <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-status-valid" />
+          <p className="font-body text-sm text-ivory">
+            <span className="font-semibold text-status-valid">Автомобилът е добавен успешно.</span>{" "}
+            Ще ти напомним, преди да изтече някой срок.
+          </p>
+        </div>
+      )}
+
       {upgraded === "1" && (
         <div className="anim-up mb-4 flex items-center gap-3 rounded-2xl border border-copper/40 bg-gradient-to-r from-copper/[0.12] to-transparent px-5 py-3.5">
           <span aria-hidden className="text-lg">🎉</span>

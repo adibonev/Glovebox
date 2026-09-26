@@ -11,6 +11,7 @@ import {
   canAddDocument,
   canAddService,
   canAddVehicle,
+  firstRegistrationProblem,
   parseFuelType,
   purgeAccount,
 } from "@glovebox/core";
@@ -40,7 +41,14 @@ function readFuelType(formData: FormData): string | null {
 /** Read the optional date of first registration ("YYYY-MM-DD" from a date input), or null. */
 function readFirstRegistration(formData: FormData): string | null {
   const value = String(formData.get("firstRegistration") ?? "").trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  // The field refuses a date before the car's year or after today (FirstRegistrationField); one
+  // that gets past it anyway is dropped rather than stored.
+  const yearRaw = String(formData.get("year") ?? "").trim();
+  const year = /^\d{4}$/.test(yearRaw) ? Number(yearRaw) : null;
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  return firstRegistrationProblem(new Date(`${value}T00:00:00Z`), year, today) ? null : value;
 }
 
 /** Read an optional cost (EUR) from the form; accepts comma or dot decimals. */
@@ -382,7 +390,10 @@ export async function saveReminderSettings(formData: FormData): Promise<void> {
   revalidatePath("/");
   revalidatePath("/vehicles");
   revalidatePath("/reminders");
-  redirect("/reminders");
+  // The last step of a new car's setup ends on the dashboard, with the car confirmed; on its own
+  // the page stays put and says it saved.
+  const setup = String(formData.get("setup") ?? "");
+  redirect(/^\d+$/.test(setup) ? `/?v=${setup}&added=1` : "/reminders?saved=1");
 }
 
 export async function deleteVehicle(formData: FormData): Promise<void> {

@@ -720,6 +720,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       join_vehicle: { Args: { invite: string }; Returns: number | null }
       referral_count: { Args: never; Returns: number }
+      invite_code_exists: { Args: { code: string }; Returns: boolean }
       vehicle_people: {
         Args: { car: number }
         Returns: { user_id: number; email: string; name: string | null; is_owner: boolean }[]

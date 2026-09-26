@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   exemptFromVehicleTax,
+  firstRegistrationProblem,
   inspectionDue,
   inspectionSchedule,
   nextInspectionDate,
@@ -150,5 +151,26 @@ describe("inspectionDue", () => {
     expect(inspectionDue(new Date("2011-09-05"), null, new Date("2026-09-26"))).toEqual({
       kind: "needsLastInspection",
     });
+  });
+});
+
+describe("firstRegistrationProblem", () => {
+  const today = new Date("2026-09-27T00:00:00Z");
+
+  it("accepts a first registration in the Vehicle's own year or later, up to today", () => {
+    expect(firstRegistrationProblem(new Date("2024-01-01T00:00:00Z"), 2024, today)).toBeNull();
+    expect(firstRegistrationProblem(new Date("2026-09-27T00:00:00Z"), 2024, today)).toBeNull();
+  });
+
+  it("refuses a first registration before the Vehicle was made", () => {
+    expect(firstRegistrationProblem(new Date("2023-12-31T00:00:00Z"), 2024, today)).toBe("beforeYear");
+  });
+
+  it("refuses a first registration that has not happened yet", () => {
+    expect(firstRegistrationProblem(new Date("2026-09-28T00:00:00Z"), 2024, today)).toBe("inFuture");
+  });
+
+  it("checks only the date when the Vehicle's year is not known", () => {
+    expect(firstRegistrationProblem(new Date("1990-05-01T00:00:00Z"), null, today)).toBeNull();
   });
 });

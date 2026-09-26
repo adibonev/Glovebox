@@ -20,6 +20,7 @@ import {
 } from "@/lib/bodyType";
 import { hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
+import { earliestFirstRegistration, firstRegistrationError } from "@/lib/firstRegistration";
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { supabase } from "@/lib/supabase";
 
@@ -79,6 +80,11 @@ export default function EditVehicleScreen() {
 
   const save = async () => {
     if (!brand.trim() || !model.trim()) return;
+    const dateError = firstRegistrationError(firstRegistration, year);
+    if (dateError) {
+      setError(dateError);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -160,6 +166,7 @@ export default function EditVehicleScreen() {
         hint="Поле (B) на талона. С нея знаем кога е прегледът на кола под пет години."
         value={firstRegistration}
         onChange={setFirstRegistration}
+        minimumDate={earliestFirstRegistration(year)}
       />
       <ChipPicker label="Тип каросерия" value={bodyType} options={BODY_OPTIONS} onChange={setBodyType} />
       <ChipPicker

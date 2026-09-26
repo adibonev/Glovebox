@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 
+import { GOOGLE_CLIENT_ID, GoogleSignIn } from "@/components/GoogleSignIn";
 import { rememberFirstRegistration } from "@/lib/firstRegistration";
 
 import { authenticate, signInWithGoogle, type AuthState } from "./actions";
@@ -136,15 +137,19 @@ export default function LoginPage() {
           </p>
         )}
 
-        <form action={signInWithGoogle}>
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:border-white/25 hover:bg-white/[0.07]"
-          >
-            <GoogleG />
-            Продължи с Google
-          </button>
-        </form>
+        {GOOGLE_CLIENT_ID ? (
+          <GoogleSignIn onError={() => setGoogleError(true)} />
+        ) : (
+          <form action={signInWithGoogle}>
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-ivory transition hover:border-white/25 hover:bg-white/[0.07]"
+            >
+              <GoogleG />
+              Продължи с Google
+            </button>
+          </form>
+        )}
 
         <p className="text-center font-body text-sm text-silver/55">
           {isSignup ? "Вече имаш акаунт? " : "Нямаш акаунт? "}

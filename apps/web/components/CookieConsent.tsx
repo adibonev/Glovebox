@@ -30,8 +30,8 @@ export function CookieConsent() {
       <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-white/10 bg-panel/95 px-4 py-3.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.7)] backdrop-blur-md sm:flex-row sm:items-center sm:gap-4">
         <p className="font-body text-[13px] leading-relaxed text-muted">
           Ползваме съществени бисквитки за вход и сесия. С твое съгласие добавяме и{" "}
-          <strong className="text-silver">аналитични и рекламни</strong> (PostHog и Meta), за да
-          разбираме как се ползва Glovebox и коя реклама те е довела.{" "}
+          <strong className="text-silver">аналитични и рекламни</strong>, за да разбираме как се
+          ползва Glovebox и коя реклама те е довела.{" "}
           <Link href="/privacy" className="text-copper underline">
             Научи повече
           </Link>

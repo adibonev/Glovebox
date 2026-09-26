@@ -42,6 +42,11 @@ export interface ReferralRepository {
   claim(code: string): Promise<boolean>;
   /** How many Users signed up with the signed-in User's code. */
   invitedCount(): Promise<number>;
+  /**
+   * Whether `code` is someone's Invite Code. Needs no sign-in: sign-up asks it, so that a
+   * mistyped code is caught on the spot rather than dropped without a word after the account exists.
+   */
+  codeExists(code: string): Promise<boolean>;
 }
 
 export class SupabaseReferralRepository implements ReferralRepository {
@@ -69,5 +74,13 @@ export class SupabaseReferralRepository implements ReferralRepository {
     const { data, error } = await this.client.rpc("referral_count");
     if (error) throw new Error(`Supabase referral_count failed: ${error.message}`);
     return data ?? 0;
+  }
+
+  async codeExists(code: string): Promise<boolean> {
+    const normalized = normalizeReferralCode(code);
+    if (!normalized) return false;
+    const { data, error } = await this.client.rpc("invite_code_exists", { code: normalized });
+    if (error) throw new Error(`Supabase invite_code_exists failed: ${error.message}`);
+    return data === true;
   }
 }

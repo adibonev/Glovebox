@@ -1,6 +1,7 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { vignetteExpiry, type VignetteKind } from "@glovebox/core";
 import { colors } from "@glovebox/ui";
 import { useState } from "react";
 import {
@@ -15,6 +16,7 @@ import {
 } from "react-native";
 
 import { formatDateShort } from "@/lib/labels";
+import { todayAsDate } from "@/lib/mileage";
 
 /** Labeled text input. */
 export function Field({ label, ...props }: { label: string } & TextInputProps) {
@@ -141,11 +143,14 @@ export function OptionalDateField({
   hint,
   value,
   onChange,
+  minimumDate,
 }: {
   label: string;
   hint?: string;
   value: Date | null;
   onChange: (date: Date | null) => void;
+  /** The earliest day offered, e.g. 1 January of the car's year for its first registration. */
+  minimumDate?: Date;
 }) {
   const [show, setShow] = useState(false);
   const [temp, setTemp] = useState(value ?? new Date());
@@ -177,6 +182,7 @@ export function OptionalDateField({
           value={value ?? new Date()}
           mode="date"
           maximumDate={new Date()}
+          minimumDate={minimumDate}
           onChange={(event, date) => {
             setShow(false);
             if (event.type === "set" && date) onChange(asDay(date));
@@ -194,6 +200,7 @@ export function OptionalDateField({
                 display="spinner"
                 themeVariant="dark"
                 maximumDate={new Date()}
+                minimumDate={minimumDate}
                 onChange={(_event, date) => date && setTemp(date)}
               />
               <PrimaryButton
@@ -241,32 +248,60 @@ export function PrimaryButton({
 }
 
 /** Quick "valid until" presets for a Vignette (BG durations) — sets Expiry from today. */
-const VIGNETTE_PRESETS: { label: string; days: number }[] = [
-  { label: "Уикенд", days: 3 },
-  { label: "Седмица", days: 7 },
-  { label: "Месец", days: 30 },
-  { label: "Тримесечие", days: 90 },
-  { label: "Година", days: 365 },
+const VIGNETTE_PRESETS: { label: string; kind: VignetteKind }[] = [
+  { label: "Уикенд", kind: "weekend" },
+  { label: "Седмица", kind: "weekly" },
+  { label: "Месец", kind: "monthly" },
+  { label: "Тримесечие", kind: "quarterly" },
+  { label: "Година", kind: "annual" },
 ];
 
-export function VignettePresets({ onPick }: { onPick: (date: Date) => void }) {
+/**
+ * The last valid day of a vignette bought today, by the rules in core: a weekend one ends on the
+ * Sunday, a week counts today as day one, a year ends the day before the anniversary. Counting
+ * plain days put every one of them a day late, and a day late is a fine.
+ */
+function presetExpiry(kind: VignetteKind): Date {
+  return vignetteExpiry(todayAsDate(), kind);
+}
+
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
+/**
+ * The vignette lengths as one tap each. The chosen one stays lit while the date is still the one
+ * it set, so it is clear what was picked; changing the date by hand puts the light out.
+ */
+export function VignettePresets({ value, onPick }: { value: Date; onPick: (date: Date) => void }) {
+  const [picked, setPicked] = useState<string | null>(null);
+  const lit = VIGNETTE_PRESETS.find((p) => p.label === picked && sameDay(value, presetExpiry(p.kind)));
+
   return (
     <View className="mb-4">
       <Text className="mb-1.5 text-sm text-muted">Бърз избор (винетка)</Text>
       <View className="flex-row flex-wrap gap-2">
-        {VIGNETTE_PRESETS.map((p) => (
-          <Pressable
-            key={p.label}
-            onPress={() => {
-              const d = new Date();
-              d.setDate(d.getDate() + p.days);
-              onPick(d);
-            }}
-            className="rounded-lg border border-white/10 bg-panel px-3 py-2"
-          >
-            <Text className="text-[13px] text-copper">{p.label}</Text>
-          </Pressable>
-        ))}
+        {VIGNETTE_PRESETS.map((p) => {
+          const on = lit?.label === p.label;
+          return (
+            <Pressable
+              key={p.label}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              onPress={() => {
+                setPicked(p.label);
+                onPick(presetExpiry(p.kind));
+              }}
+              className={
+                on
+                  ? "rounded-lg border border-copper bg-copper/20 px-3 py-2"
+                  : "rounded-lg border border-white/10 bg-panel px-3 py-2"
+              }
+            >
+              <Text className={on ? "text-[13px] font-semibold text-ivory" : "text-[13px] text-copper"}>
+                {on ? `✓ ${p.label}` : p.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );

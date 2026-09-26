@@ -10,9 +10,11 @@ const nextConfig = {
   },
   // The passport PDF is drawn by @react-pdf/renderer, which runs as plain Node rather than
   // through the bundler, and reads its fonts off disk: ship those files with that one route.
+  // pdfkit also loads its built-in Helvetica through a computed import that tracing cannot
+  // follow; without it every PDF failed on Vercel with "Cannot find module …/Helvetica.cjs".
   serverExternalPackages: ["@react-pdf/renderer"],
   outputFileTracingIncludes: {
-    "/p/[token]/pdf": ["./assets/fonts/**/*"],
+    "/p/[token]/pdf": ["./assets/fonts/**/*", "../../node_modules/pdfkit/js/standard-fonts/**/*"],
   },
   experimental: {
     // Documents are photos/scans of real paperwork, so a submit that carries one is almost
