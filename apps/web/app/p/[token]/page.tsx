@@ -7,7 +7,7 @@ import { PassportSheet } from "./PassportSheet";
 
 // A passport is read by whoever holds the link, not found by searching.
 export const metadata: Metadata = {
-  title: "Паспорт на автомобил · Glovebox",
+  title: "Паспорт на кола · Glovebox",
   robots: { index: false, follow: false },
 };
 

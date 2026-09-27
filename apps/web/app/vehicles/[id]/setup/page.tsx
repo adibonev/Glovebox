@@ -14,15 +14,15 @@ import { ServiceTypeIcon } from "../../../_components/ServiceTypeIcon";
 import { SERVICE_TYPE_LABELS } from "../../../_lib/labels";
 import { currentUser } from "../../../_lib/session";
 
-export const metadata = { title: "Glovebox — Довърши колата" };
+export const metadata = { title: "Довърши колата · Glovebox" };
 
 /** A line of encouragement per Service Type, so the list reads as help rather than homework. */
 const WHY: Record<string, string> = {
   civil_liability: "Задължителна е. Глобата за изтекла е по-скъпа от самата полица.",
   casco: "Ако имаш каско, срокът му върви отделно от гражданската.",
-  vignette: "Избираш вида и началната дата — срокът се смята сам.",
+  vignette: "Избираш вида и началната дата, а срокът се смята сам.",
   inspection: "Годишният технически преглед.",
-  tax: "Сроковете са по закон и важат за всички — 30 април, 30 юни и 31 октомври.",
+  tax: "Сроковете са по закон и важат за всички: 30 април, 30 юни и 31 октомври.",
   fire_extinguisher: "Пожарогасителят има срок на годност и се проверява при преглед.",
 };
 
@@ -55,12 +55,12 @@ export default async function VehicleSetupPage({
   // assumed, because the exemption follows a declaration only the owner can have filed.
   const why = (type: string) =>
     type === "tax" && exemptFromVehicleTax(vehicle.fuelType)
-      ? "Електрическите автомобили не дължат данък МПС (ЗМДТ чл. 58, ал. 2) — след декларация по чл. 54, ал. 4 в общината."
+      ? "Електрическите коли не дължат данък МПС (ЗМДТ чл. 58, ал. 2), след декларация по чл. 54, ал. 4 в общината."
       : WHY[type];
 
   return (
     <Shell email={user.email}>
-      <section className="anim-up anim-d1 mx-auto mt-2 max-w-xl">
+      <section className="mx-auto mt-2 max-w-xl">
         <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">
           {name || "Нова кола"}
         </p>
@@ -70,7 +70,7 @@ export default async function VehicleSetupPage({
         <p className="mb-6 mt-2 font-body text-muted">
           {done
             ? "Всички срокове са добавени. Остава да кажеш кога да те подсещаме."
-            : "Добави ги сега или по-късно — нищо не е задължително на този екран."}
+            : "Добави ги сега или по-късно. Нищо не е задължително на този екран."}
         </p>
 
         {!done && (

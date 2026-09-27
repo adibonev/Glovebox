@@ -15,6 +15,7 @@ import { useAnalyticsTracking } from "@/lib/analytics";
 import { useAuthDeepLink } from "@/lib/authLink";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { setMonitoredUser, withMonitoring } from "@/lib/monitoring";
+import { GarageProvider } from "@/lib/useGarage";
 
 // Paint the native root view dark so there's no white flash before React mounts.
 void SystemUI.setBackgroundColorAsync(colors.ink);
@@ -37,7 +38,9 @@ function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <StatusBar style="light" />
-          <RootNavigator />
+          <GarageProvider>
+            <RootNavigator />
+          </GarageProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

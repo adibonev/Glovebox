@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { Wheel } from "./Wheel";
+import { Wordmark } from "./Wordmark";
 
 /** Public, dark-themed wrapper for the legal pages (no auth chrome). */
 export function LegalPage({
@@ -22,13 +22,8 @@ export function LegalPage({
 
       <div className="relative z-[1] mx-auto w-full max-w-2xl px-5 pb-16 sm:px-6">
         <header className="flex items-center justify-between py-6">
-          <Link href="/" className="flex items-baseline font-brand text-[22px] font-semibold leading-none tracking-tight">
-            <span className="text-ivory">Glove</span>
-            <span className="flex items-baseline text-copper">
-              b
-              <Wheel style={{ width: "0.82em", height: "0.82em", transform: "translateY(0.08em)", margin: "0 0.01em" }} />
-              x
-            </span>
+          <Link href="/" aria-label="Glovebox, начало">
+            <Wordmark className="text-[22px]" />
           </Link>
           <Link href="/" className="font-body text-sm text-muted transition hover:text-ivory">
             ← Начало

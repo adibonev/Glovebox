@@ -9,10 +9,12 @@ import {
   type ExpiryStatus,
   type MileageSource,
   type PassportLink,
+  type Vehicle,
   type VehiclePassport,
 } from "@glovebox/core";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/site";
 
 import { FUEL_TYPE_LABELS } from "./fuelType";
@@ -50,6 +52,24 @@ export async function passportByToken(token: string, today = calendarDay(new Dat
     ),
     link,
   };
+}
+
+/**
+ * The passport as a Passport Link would show it, for its owner to look at before publishing one.
+ * Read with the owner's own session: the caller has checked the Vehicle is theirs.
+ */
+export async function ownerPassport(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  vehicle: Vehicle,
+  includeCosts: boolean,
+  today = calendarDay(new Date()),
+): Promise<VehiclePassport> {
+  const [serviceRecords, renewals, mileageReadings] = await Promise.all([
+    new SupabaseServiceRecordRepository(supabase).listByVehicle(vehicle.id),
+    new SupabaseRenewalRepository(supabase).listByVehicle(vehicle.id),
+    new SupabaseMileageReadingRepository(supabase).listByVehicle(vehicle.id),
+  ]);
+  return vehiclePassport({ vehicle, serviceRecords, renewals, mileageReadings }, { today, includeCosts });
 }
 
 /** The address a Passport Link opens, and the one its QR code carries. */

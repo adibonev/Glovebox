@@ -1,92 +1,37 @@
-import { colors } from "@glovebox/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Text } from "react-native";
 
 import { PushSettings } from "@/components/PushSettings";
 import { ReminderSettings } from "@/components/ReminderSettings";
-import {
-  SERVICE_TYPE_LABELS,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  formatCost,
-  formatDateShort,
-  formatDaysRemaining,
-} from "@/lib/labels";
+import { Screen } from "@/components/Screen";
 import { useGarage } from "@/lib/useGarage";
 
-export default function RemindersTab() {
+/**
+ * When and how reminders come: notifications on this phone, and how many days before each kind
+ * of deadline. Reached from Профил, and as the last step of adding a car. What is due is on the
+ * dashboard, so it is not listed a second time here.
+ */
+export default function RemindersScreen() {
   const router = useRouter();
-  const { data, loading, refreshing, onRefresh } = useGarage();
+  const { data } = useGarage();
   // Arrived from a new car's setup (vehicle/setup): saving is its last step, and ends on the
   // dashboard with the car confirmed. The flag is cleared first, or every later save would too.
   const { setup } = useLocalSearchParams<{ setup?: string }>();
   const onSaved = () => {
-    onRefresh();
     if (setup !== "1") return;
     router.setParams({ setup: undefined });
     router.replace("/?added=1");
   };
 
-  // Everything not "Valid" — the obligations you'll be reminded about, soonest first.
-  const due = (data?.flat ?? []).filter((f) => f.status !== "Valid");
-
   return (
-    <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
-      <View className="px-5 pb-3 pt-2">
-        <Text className="text-2xl font-semibold text-ivory">Напомняния</Text>
-        {setup === "1" && (
-          <Text className="mt-1 text-sm text-silver">
-            Последна стъпка. Избери кога да ти напомняме и натисни „Запази“.
-          </Text>
-        )}
-      </View>
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.copper} />
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerClassName="px-5 pb-8"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.copper} />}
-        >
-          <PushSettings />
-          {data?.userId && <ReminderSettings userId={data.userId} onSaved={onSaved} />}
-
-          {due.length === 0 ? (
-            <View className="mt-12 items-center">
-              <Text className="text-center text-base text-muted">Няма наближаващи срокове.</Text>
-              <Text className="mt-1 text-center text-sm text-dim">Всичко е в сила.</Text>
-            </View>
-          ) : (
-            due.map((item) => (
-              <Pressable
-                key={item.record.id}
-                onPress={() => router.push(`/service/${item.record.id}`)}
-                className="mb-2.5 flex-row items-center gap-3 rounded-xl border border-white/10 bg-panel px-4 py-3"
-              >
-                <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] }} />
-                <View className="flex-1">
-                  <Text className="text-sm text-ivory">
-                    {SERVICE_TYPE_LABELS[item.record.serviceType] ?? item.record.serviceType}
-                  </Text>
-                  <Text className="text-xs text-dim">
-                    {item.vehicle.brand} {item.vehicle.model} · {formatDateShort(item.record.expiryDate)} ·{" "}
-                    {formatDaysRemaining(item.days)}
-                    {formatCost(item.record.cost) ? (
-                      <Text className="text-copper"> · {formatCost(item.record.cost)}</Text>
-                    ) : null}
-                  </Text>
-                </View>
-                <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[item.status] }}>
-                  {STATUS_LABELS[item.status]}
-                </Text>
-              </Pressable>
-            ))
-          )}
-        </ScrollView>
+    <Screen title="Напомняния">
+      {setup === "1" && (
+        <Text className="-mt-3 mb-5 text-sm leading-5 text-silver">
+          Последна стъпка. Избери кога да ти напомняме и натисни „Запази“.
+        </Text>
       )}
-    </SafeAreaView>
+      <PushSettings />
+      {data?.userId && <ReminderSettings userId={data.userId} onSaved={onSaved} />}
+    </Screen>
   );
 }

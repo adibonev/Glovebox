@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, type ScrollViewProps, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -15,7 +15,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * has nothing below it to scroll into, and without the padding it stops just short of clearing
  * the keyboard.
  */
-export function Screen({ title, children }: { title: string; children: ReactNode }) {
+export function Screen({
+  title,
+  tab = false,
+  refreshControl,
+  children,
+}: {
+  title: string;
+  /** A tab's own screen: no way back to show, and the title stays put like the other tabs'. */
+  tab?: boolean;
+  refreshControl?: ScrollViewProps["refreshControl"];
+  children: ReactNode;
+}) {
   const router = useRouter();
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
@@ -23,18 +34,25 @@ export function Screen({ title, children }: { title: string; children: ReactNode
         className="flex-1"
         behavior={Platform.OS === "android" ? "height" : undefined}
       >
-        <View className="px-5 pb-1 pt-2">
-          <Pressable onPress={() => router.back()} hitSlop={10}>
-            <Text className="text-base text-muted">← Назад</Text>
-          </Pressable>
-        </View>
+        {tab ? (
+          <View className="px-5 pb-3 pt-2">
+            <Text className="text-2xl font-semibold text-ivory">{title}</Text>
+          </View>
+        ) : (
+          <View className="px-5 pb-1 pt-2">
+            <Pressable onPress={() => router.back()} hitSlop={10}>
+              <Text className="text-base text-muted">← Назад</Text>
+            </Pressable>
+          </View>
+        )}
         <ScrollView
-          contentContainerClassName="px-5 pb-72"
+          contentContainerClassName={tab ? "px-5 pb-10" : "px-5 pb-72"}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           automaticallyAdjustKeyboardInsets
+          refreshControl={refreshControl}
         >
-          <Text className="mb-6 mt-3 text-2xl font-semibold text-ivory">{title}</Text>
+          {!tab && <Text className="mb-6 mt-3 text-2xl font-semibold text-ivory">{title}</Text>}
           {children}
         </ScrollView>
       </KeyboardAvoidingView>

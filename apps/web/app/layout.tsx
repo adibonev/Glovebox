@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { CookieConsent } from "@/components/CookieConsent";
 import { MetaPixel } from "@/components/MetaPixel";
 import { PostHogProvider } from "@/components/PostHogProvider";
+import { RecoveryRedirect } from "@/components/RecoveryRedirect";
 import { SITE_URL } from "@/lib/site";
 
 import "./globals.css";
@@ -40,7 +41,7 @@ const jetbrains = JetBrains_Mono({
 
 const siteUrl = SITE_URL;
 
-const title = "Glovebox — Следи сроковете на колата си";
+const title = "Glovebox · Следи сроковете на колата си";
 const description =
   "Гражданска отговорност, Каско, Винетка, Технически преглед и Данък МПС. Снимаш талона, а Glovebox ти напомня преди всеки срок.";
 
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
           <CookieConsent />
           <MetaPixel />
+          <RecoveryRedirect />
         </PostHogProvider>
       </body>
     </html>

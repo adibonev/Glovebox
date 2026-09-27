@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { AdminView } from "./AdminView";
 
-export const metadata = { title: "Glovebox — Админ" };
+export const metadata = { title: "Администрация · Glovebox" };
 
 export default async function AdminPage({
   searchParams,

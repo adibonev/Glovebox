@@ -13,5 +13,5 @@ export const MAX_DOCUMENT_LABEL = "4 MB";
 export function documentTooLargeMessage(file: { size: number } | null | undefined): string | null {
   if (!file || file.size <= MAX_DOCUMENT_BYTES) return null;
   const mb = (file.size / (1024 * 1024)).toFixed(1).replace(".", ",");
-  return `Файлът е ${mb} MB — максимумът е ${MAX_DOCUMENT_LABEL}. Намали го или го качи по-късно.`;
+  return `Файлът е ${mb} MB, а най-много може ${MAX_DOCUMENT_LABEL}. Намали го или го качи по-късно.`;
 }

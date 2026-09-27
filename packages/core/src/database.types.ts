@@ -383,6 +383,7 @@ export type Database = {
           car_id: number
           id: number
           previous_cost: number | null
+          previous_cost_date: string | null
           previous_expiry_date: string
           renewed_at: string
           service_id: number | null
@@ -393,6 +394,7 @@ export type Database = {
           car_id: number
           id?: number
           previous_cost?: number | null
+          previous_cost_date?: string | null
           previous_expiry_date: string
           renewed_at?: string
           service_id?: number | null
@@ -403,6 +405,7 @@ export type Database = {
           car_id?: number
           id?: number
           previous_cost?: number | null
+          previous_cost_date?: string | null
           previous_expiry_date?: string
           renewed_at?: string
           service_id?: number | null
@@ -482,19 +485,14 @@ export type Database = {
           car_id: number
           check_url: string | null
           cost: number | null
+          cost_date: string | null
           created_at: string | null
           expiry_date: string | null
-          file_url: string | null
-          fuel_type: string | null
           id: number
           last_check_source: string | null
           last_check_status: string | null
           last_checked_at: string | null
-          liters: number | null
-          mileage: number | null
           notes: string | null
-          price_per_liter: number | null
-          reminder_sent: boolean | null
           service_type: string
           updated_at: string | null
           user_id: number
@@ -503,19 +501,14 @@ export type Database = {
           car_id: number
           check_url?: string | null
           cost?: number | null
+          cost_date?: string | null
           created_at?: string | null
           expiry_date?: string | null
-          file_url?: string | null
-          fuel_type?: string | null
           id?: number
           last_check_source?: string | null
           last_check_status?: string | null
           last_checked_at?: string | null
-          liters?: number | null
-          mileage?: number | null
           notes?: string | null
-          price_per_liter?: number | null
-          reminder_sent?: boolean | null
           service_type: string
           updated_at?: string | null
           user_id: number
@@ -524,19 +517,14 @@ export type Database = {
           car_id?: number
           check_url?: string | null
           cost?: number | null
+          cost_date?: string | null
           created_at?: string | null
           expiry_date?: string | null
-          file_url?: string | null
-          fuel_type?: string | null
           id?: number
           last_check_source?: string | null
           last_check_status?: string | null
           last_checked_at?: string | null
-          liters?: number | null
-          mileage?: number | null
           notes?: string | null
-          price_per_liter?: number | null
-          reminder_sent?: boolean | null
           service_type?: string
           updated_at?: string | null
           user_id?: number

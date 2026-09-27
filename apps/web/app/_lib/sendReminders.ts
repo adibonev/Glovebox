@@ -40,7 +40,7 @@ function pushContent(stage: ReminderStage, lines: ReminderLine[]): { title: stri
       body:
         stage === "expired"
           ? `${subject} изтече. Поднови я и въведи новия срок.`
-          : `${subject} — ${formatDaysRemaining(first.daysUntilExpiry)}`,
+          : `${subject}: ${formatDaysRemaining(first.daysUntilExpiry)}`,
     };
   }
 
@@ -54,6 +54,37 @@ function pushContent(stage: ReminderStage, lines: ReminderLine[]): { title: stri
 }
 
 type AdminClient = ReturnType<typeof createAdminClient>;
+
+type UserRow = { id: number; email: string; reminder_settings: unknown; reminder_enabled: boolean | null };
+type CarRow = { id: number; user_id: number; brand: string; model: string };
+type ServiceRow = { id: number; car_id: number; user_id: number; service_type: string; expiry_date: string | null };
+type LogRow = {
+  car_id: number | null;
+  user_id: number | null;
+  service_type: string | null;
+  expiry_date: string | null;
+  stage: string | null;
+};
+type TokenRow = { user_id: number; token: string };
+type MemberRow = { car_id: number; user_id: number };
+
+const PAGE = 1000;
+
+/**
+ * All the rows a query matches, fetched `PAGE` at a time until a short page says there are no
+ * more. `page` must order the rows, or pages could overlap. Throws on the first failed page.
+ */
+export async function fetchAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await page(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...((data ?? []) as T[]));
+    if (!data || data.length < PAGE) return rows;
+  }
+}
 type Mailer = (message: EmailMessage) => Promise<SendResult>;
 
 export type ReminderJobResult = {
@@ -88,37 +119,64 @@ export async function runReminderJob(
     errors: [],
   };
 
-  const [usersRes, carsRes, servicesRes, logsRes, tokensRes, membersRes] = await Promise.all([
-    admin.from("users").select("id, email, reminder_settings, reminder_enabled"),
-    admin.from("cars").select("id, user_id, brand, model"),
-    admin
-      .from("services")
-      .select("id, car_id, user_id, service_type, expiry_date")
-      .not("expiry_date", "is", null),
-    admin.from("service_logs").select("car_id, user_id, service_type, expiry_date, stage"),
-    admin.from("push_tokens").select("user_id, token"),
-    // Missing until the sharing migration is applied: then every car simply has its owner alone.
-    admin.from("vehicle_members").select("car_id, user_id"),
-  ]);
+  // Every row, a page at a time: PostgREST hands back at most 1000 per request, and a log cut
+  // short at 1000 would have sent the same reminder again.
+  let users: UserRow[];
+  let cars: CarRow[];
+  let services: ServiceRow[];
+  let logs: LogRow[];
+  let tokens: TokenRow[];
+  try {
+    [users, cars, services, tokens] = await Promise.all([
+      fetchAll<UserRow>((from, to) =>
+        admin.from("users").select("id, email, reminder_settings, reminder_enabled").order("id").range(from, to),
+      ),
+      fetchAll<CarRow>((from, to) => admin.from("cars").select("id, user_id, brand, model").order("id").range(from, to)),
+      fetchAll<ServiceRow>((from, to) =>
+        admin
+          .from("services")
+          .select("id, car_id, user_id, service_type, expiry_date")
+          .not("expiry_date", "is", null)
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAll<TokenRow>((from, to) => admin.from("push_tokens").select("user_id, token").order("id").range(from, to)),
+    ]);
+    // Only logs that can match a current Service Record: the key includes its Expiry Date, and
+    // none is earlier than the earliest one on record now.
+    const earliest = services.reduce<string | null>(
+      (min, s) => (s.expiry_date && (min === null || s.expiry_date < min) ? s.expiry_date : min),
+      null,
+    );
+    logs =
+      earliest === null
+        ? []
+        : await fetchAll<LogRow>((from, to) =>
+            admin
+              .from("service_logs")
+              .select("car_id, user_id, service_type, expiry_date, stage")
+              .gte("expiry_date", earliest)
+              .order("id")
+              .range(from, to),
+          );
+  } catch (error) {
+    // Without the full log every reminder already sent would go out again: better none today.
+    result.errors.push(`load failed: ${error instanceof Error ? error.message : String(error)}`);
+    return result;
+  }
+  // Missing until the sharing migration is applied: then every car simply has its owner alone.
+  const members = await fetchAll<MemberRow>((from, to) =>
+    admin.from("vehicle_members").select("car_id, user_id").order("car_id").order("user_id").range(from, to),
+  ).catch(() => [] as MemberRow[]);
 
   // Expo push tokens grouped per User (push goes to any app device that registered one).
   const tokensByUser = new Map<number, string[]>();
-  for (const t of tokensRes.data ?? []) {
+  for (const t of tokens) {
     const list = tokensByUser.get(t.user_id) ?? [];
     list.push(t.token);
     tokensByUser.set(t.user_id, list);
   }
   const pushMessages: ExpoPushMessage[] = [];
-
-  if (usersRes.error || carsRes.error || servicesRes.error) {
-    result.errors.push(
-      `load failed: ${usersRes.error?.message ?? carsRes.error?.message ?? servicesRes.error?.message}`,
-    );
-    return result;
-  }
-  const users = usersRes.data ?? [];
-  const cars = carsRes.data ?? [];
-  const services = servicesRes.data ?? [];
 
   const carName = new Map<number, string>();
   // Who hears about a car: its owner, then everyone it is shared with.
@@ -127,7 +185,7 @@ export async function runReminderJob(
     carName.set(c.id, `${c.brand} ${c.model}`);
     recipients.set(c.id, [c.user_id]);
   }
-  for (const m of membersRes.error ? [] : (membersRes.data ?? [])) {
+  for (const m of members) {
     recipients.get(m.car_id)?.push(m.user_id);
   }
 
@@ -137,7 +195,7 @@ export async function runReminderJob(
   const key = (userId: number, carId: number, serviceType: string, expiry: string, stage: string) =>
     `${userId}|${carId}|${serviceType}|${expiry}|${stage}`;
   const alreadySent = new Set<string>();
-  for (const log of logsRes.data ?? []) {
+  for (const log of logs) {
     if (log.car_id == null || !log.service_type || !log.expiry_date) continue;
     // Old rows may lack the person; those were always the owner's.
     const userId = log.user_id ?? recipients.get(log.car_id)?.[0];
@@ -197,6 +255,7 @@ export async function runReminderJob(
           vehicleName: carName.get(row.car_id) ?? "—",
           expiryDate: reminder.expiryDate,
           daysUntilExpiry: reminder.daysUntilExpiry,
+          serviceRecordId: reminder.serviceRecordId,
         },
         carId: row.car_id,
         expiry: row.expiry_date,

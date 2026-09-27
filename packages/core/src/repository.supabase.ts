@@ -85,7 +85,8 @@ function vehicleFromRow(
 }
 
 function serviceRecordFromRow(
-  row: Pick<ServiceRow, "id" | "car_id" | "service_type" | "expiry_date" | "cost">,
+  row: Pick<ServiceRow, "id" | "car_id" | "service_type" | "expiry_date" | "cost"> &
+    Partial<Pick<ServiceRow, "notes" | "cost_date">>,
 ): ServiceRecord {
   if (row.expiry_date === null) {
     throw new Error(`service ${row.id} has no expiry_date; not a ServiceRecord`);
@@ -96,6 +97,8 @@ function serviceRecordFromRow(
     serviceType: row.service_type,
     expiryDate: new Date(row.expiry_date),
     cost: row.cost,
+    notes: row.notes ?? null,
+    costDate: row.cost_date ? new Date(row.cost_date) : null,
   };
 }
 
@@ -237,7 +240,9 @@ export class SupabaseVehicleRepository implements VehicleRepository {
   }
 }
 
-const SERVICE_COLUMNS = "id, car_id, service_type, expiry_date, cost";
+// Every column: `cost_date` arrives with a migration, and naming it here would break every read
+// on a database that has not had it yet. Absent, it simply maps to null.
+const SERVICE_COLUMNS = "*";
 
 export class SupabaseServiceRecordRepository implements ServiceRecordRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
@@ -281,6 +286,7 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
         service_type: input.serviceType,
         expiry_date: toISODate(input.expiryDate),
         cost: input.cost ?? null,
+        notes: input.notes ?? null,
       })
       .select(SERVICE_COLUMNS)
       .single();
@@ -293,6 +299,7 @@ export class SupabaseServiceRecordRepository implements ServiceRecordRepository 
     if (changes.serviceType !== undefined) patch.service_type = changes.serviceType;
     if (changes.expiryDate !== undefined) patch.expiry_date = toISODate(changes.expiryDate);
     if (changes.cost !== undefined) patch.cost = changes.cost;
+    if (changes.notes !== undefined) patch.notes = changes.notes;
 
     // Ownership is enforced by RLS (update services only for the User's own cars).
     const { data, error } = await this.client
@@ -472,13 +479,15 @@ export class SupabaseMileageReadingRepository implements MileageReadingRepositor
 
 type RenewalRow = Database["public"]["Tables"]["renewals"]["Row"];
 
-const RENEWAL_COLUMNS = "id, car_id, service_type, previous_expiry_date, previous_cost, renewed_at";
+// Every column, for the same reason as SERVICE_COLUMNS: `previous_cost_date` comes with a migration.
+const RENEWAL_COLUMNS = "*";
 
 function renewalFromRow(
   row: Pick<
     RenewalRow,
     "id" | "car_id" | "service_type" | "previous_expiry_date" | "previous_cost" | "renewed_at"
-  >,
+  > &
+    Partial<Pick<RenewalRow, "previous_cost_date">>,
 ): Renewal {
   return {
     id: String(row.id),
@@ -486,6 +495,7 @@ function renewalFromRow(
     serviceType: row.service_type,
     previousExpiryDate: new Date(row.previous_expiry_date),
     previousCost: row.previous_cost,
+    previousCostDate: row.previous_cost_date ? new Date(row.previous_cost_date) : null,
     renewedAt: new Date(row.renewed_at),
   };
 }

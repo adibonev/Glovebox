@@ -46,7 +46,7 @@ export function VehicleSwitcher({
         className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-white/20 px-3.5 py-1.5 font-body text-[13px] font-medium text-muted transition hover:border-copper/50 hover:text-copper"
       >
         <span aria-hidden>+</span>
-        Нова кола
+        Добави кола
       </Link>
     </div>
   );

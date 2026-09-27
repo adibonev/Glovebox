@@ -48,10 +48,10 @@ export function Pricing() {
           <p className="mt-3 font-brand text-[40px] font-semibold leading-none text-ivory">0 €</p>
           <p className="mt-1.5 font-body text-[13px] text-dim">завинаги</p>
           <ul className="mt-5 flex flex-1 flex-col gap-2.5">
-            <Check>1 автомобил</Check>
-            <Check>До 2 услуги</Check>
+            <Check>1 кола</Check>
+            <Check>До 2 срока</Check>
             <Check>Статуси и имейл напомняния</Check>
-            <Check>Документи към услугите</Check>
+            <Check>Документи към сроковете</Check>
             <Check>PDF експорт</Check>
           </ul>
           <Link
@@ -77,8 +77,8 @@ export function Pricing() {
             {annual ? "Около 2 месеца безплатно спрямо месечния." : "Или 24.99 € на година."}
           </p>
           <ul className="mt-5 flex flex-1 flex-col gap-2.5">
-            <Check>Неограничено автомобили</Check>
-            <Check>Неограничено услуги</Check>
+            <Check>Колкото искаш коли</Check>
+            <Check>Колкото искаш срокове</Check>
             <Check>Push и имейл напомняния</Check>
             <Check>Свой срок за напомняне, от 7 до 90 дни</Check>
             <Check>Споделяне със семейството (скоро)</Check>

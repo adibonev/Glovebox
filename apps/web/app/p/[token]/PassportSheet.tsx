@@ -16,8 +16,11 @@ import {
   vehicleFacts,
 } from "../../_lib/passport";
 
-/** The passport on paper: what a Passport Link opens. */
-export function PassportSheet({ passport, pdfHref }: { passport: VehiclePassport; pdfHref: string }) {
+/**
+ * The passport on paper: what a Passport Link opens, and what the owner previews before making
+ * one (`pdfHref` null: there is no link yet, so no PDF to download either).
+ */
+export function PassportSheet({ passport, pdfHref }: { passport: VehiclePassport; pdfHref: string | null }) {
   const { vehicle, obligations, mileage, expenses, totalCost } = passport;
   const facts = vehicleFacts(vehicle);
 
@@ -34,7 +37,7 @@ export function PassportSheet({ passport, pdfHref }: { passport: VehiclePassport
             </span>
           </Link>
           <p className="font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-paper-copper">
-            Паспорт на автомобила
+            Паспорт на колата
           </p>
         </header>
 
@@ -157,12 +160,14 @@ export function PassportSheet({ passport, pdfHref }: { passport: VehiclePassport
         <footer className="mt-10 border-t border-paper-rule pt-5">
           <p className="font-body text-[13px] leading-relaxed text-paper-muted">{PASSPORT_FOOTNOTE}</p>
           <p className="mt-2 font-mono text-[12px] text-paper-muted">Към {passportDate(passport.generatedOn)}</p>
-          <a
-            href={pdfHref}
-            className="mt-5 inline-block rounded-lg bg-emerald px-5 py-2.5 font-body text-[15px] font-semibold text-ivory transition hover:bg-emerald/90"
-          >
-            Свали като PDF
-          </a>
+          {pdfHref && (
+            <a
+              href={pdfHref}
+              className="mt-5 inline-block rounded-lg bg-emerald px-5 py-2.5 font-body text-[15px] font-semibold text-ivory transition hover:bg-emerald/90"
+            >
+              Свали като PDF
+            </a>
+          )}
         </footer>
       </article>
 

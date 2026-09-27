@@ -4,9 +4,6 @@ import { FirstRegistrationField } from "./FirstRegistrationField";
 import { FuelTypePicker } from "./FuelTypePicker";
 import { VehicleIdentityFields } from "./VehicleIdentityFields";
 
-const fieldClass =
-  "rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60";
-
 /** Empty state: create the user's first Vehicle. */
 export function AddVehicleForm() {
   return (
@@ -17,16 +14,7 @@ export function AddVehicleForm() {
       <p className="font-body text-silver/70">
         Добави колата си, за да започнеш да следиш сроковете.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <VehicleIdentityFields />
-        <input name="plate" placeholder="Рег. номер" className={fieldClass} />
-      </div>
-      <input
-        name="vin"
-        maxLength={17}
-        placeholder="VIN / рама (по избор)"
-        className={`${fieldClass} uppercase placeholder:normal-case`}
-      />
+      <VehicleIdentityFields />
       <FirstRegistrationField />
       <BodyTypePicker />
       <FuelTypePicker />

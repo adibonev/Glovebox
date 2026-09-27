@@ -6,6 +6,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,7 +19,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Wordmark } from "@/components/Wordmark";
 import { SITE_URL } from "@/lib/config";
 import { rememberInviteCode } from "@/lib/invite";
+import { authErrorMessage } from "@/lib/labels";
+import { reportProblem } from "@/lib/monitoring";
 import { signInWithApple, signInWithProvider } from "@/lib/oauth";
+import { requestPasswordReset } from "@/lib/passwordReset";
 import { supabase } from "@/lib/supabase";
 
 type Mode = "signin" | "signup";
@@ -88,10 +92,42 @@ export default function LoginScreen() {
         setMode("signin");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Възникна грешка. Опитай пак.");
+      // Supabase answers in English ("Invalid login credentials"); say it in Bulgarian.
+      setError(authErrorMessage(e));
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * "Забравена парола?": an e-mail with a link to the website's /auth/reset. Uses the address
+   * already in the field, and asks first, so a stray tap sends nothing.
+   */
+  const forgotPassword = () => {
+    setError(null);
+    setNotice(null);
+    const address = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+      setError("Напиши имейла си в полето отгоре и натисни пак „Забравена парола?“.");
+      return;
+    }
+    Alert.alert("Нова парола", `Да пратим ли линк за нова парола на ${address}?`, [
+      { text: "Отказ", style: "cancel" },
+      {
+        text: "Прати",
+        onPress: async () => {
+          setLoading(true);
+          const failure = await requestPasswordReset(address).catch((e: unknown) => e);
+          setLoading(false);
+          if (failure) setError(authErrorMessage(failure));
+          else {
+            setNotice(
+              `Ако има профил с ${address}, до минута ще получиш писмо. Отвори линка, сложи нова парола и влез тук с нея.`,
+            );
+          }
+        },
+      },
+    ]);
   };
 
   const continueWithGoogle = async () => {
@@ -103,7 +139,8 @@ export default function LoginScreen() {
       await signInWithProvider("google");
       // On success the auth gate routes into the app.
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Възникна грешка при входа с Google.");
+      reportProblem(`google sign-in failed: ${e instanceof Error ? e.message : String(e)}`);
+      setError("Входът с Google не успя. Опитай пак.");
     } finally {
       setLoading(false);
     }
@@ -118,7 +155,8 @@ export default function LoginScreen() {
       await signInWithApple();
       // On success the auth gate routes into the app.
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Възникна грешка при входа с Apple.");
+      reportProblem(`apple sign-in failed: ${e instanceof Error ? e.message : String(e)}`);
+      setError("Входът с Apple не успя. Опитай пак.");
     } finally {
       setLoading(false);
     }
@@ -182,6 +220,11 @@ export default function LoginScreen() {
               secureTextEntry
               className="rounded-xl border border-white/10 bg-panel px-4 py-3.5 text-base text-ivory"
             />
+            {mode === "signin" && (
+              <Pressable onPress={forgotPassword} disabled={loading} hitSlop={8} className="self-end py-1">
+                <Text className="text-sm text-copper">Забравена парола?</Text>
+              </Pressable>
+            )}
             {mode === "signup" && (
               <TextInput
                 value={inviteCode}

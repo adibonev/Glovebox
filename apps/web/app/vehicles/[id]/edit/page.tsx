@@ -9,9 +9,10 @@ import {
 import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
+import { DeleteVehicleButton } from "../../_components/DeleteVehicleButton";
 import { EditVehicleForm } from "../../_components/EditVehicleForm";
 
-export const metadata = { title: "Glovebox — Редакция на автомобил" };
+export const metadata = { title: "Редакция на кола · Glovebox" };
 
 export default async function EditVehiclePage({
   params,
@@ -35,9 +36,9 @@ export default async function EditVehiclePage({
 
   return (
     <Shell email={authUser.email ?? ""}>
-      <section className="anim-up anim-d1 mx-auto mt-2 max-w-xl">
+      <section className="mx-auto mt-2 max-w-xl">
         <Link href="/vehicles" className="font-body text-sm text-muted transition hover:text-ivory">
-          ← Назад към гаража
+          ← Коли
         </Link>
         <h1 className="mb-6 mt-4 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           {vehicle.brand} {vehicle.model}
@@ -55,6 +56,12 @@ export default async function EditVehiclePage({
             firstRegistration: vehicle.firstRegistration?.toISOString().slice(0, 10) ?? null,
           }}
         />
+        {/* Only the owner deletes a car: a Vehicle Member sees it, but it is not theirs to remove. */}
+        {vehicle.userId === user.id && (
+          <div className="mt-8 flex justify-end">
+            <DeleteVehicleButton id={vehicle.id} name={`${vehicle.brand} ${vehicle.model}`} />
+          </div>
+        )}
       </section>
     </Shell>
   );

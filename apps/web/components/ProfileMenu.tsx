@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { signOut } from "@/app/login/actions";
 
-/** Avatar that opens a small menu (account settings + sign out) instead of signing out on click. */
+/** Avatar that opens a small menu (profile, admin, sign out) instead of signing out on click. */
 export function ProfileMenu({ email, isAdmin = false }: { email: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -54,16 +54,15 @@ export function ProfileMenu({ email, isAdmin = false }: { email: string; isAdmin
             onClick={() => setOpen(false)}
             className="block px-4 py-2.5 font-body text-sm text-silver transition hover:bg-white/[0.05] hover:text-ivory"
           >
-            Настройки на акаунта
+            Профил и настройки
           </Link>
           {isAdmin && (
             <Link
               href="/admin"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-4 py-2.5 font-body text-sm text-copper transition hover:bg-copper/10"
+              className="block px-4 py-2.5 font-body text-sm text-copper transition hover:bg-copper/10"
             >
-              <span aria-hidden>♛</span>
               Админ панел
             </Link>
           )}
@@ -71,7 +70,7 @@ export function ProfileMenu({ email, isAdmin = false }: { email: string; isAdmin
             <button
               type="submit"
               role="menuitem"
-              className="w-full px-4 py-2.5 text-left font-body text-sm text-silver transition hover:bg-status-expired/10 hover:text-status-expired"
+              className="w-full px-4 py-2.5 text-left font-body text-sm text-silver transition hover:bg-white/[0.05] hover:text-ivory"
             >
               Изход
             </button>

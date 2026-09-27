@@ -1,3 +1,5 @@
+import { SITE_URL } from "@/lib/site";
+
 import { SERVICE_TYPE_LABELS, formatDate, formatDaysRemaining } from "./labels";
 
 export type EmailMessage = { to: string; subject: string; html: string };
@@ -9,6 +11,8 @@ export type ReminderLine = {
   vehicleName: string;
   expiryDate: Date;
   daysUntilExpiry: number;
+  /** Its page on the website, where it is renewed. */
+  serviceRecordId?: string;
 };
 
 /**
@@ -39,16 +43,23 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
 export function renderReminderEmail(lines: ReminderLine[]): { subject: string; html: string } {
   const subject =
     lines.length === 1
-      ? "Glovebox · наближаващ срок за автомобила ти"
+      ? "Glovebox · наближаващ срок за колата ти"
       : `Glovebox · ${lines.length} наближаващи срока`;
+
+  // One deadline: its own page, where it is renewed. Several: the dashboard.
+  const only = lines.length === 1 ? lines[0] : undefined;
+  const openUrl = only?.serviceRecordId ? `${SITE_URL}/services/${only.serviceRecordId}` : `${SITE_URL}/`;
 
   const rows = lines
     .map((line) => {
       const label = SERVICE_TYPE_LABELS[line.serviceType] ?? line.serviceType;
+      const name = line.serviceRecordId
+        ? `<a href="${SITE_URL}/services/${line.serviceRecordId}" style="color:#F4F1EA;text-decoration:none;">${escapeHtml(label)}</a>`
+        : escapeHtml(label);
       return `
         <tr>
           <td style="padding:14px 16px;border-bottom:1px solid #18241d;">
-            <div style="font:600 16px Georgia,serif;color:#F4F1EA;">${escapeHtml(label)}</div>
+            <div style="font:600 16px Georgia,serif;color:#F4F1EA;">${name}</div>
             <div style="font:13px Arial,sans-serif;color:#9AA79C;margin-top:2px;">${escapeHtml(line.vehicleName)}</div>
           </td>
           <td style="padding:14px 16px;border-bottom:1px solid #18241d;text-align:right;">
@@ -68,12 +79,16 @@ export function renderReminderEmail(lines: ReminderLine[]): { subject: string; h
       <tr><td style="background:#0C1813;border:1px solid #18241d;border-radius:18px;overflow:hidden;">
         <div style="padding:20px 16px 8px;">
           <div style="font:600 18px Georgia,serif;color:#F4F1EA;">Наближават срокове</div>
-          <div style="font:13px Arial,sans-serif;color:#9AA79C;margin-top:4px;">Подсещаме те преди да изтекат — обнови ги навреме.</div>
+          <div style="font:13px Arial,sans-serif;color:#9AA79C;margin-top:4px;">Подсещаме те, преди да изтекат. Като ги подновиш, въведи новите дати.</div>
         </div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+        <div style="padding:18px 16px 20px;">
+          <a href="${openUrl}" style="display:inline-block;background:#14503A;color:#F4F1EA;text-decoration:none;padding:12px 22px;border-radius:10px;font:600 15px Arial,sans-serif;">Отвори в Glovebox</a>
+        </div>
       </td></tr>
       <tr><td style="padding:16px 6px;font:12px Arial,sans-serif;color:#69736A;">
-        Получаваш това, защото имейл напомнянията са включени в Glovebox. Можеш да ги изключиш от Напомняния.
+        Получаваш това, защото имейл напомнянията са включени в Glovebox. Изключваш ги от
+        <a href="${SITE_URL}/reminders" style="color:#69736A;">Профил, Напомняния</a>.
       </td></tr>
     </table>
   </div>`;

@@ -20,6 +20,8 @@ import {
 } from "@/lib/bodyType";
 import { hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
 import { useAuth } from "@/lib/auth";
+import { DELETE_FAILED, deleteVehicle } from "@/lib/erasure";
+import { dataChanged } from "@/lib/freshness";
 import { earliestFirstRegistration, firstRegistrationError } from "@/lib/firstRegistration";
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { supabase } from "@/lib/supabase";
@@ -99,25 +101,26 @@ export default function EditVehicleScreen() {
         fuelType,
         firstRegistration,
       });
+      dataChanged();
       router.back();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Грешка при запис.");
+    } catch {
+      setError("Промените не са записани. Провери връзката и опитай пак.");
       setSaving(false);
     }
   };
 
   const confirmDelete = () => {
-    Alert.alert("Изтриване на автомобил", "Това ще изтрие и всички негови услуги. Сигурен ли си?", [
+    Alert.alert(`Да изтрия ли ${brand} ${model}?`, "Изтриват се и всичките ѝ срокове и документи.", [
       { text: "Отказ", style: "cancel" },
       {
         text: "Изтрий",
         style: "destructive",
         onPress: async () => {
           try {
-            await vehicleRepo.delete(id);
+            await deleteVehicle(id);
             router.back();
-          } catch (e) {
-            setError(e instanceof Error ? e.message : "Грешка при изтриване.");
+          } catch {
+            setError(DELETE_FAILED);
           }
         },
       },
@@ -135,7 +138,7 @@ export default function EditVehicleScreen() {
   }
 
   return (
-    <Screen title="Редакция на автомобил">
+    <Screen title="Редакция на кола">
       <SelectField
         label="Марка"
         value={brand}
@@ -160,9 +163,9 @@ export default function EditVehicleScreen() {
         placeholder="Избери година"
       />
       <Field label="Регистрационен номер" value={plate} onChangeText={setPlate} autoCapitalize="characters" />
-      <Field label="VIN / рама (по избор)" value={vin} onChangeText={setVin} autoCapitalize="characters" maxLength={17} />
+      <Field label="Рама (VIN) · по избор" value={vin} onChangeText={setVin} autoCapitalize="characters" maxLength={17} />
       <OptionalDateField
-        label="Дата на първа регистрация (по избор)"
+        label="Дата на първа регистрация · по избор"
         hint="Поле (B) на талона. С нея знаем кога е прегледът на кола под пет години."
         value={firstRegistration}
         onChange={setFirstRegistration}
@@ -177,7 +180,7 @@ export default function EditVehicleScreen() {
       />
       {error && <Text className="mb-2 text-sm text-status-expired">{error}</Text>}
       <PrimaryButton label="Запази" onPress={save} loading={saving} disabled={!brand.trim() || !model.trim()} />
-      {mine && <DangerButton label="Изтрий автомобила" onPress={confirmDelete} />}
+      {mine && <DangerButton label="Изтрий колата" onPress={confirmDelete} />}
     </Screen>
   );
 }

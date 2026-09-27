@@ -7,18 +7,18 @@ import { createClient } from "@/lib/supabase/server";
 
 import { startProCheckout } from "../_lib/actions";
 
-export const metadata = { title: "Glovebox — Надгради към Pro" };
+export const metadata = { title: "Надгради към Pro · Glovebox" };
 
 const REASONS: Record<string, string> = {
-  vehicle: "Достигна лимита на безплатния план — 1 автомобил.",
-  service: "Достигна лимита на безплатния план — 2 услуги.",
+  vehicle: "Безплатният план е за 1 кола.",
+  service: "Безплатният план е до 2 срока на кола.",
 };
 
 const PRO_FEATURES = [
-  "Неограничено автомобили",
-  "Неограничено услуги",
-  "Push + имейл напомняния",
-  "Персонализирани срокове (7–90 дни)",
+  "Колкото искаш коли",
+  "Колкото искаш срокове",
+  "Известия на телефона и имейл",
+  "Напомняне от 7 до 90 дни преди срока",
   "Споделяне със семейството (скоро)",
 ];
 
@@ -37,14 +37,14 @@ export default async function PaywallPage({
 
   return (
     <Shell email={user.email ?? ""}>
-      <section className="anim-up anim-d1 mx-auto mt-4 max-w-xl text-center">
+      <section className="mx-auto mt-4 max-w-xl text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-copper">Glovebox Pro</p>
         <h1 className="mt-3 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Време е за повече
         </h1>
         <p className="mt-3 font-body text-muted">
-          {(reason && REASONS[reason]) ?? "Надгради към Pro за пълните възможности."} Pro дава
-          неограничено и още — с 14 дни безплатно.
+          {(reason && REASONS[reason]) ?? "Надгради към Pro за пълните възможности."} Pro няма
+          ограничения, а първите 14 дни са безплатни.
         </p>
 
         <ul className="mx-auto mt-7 flex max-w-sm flex-col gap-2.5 text-left">
@@ -60,7 +60,7 @@ export default async function PaywallPage({
 
         {error === "soon" && (
           <p className="mt-6 font-body text-sm text-status-expiring">
-            Плащанията се финализират — съвсем скоро. 🛠️
+            Плащанията още не са пуснати. Съвсем скоро.
           </p>
         )}
         {error === "checkout" && (

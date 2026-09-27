@@ -106,7 +106,7 @@ export default function ShareScreen() {
           onPress: async () => {
             try {
               await sharing.remove(vehicle.id, person.userId);
-              if (leaving) router.replace("/(tabs)/vehicles");
+              if (leaving) router.replace("/vehicles");
               else await load();
             } catch {
               setError("Не се получи. Опитай пак.");

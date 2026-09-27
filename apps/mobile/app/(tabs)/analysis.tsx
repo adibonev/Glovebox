@@ -60,7 +60,7 @@ export default function AnalysisScreen() {
 
   if (loading) {
     return (
-      <Screen title="Анализ">
+      <Screen title="Анализ" tab>
         <View className="mt-12 items-center">
           <ActivityIndicator color={colors.copper} />
         </View>
@@ -69,7 +69,7 @@ export default function AnalysisScreen() {
   }
   if (error) {
     return (
-      <Screen title="Анализ">
+      <Screen title="Анализ" tab>
         <View className="rounded-xl border border-status-expired/40 bg-panel p-4">
           <Text className="text-sm text-status-expired">{error}</Text>
         </View>
@@ -78,11 +78,11 @@ export default function AnalysisScreen() {
   }
   if (records.length === 0 && readings.length === 0) {
     return (
-      <Screen title="Анализ">
+      <Screen title="Анализ" tab>
         <View className="mt-10 items-center">
           <Text className="text-center text-base text-muted">Още нямаш записани разходи.</Text>
           <Text className="mt-1 text-center text-sm text-dim">
-            Добави цена към услугите, за да видиш анализа.
+            Добави цена към сроковете си, за да видиш анализа.
           </Text>
         </View>
       </Screen>
@@ -141,7 +141,7 @@ export default function AnalysisScreen() {
     .filter((v) => v.readings.length > 0);
 
   return (
-    <Screen title="Анализ">
+    <Screen title="Анализ" tab>
       <FilterChips
         label="Кола"
         value={car}
@@ -172,7 +172,7 @@ export default function AnalysisScreen() {
         <View className="mt-6 items-center">
           <Text className="text-center text-base text-muted">Още нямаш записани разходи.</Text>
           <Text className="mt-1 text-center text-sm text-dim">
-            Добави цена към услугите, за да видиш анализа.
+            Добави цена към сроковете си, за да видиш анализа.
           </Text>
         </View>
       ) : filtered.length === 0 ? (
@@ -196,7 +196,7 @@ export default function AnalysisScreen() {
           </View>
 
           <View className="mt-5 rounded-2xl border border-white/10 bg-panel p-4">
-            <Text className="mb-1 text-sm text-muted">{groupByCar ? "По автомобил" : "По вид услуга"}</Text>
+            <Text className="mb-1 text-sm text-muted">{groupByCar ? "По кола" : "По вид"}</Text>
             {pie.map((s) => (
               <View key={s.key} className="flex-row items-center justify-between border-t border-white/[0.06] py-3">
                 <View className="flex-1 flex-row items-center gap-2.5">
@@ -254,7 +254,7 @@ function MileagePerYear({
             {row.driven.length === 0 ? (
               <Text className="text-sm leading-5 text-silver">
                 {latest ? `${formatKm(latest.km)} към ${fmtDate(latest.readOn.getTime())}. ` : ""}
-                Снимай и талона от следващия преглед — тогава ще видиш колко си изминал за година.
+                Снимай и талона от следващия преглед. Тогава ще видиш колко си изминал за година.
               </Text>
             ) : (
               row.driven.map((stretch) => (

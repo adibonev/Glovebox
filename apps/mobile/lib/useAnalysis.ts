@@ -1,19 +1,23 @@
 import {
   SupabaseMileageReadingRepository,
+  SupabaseRenewalRepository,
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   SupabaseVehicleRepository,
+  spendingOf,
 } from "@glovebox/core";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 
 import { useAuth } from "./auth";
+import { reportProblem } from "./monitoring";
 import { supabase } from "./supabase";
 
 const userRepo = new SupabaseUserRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 const mileageRepo = new SupabaseMileageReadingRepository(supabase);
+const renewalRepo = new SupabaseRenewalRepository(supabase);
 
 export type AnalysisVehicle = { id: string; name: string };
 export type AnalysisRecord = { vehicleId: string; serviceType: string; cost: number; ts: number };
@@ -44,20 +48,24 @@ export function useAnalysis() {
         mileageRepo.listByUser(user.id).catch(() => []),
       ]);
 
+      // What renewals replaced counts too, each period on the day it was paid (core `spendingOf`).
+      const renewals = (
+        await Promise.all(vs.map((v) => renewalRepo.listByVehicle(v.id).catch(() => [])))
+      ).flat();
+
       setVehicles(vs.map((v) => ({ id: v.id, name: `${v.brand} ${v.model}` })));
       setRecords(
-        services
-          .filter((s) => s.cost != null && s.cost > 0)
-          .map((s) => ({
-            vehicleId: s.vehicleId,
-            serviceType: s.serviceType,
-            cost: s.cost as number,
-            ts: s.expiryDate.getTime(),
-          })),
+        spendingOf(services, renewals).map((spend) => ({
+          vehicleId: spend.vehicleId,
+          serviceType: spend.serviceType,
+          cost: spend.cost,
+          ts: spend.paidOn.getTime(),
+        })),
       );
       setReadings(mileage.map((r) => ({ vehicleId: r.vehicleId, km: r.km, readOn: r.readOn })));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Грешка при зареждане на анализа.");
+      reportProblem(`analysis load failed: ${e instanceof Error ? e.message : String(e)}`);
+      setError("Анализът не се зареди. Дръпни надолу, за да опиташ пак.");
     }
   }, [session]);
 

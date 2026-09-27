@@ -112,6 +112,7 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
       serviceType: input.serviceType,
       expiryDate: input.expiryDate,
       cost: input.cost ?? null,
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
     };
     this.serviceRecords.push(record);
     return record;
@@ -123,6 +124,7 @@ export class InMemoryServiceRecordRepository implements ServiceRecordRepository 
     if (changes.serviceType !== undefined) record.serviceType = changes.serviceType;
     if (changes.expiryDate !== undefined) record.expiryDate = changes.expiryDate;
     if (changes.cost !== undefined) record.cost = changes.cost;
+    if (changes.notes !== undefined) record.notes = changes.notes;
     return record;
   }
 

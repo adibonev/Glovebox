@@ -9,9 +9,6 @@ import { FuelTypePicker } from "../../_components/FuelTypePicker";
 import { VehicleIdentityFields } from "../../_components/VehicleIdentityFields";
 import { parseBodyType } from "../../_lib/bodyType";
 
-const fieldClass =
-  "rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60";
-
 export type EditableVehicle = {
   id: string;
   brand: string;
@@ -33,21 +30,12 @@ export function EditVehicleForm({ vehicle }: { vehicle: EditableVehicle }) {
       className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-8 backdrop-blur-md"
     >
       <input type="hidden" name="id" value={vehicle.id} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <VehicleIdentityFields brand={vehicle.brand} model={vehicle.model} year={vehicle.year} />
-        <input
-          name="plate"
-          defaultValue={vehicle.plate ?? ""}
-          placeholder="Рег. номер"
-          className={fieldClass}
-        />
-      </div>
-      <input
-        name="vin"
-        maxLength={17}
-        defaultValue={vehicle.vin ?? ""}
-        placeholder="VIN / рама (по избор)"
-        className={`${fieldClass} uppercase placeholder:normal-case`}
+      <VehicleIdentityFields
+        brand={vehicle.brand}
+        model={vehicle.model}
+        year={vehicle.year}
+        plate={vehicle.plate}
+        vin={vehicle.vin}
       />
       <FirstRegistrationField value={vehicle.firstRegistration} />
       <BodyTypePicker value={parseBodyType(vehicle.bodyType)} />

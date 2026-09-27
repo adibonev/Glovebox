@@ -9,7 +9,7 @@ import { InspectionCertificate } from "./landing/InspectionCertificate";
 import { Pricing } from "./landing/Pricing";
 import { PlateBadge } from "./PlateBadge";
 import { StoreBadge } from "./StoreBadge";
-import { Wheel } from "./Wheel";
+import { Wordmark } from "./Wordmark";
 
 // A static sample so the hero previews the real product (the same GaugePanel the app uses).
 const SAMPLE_GAUGE = {
@@ -64,14 +64,7 @@ export function Landing() {
 
       <div className="mx-auto w-full max-w-[1180px] px-5 sm:px-6">
         <header className="flex items-center justify-between py-6">
-          <span className="flex items-baseline font-brand text-[25px] font-semibold leading-none tracking-tight">
-            <span className="text-ivory">Glove</span>
-            <span className="flex items-baseline text-copper">
-              b
-              <Wheel style={{ width: "0.82em", height: "0.82em", transform: "translateY(0.08em)", margin: "0 0.01em" }} />
-              x
-            </span>
-          </span>
+          <Wordmark />
           <nav className="flex items-center gap-1 sm:gap-2">
             <a href="#chzv" className="hidden px-3 py-2 font-body text-sm font-semibold text-silver/85 transition hover:text-ivory sm:block">
               Въпроси
@@ -169,7 +162,7 @@ export function Landing() {
             <figure className="w-[220px] shrink-0 sm:w-[240px] lg:-ml-10 lg:mt-20">
               <img
                 src="/screens/avtomobili.webp"
-                alt="Екранът „Автомобили“ в приложението: BMW 320d с всичките си срокове и суми"
+                alt="Екранът „Коли“ в приложението: BMW 320d с всичките си срокове и суми"
                 width={600}
                 height={1300}
                 className="w-full rounded-[34px] border-[6px] border-ink shadow-[0_30px_60px_-24px_rgba(7,16,12,0.55)]"

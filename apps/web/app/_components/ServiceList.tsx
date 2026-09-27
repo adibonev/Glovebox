@@ -1,11 +1,8 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Link from "next/link";
 
 import type { ExpiryStatus } from "@glovebox/core";
 
-import { deleteService } from "../_lib/actions";
+import { formatDaysFigure } from "../_lib/labels";
 import { ServiceTypeIcon } from "./ServiceTypeIcon";
 
 type ServiceItem = {
@@ -22,109 +19,85 @@ type ServiceItem = {
   costLabel: string | null;
 };
 
-/** Service Records list: left status accent, code chip, name + date, days, status badge, delete. */
+/**
+ * The Service Records of one car. Each row opens its own page (`/services/[id]`), where it is
+ * renewed, documented or deleted: the pencil and the cross on every row were small targets, the
+ * cross deleted without a word, and together they cut the names short on a phone.
+ */
 export function ServiceList({ items }: { items: ServiceItem[] }) {
   return (
-    <div className="overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-b from-panel to-ink2">
-      {items.map((item, index) => (
-        <Row key={item.id} item={item} index={index} />
+    <ul className="overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-b from-panel to-ink2">
+      {items.map((item) => (
+        <Row key={item.id} item={item} />
       ))}
-    </div>
+    </ul>
   );
 }
 
-function Row({ item, index }: { item: ServiceItem; index: number }) {
-  const expired = item.status === "Expired";
-  const count = Math.abs(item.days);
-  // The Expiry Date is the last valid day: "Днес" there, and "1 ден", not "1 дни".
-  const figure = item.days === 0 ? "Днес" : `${count} ${count === 1 ? "ден" : "дни"}`;
-  const note = expired ? "преди това" : item.days === 0 ? "последен ден" : "остават";
+function Row({ item }: { item: ServiceItem }) {
+  // "68 дни" over "остават", worded in core so the phone's rows say the same.
+  const { figure, note } = formatDaysFigure(item.days);
+  // Only what needs attention gets a label; "в сила" on every row said nothing the colour did not.
+  const flagged = !item.isExpense && item.status !== "Valid";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.05 + index * 0.07, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex items-center gap-4 border-t border-white/[0.05] px-5 py-4 first:border-t-0"
-    >
-      <span
-        aria-hidden
-        className="absolute bottom-3 left-0 top-3 w-[3px] rounded-r"
-        style={{ backgroundColor: item.color }}
-      />
-
-      <span
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10"
-        style={{ backgroundColor: `${item.color}14`, color: item.color }}
+    <li className="border-t border-white/[0.05] first:border-t-0">
+      <Link
+        href={`/services/${item.id}`}
+        className="relative flex items-center gap-4 px-5 py-4 transition hover:bg-white/[0.03] focus-visible:bg-white/[0.04] focus-visible:outline-none"
       >
-        <ServiceTypeIcon type={item.serviceType} className="h-6 w-6" />
-      </span>
+        <span
+          aria-hidden
+          className="absolute bottom-3 left-0 top-3 w-[3px] rounded-r"
+          style={{ backgroundColor: item.color }}
+        />
 
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-body text-[15px] text-ivory">{item.typeLabel}</div>
-        <div className="font-mono text-[12px] text-dim">
-          {item.dateLabel}
-          {item.costLabel && <span className="text-copper"> · {item.costLabel}</span>}
-        </div>
-      </div>
+        <span
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10"
+          style={{ backgroundColor: `${item.color}14`, color: item.color }}
+        >
+          <ServiceTypeIcon type={item.serviceType} className="h-6 w-6" />
+        </span>
 
-      <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="font-body text-[15px] leading-snug text-ivory">{item.typeLabel}</span>
+          <span className="font-mono text-[12px] text-dim">
+            {item.dateLabel}
+            {item.costLabel && <span className="text-copper"> · {item.costLabel}</span>}
+          </span>
+        </span>
+
         {item.isExpense ? (
-          <span className="hidden items-center gap-1.5 rounded-md bg-white/[0.06] px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-silver/70 sm:inline-flex">
+          <span className="shrink-0 rounded-md bg-white/[0.06] px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-silver/70">
             Разход
           </span>
         ) : (
-          <>
-            <div className="min-w-[78px] text-right">
-              <div
-                className={`font-display text-[17px] font-bold leading-none ${
-                  item.status === "Valid" ? "text-ivory" : ""
-                }`}
+          <span className="flex shrink-0 items-center gap-4">
+            <span className="text-right">
+              <span
+                className={`block font-display text-[17px] font-bold leading-none ${item.status === "Valid" ? "text-ivory" : ""}`}
                 style={item.status === "Valid" ? undefined : { color: item.color }}
               >
                 {figure}
-              </div>
-              <div className="mt-0.5 font-body text-[11px] text-dim">{note}</div>
-            </div>
-
-            <span
-              className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] sm:inline-flex"
-              style={{ color: item.color, backgroundColor: `${item.color}1f` }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-              {item.statusLabel}
+              </span>
+              <span className="mt-0.5 block font-body text-[11px] text-dim">{note}</span>
             </span>
-          </>
+            {flagged && (
+              <span
+                className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] sm:inline-flex"
+                style={{ color: item.color, backgroundColor: `${item.color}1f` }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                {item.statusLabel}
+              </span>
+            )}
+          </span>
         )}
 
-        <Link
-          href={`/services/${item.id}/edit`}
-          aria-label="Редакция"
-          title="Редакция / подновяване"
-          className="text-base leading-none text-dim transition hover:text-copper"
-        >
-          ✎
-        </Link>
-
-        {/* Asked first, as deleting a car or a document is: one stray click used to be enough. */}
-        <form
-          action={deleteService}
-          onSubmit={(event) => {
-            if (!confirm(`Да изтрия ли „${item.typeLabel}“? Изтриват се и документите към този срок.`)) {
-              event.preventDefault();
-            }
-          }}
-        >
-          <input type="hidden" name="serviceId" value={item.id} />
-          <button
-            type="submit"
-            aria-label="Изтрий"
-            className="text-base leading-none text-dim transition hover:text-status-expired"
-          >
-            ✕
-          </button>
-        </form>
-      </div>
-    </motion.div>
+        <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-dim" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </Link>
+    </li>
   );
 }

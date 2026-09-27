@@ -58,6 +58,12 @@ Leave `REMINDER_TEST_TO` **unset** in production.
 ## 5. Reminders cron
 `apps/web/vercel.json` runs `GET /api/cron/send-reminders` daily at 08:00 UTC. With
 `CRON_SECRET` set, Vercel authenticates the call automatically. (Hobby plan = daily cron.)
+The secret is accepted only in the header, never as `?secret=`. To run it by hand, and to see
+what it would send without sending anything, add `?dry=1`:
+
+```sh
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.glovebox.bg/api/cron/send-reminders?dry=1"
+```
 
 ## 6. Going to real payments
 Switch Stripe to **Live mode**: live keys, recreate the two Prices (live `price_…`), a live

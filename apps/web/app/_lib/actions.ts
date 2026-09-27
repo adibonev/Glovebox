@@ -7,10 +7,13 @@ import { redirect } from "next/navigation";
 
 import {
   SupabaseAccountPurge,
+  SupabaseRecordErasure,
   SupabaseUserRepository,
   canAddDocument,
   canAddService,
   canAddVehicle,
+  eraseServiceRecord,
+  eraseVehicle,
   firstRegistrationProblem,
   parseFuelType,
   purgeAccount,
@@ -22,7 +25,7 @@ import { createClient } from "@/lib/supabase/server";
 import { writableCarOwner, writableServiceOwner } from "./access";
 import { BODY_TYPES } from "./bodyType";
 import type { FormState } from "./formState";
-import { DELETE_ACCOUNT_CONFIRMATION, SERVICE_TYPE_ORDER } from "./labels";
+import { DELETE_ACCOUNT_CONFIRMATION, SERVICE_TYPE_ORDER, parseCost } from "./labels";
 import { countDocuments, countServices, countVehicles, getPlan } from "./plan";
 import { WINDOW_OPTIONS } from "./reminderSettings";
 import { documentTooLargeMessage } from "./upload";
@@ -51,12 +54,9 @@ function readFirstRegistration(formData: FormData): string | null {
   return firstRegistrationProblem(new Date(`${value}T00:00:00Z`), year, today) ? null : value;
 }
 
-/** Read an optional cost (EUR) from the form; accepts comma or dot decimals. */
+/** Read an optional cost (EUR) from the form, however it was typed (core `parseCost`). */
 function readCost(formData: FormData): number | null {
-  const raw = String(formData.get("cost") ?? "").trim().replace(",", ".");
-  if (!raw) return null;
-  const value = Number(raw);
-  return Number.isFinite(value) && value >= 0 ? value : null;
+  return parseCost(String(formData.get("cost") ?? ""));
 }
 
 /**
@@ -207,7 +207,7 @@ export async function uploadDocument(_prev: FormState, formData: FormData): Prom
   // The Service Record must be on the User's car or one shared with them; checked, because an
   // Administrator's RLS policy can read every row. The Document is then the car owner's.
   const owner = await writableServiceOwner(supabase, userId, serviceId);
-  if (!owner) return { error: "Услугата не е намерена." };
+  if (!owner) return { error: "Срокът не е намерен." };
 
   // Quota gate: Free is capped at 1 Document per Service Record → Paywall (ADR-0003).
   const plan = await getPlan(supabase, userId);
@@ -219,6 +219,7 @@ export async function uploadDocument(_prev: FormState, formData: FormData): Prom
 
   revalidatePath("/documents");
   revalidatePath("/");
+  revalidatePath(`/services/${serviceId}`);
   return stored ? { error: null } : { error: "Документът не се качи. Опитай пак." };
 }
 
@@ -244,6 +245,7 @@ export async function deleteDocument(formData: FormData): Promise<void> {
 
   revalidatePath("/documents");
   revalidatePath("/");
+  revalidatePath(`/services/${doc.service_id}`);
 }
 
 export async function updateUserName(formData: FormData): Promise<void> {
@@ -404,13 +406,24 @@ export async function deleteVehicle(formData: FormData): Promise<void> {
   const id = Number(formData.get("id"));
   if (!id) return;
 
-  // Service Records cascade away with the car (FK ON DELETE CASCADE); RLS +
-  // `.eq("user_id")` scope the delete to the owner.
-  await supabase.from("cars").delete().eq("id", id).eq("user_id", userId);
+  // The owner's only: a member leaves a shared car rather than deleting it, and an
+  // Administrator's RLS reaches every car, so the check is made here, not left to RLS.
+  const { data: car } = await supabase.from("cars").select("id").eq("id", id).eq("user_id", userId).maybeSingle();
+  if (!car) return;
+
+  // The files of its Documents first, then the car (its Service Records cascade).
+  let erased = true;
+  try {
+    await eraseVehicle(new SupabaseRecordErasure(supabase), String(id));
+  } catch (error) {
+    Sentry.captureException(error);
+    erased = false;
+  }
 
   revalidatePath("/");
   revalidatePath("/vehicles");
-  redirect("/vehicles");
+  revalidatePath("/documents");
+  redirect(erased ? "/vehicles" : "/vehicles?error=delete");
 }
 
 export async function addService(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -427,7 +440,7 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
   const expiryDate = String(formData.get("expiryDate") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
   if (!vehicleId || !serviceType || !expiryDate) {
-    return { error: "Избери вид услуга и дата." };
+    return { error: "Избери вид и дата." };
   }
 
   // Refuse an oversized Document here too — the browser guards it, but a request that
@@ -461,7 +474,7 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
 
   if (error || !created) {
     Sentry.captureException(error ?? new Error("addService: insert returned no row"));
-    return { error: "Услугата не беше записана. Провери връзката и опитай пак." };
+    return { error: "Срокът не беше записан. Провери връзката и опитай пак." };
   }
 
   // Optionally attach a Document supplied with the form (visible in /documents).
@@ -472,8 +485,8 @@ export async function addService(_prev: FormState, formData: FormData): Promise<
   revalidatePath("/");
   revalidatePath("/documents");
   // The setup checklist sends the User here one Service Type at a time; going back to it keeps
-  // the remaining ones in front of them instead of dropping them on the dashboard each time.
-  redirect(safeReturnTo(formData) ?? "/");
+  // the remaining ones in front of them. Otherwise the dashboard, on the same car.
+  redirect(safeReturnTo(formData) ?? `/?v=${vehicleId}`);
 }
 
 /**
@@ -495,26 +508,69 @@ export async function updateService(formData: FormData): Promise<void> {
   const serviceId = Number(formData.get("serviceId"));
   const serviceType = String(formData.get("serviceType") ?? "");
   const expiryDate = String(formData.get("expiryDate") ?? "");
-  const notes = String(formData.get("notes") ?? "").trim();
-  if (!serviceId || !serviceType || !expiryDate) return;
+  if (!serviceId || !serviceType || !/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) return;
+  // The note has its own form on the record's page; a form without the field leaves it alone.
+  const notes = formData.get("notes");
 
   // On the User's car or one shared with them (checked, see writableCarOwner). Editing the Expiry
-  // Date (a renewal) keeps the Service Record's Documents and re-derives reminders.
+  // Date keeps the Service Record's Documents and re-derives reminders.
   if (!(await writableServiceOwner(supabase, userId, serviceId))) return;
   await supabase
     .from("services")
     .update({
       service_type: serviceType,
       expiry_date: expiryDate,
-      notes: notes || null,
       cost: readCost(formData),
+      ...(notes !== null ? { notes: String(notes).trim() || null } : {}),
     })
     .eq("id", serviceId);
 
   revalidatePath("/");
   revalidatePath("/documents");
   revalidatePath("/reminders");
-  redirect("/");
+  redirect(`/services/${serviceId}?saved=1`);
+}
+
+/**
+ * A renewal: the new Expiry Date and what the new period cost. The period it replaces, with its
+ * cost, is kept by the database (`renewals`), and the new cost is dated today (`cost_date`); an
+ * empty cost means not known yet rather than last year's again.
+ */
+export async function renewService(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const serviceId = Number(formData.get("serviceId"));
+  const expiryDate = String(formData.get("expiryDate") ?? "");
+  if (!serviceId || !/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) return;
+  if (!(await writableServiceOwner(supabase, userId, serviceId))) return;
+
+  await supabase
+    .from("services")
+    .update({ expiry_date: expiryDate, cost: readCost(formData) })
+    .eq("id", serviceId);
+
+  revalidatePath("/");
+  revalidatePath("/documents");
+  revalidatePath("/reminders");
+  revalidatePath("/analysis");
+  redirect(`/services/${serviceId}?renewed=1`);
+}
+
+/** The User's note on a Service Record, on its own. */
+export async function saveServiceNote(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const userId = await resolveUserId(supabase);
+  if (!userId) redirect("/login");
+
+  const serviceId = Number(formData.get("serviceId"));
+  if (!serviceId) return;
+  if (!(await writableServiceOwner(supabase, userId, serviceId))) return;
+
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 2000);
+  await supabase.from("services").update({ notes: notes || null }).eq("id", serviceId);
+  redirect(`/services/${serviceId}?saved=note`);
 }
 
 export async function deleteService(formData: FormData): Promise<void> {
@@ -528,8 +584,19 @@ export async function deleteService(formData: FormData): Promise<void> {
   // The check is what actually scopes this: an Administrator's RLS policy allows deleting *any*
   // Service Record, so RLS alone would let a crafted id remove someone else's.
   if (!(await writableServiceOwner(supabase, userId, serviceId))) return;
-  await supabase.from("services").delete().eq("id", serviceId);
+  const { data: service } = await supabase.from("services").select("car_id").eq("id", serviceId).maybeSingle();
+
+  // The files of its Documents first, then the record; if Storage refuses, the record stays.
+  try {
+    await eraseServiceRecord(new SupabaseRecordErasure(supabase), String(serviceId));
+  } catch (error) {
+    Sentry.captureException(error);
+    redirect(`/services/${serviceId}?error=delete`);
+  }
   revalidatePath("/");
+  revalidatePath("/documents");
+  revalidatePath("/analysis");
+  redirect(service ? `/?v=${service.car_id}` : "/");
 }
 
 /**

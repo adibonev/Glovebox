@@ -32,14 +32,14 @@ import { SelectField } from "@/components/SelectField";
 import { useAuth } from "@/lib/auth";
 import { BODY_TYPE_LABELS, BODY_TYPE_OPTIONS } from "@/lib/bodyType";
 import { catalogueVehicle, hasModel, makeOptions, modelOptions, yearOptions } from "@/lib/catalog";
+import { dataChanged } from "@/lib/freshness";
 import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
-import { SERVICE_TYPE_LABELS, formatDateShort } from "@/lib/labels";
+import { SERVICE_TYPE_LABELS, formatDateShort, parseCost } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { correctedFields, track } from "@/lib/analytics";
 import { earliestFirstRegistration, firstRegistrationError } from "@/lib/firstRegistration";
 import { offerPush } from "@/lib/push";
 import { maybeAskForReview } from "@/lib/review";
-import { parseCost } from "@/lib/cost";
 import { parseKm, todayAsDate } from "@/lib/mileage";
 import { useDocumentRecognition } from "@/lib/recognize";
 import { supabase } from "@/lib/supabase";
@@ -167,7 +167,7 @@ export default function VehicleSetupScreen() {
         brand: identity.brand || null,
         model: identity.model || null,
       });
-      setNote(missing.length ? "Част от данните не се разчетоха — допълни ги." : null);
+      setNote(missing.length ? "Част от данните не се разчетоха. Допълни ги." : null);
       setVehicleRead({
         brand: identity.brand || null,
         model: identity.model || null,
@@ -203,7 +203,7 @@ export default function VehicleSetupScreen() {
       const existing = await vehicleRepo.listByUser(user.id);
       // Only the cars the User owns count; one shared with them is someone else's quota.
       if (!canAddVehicle(plan, existing.filter((v) => v.userId === user.id).length)) {
-        return fail("Достигна лимита на Free (1 кола). Надгради до Pro от уеб приложението.");
+        return fail("Безплатният план е за 1 кола. С Pro добавяш колкото искаш, от сайта.");
       }
 
       const parsedYear = Number(year.trim());
@@ -218,6 +218,7 @@ export default function VehicleSetupScreen() {
         fuelType,
         firstRegistration,
       });
+      dataChanged();
       setVehicleId(vehicle.id);
       if (vehicleRead) {
         track("scan_succeeded", {
@@ -236,6 +237,7 @@ export default function VehicleSetupScreen() {
           serviceType: "inspection",
           expiryDate: inspectionExpiry,
         });
+        dataChanged();
         recorded.push("inspection");
       }
 
@@ -297,7 +299,7 @@ export default function VehicleSetupScreen() {
           ? `Внимание: полицата е за ${insured}, а колата е ${plate.trim().toUpperCase()}.`
           : draft.serviceRecord
             ? null
-            : "Срокът не се разчете — въведи го ръчно.",
+            : "Срокът не се разчете. Въведи го ръчно.",
       );
     } catch {
       track("scan_failed", { document: serviceType });
@@ -333,6 +335,7 @@ export default function VehicleSetupScreen() {
         expiryDate: expiry,
         cost: parseCost(cost),
       });
+      dataChanged();
       if (policyRead) {
         track("scan_succeeded", {
           document: serviceType,
@@ -342,7 +345,7 @@ export default function VehicleSetupScreen() {
       }
       nextService(serviceType);
     } catch {
-      fail("Услугата не беше записана. Опитай пак.");
+      fail("Срокът не беше записан. Опитай пак.");
     } finally {
       setBusy(false);
     }
@@ -354,7 +357,7 @@ export default function VehicleSetupScreen() {
     // Awaited, so the system dialog is answered before the rating one can appear.
     if (session) await offerPush(session).catch(() => undefined);
     // `setup` makes saving the reminders the last step: it then lands on the dashboard.
-    router.replace("/(tabs)/reminders?setup=1");
+    router.replace("/reminders?setup=1");
     // A car is now fully recorded, which is the moment this app has earned a rating. Asked once
     // the screen has settled rather than mid-navigation, and at most once a quarter.
     setTimeout(() => void maybeAskForReview(), 1500);
@@ -395,7 +398,7 @@ export default function VehicleSetupScreen() {
       <Screen title="Добре дошъл в Glovebox">
         {reader}
         <Text className="mb-6 text-base leading-6 text-silver">
-          Добави първия си автомобил. Ще те преведа през документите му един по един — каквото
+          Добави първата си кола. Ще те преведа през документите ѝ един по един, а каквото
           нямаш подръка, оставяш за после.
         </Text>
         <ChipPicker
@@ -420,7 +423,7 @@ export default function VehicleSetupScreen() {
       <Screen title="Данните за колата">
         {reader}
         <Text className="mb-6 text-base leading-6 text-silver">
-          Талонът от техническия преглед носи всичко наведнъж — марка, модел, номер, рама и
+          Талонът от техническия преглед носи всичко наведнъж: марка, модел, номер, рама и
           срока на прегледа.
         </Text>
         {DOCUMENT_SCAN_ENABLED && (
@@ -483,7 +486,7 @@ export default function VehicleSetupScreen() {
         {vin.trim().length === 17 && !vinChecksumValid(vin.trim().toUpperCase()) && (
           <View className="-mt-2 mb-4 gap-2">
             <Text className="text-xs text-status-expiring">
-              Сверѝ рамата — контролната ѝ цифра не излиза.
+              Сверѝ рамата: контролната ѝ цифра не излиза.
             </Text>
             {vinSuggestion && (
               <Pressable
@@ -491,8 +494,8 @@ export default function VehicleSetupScreen() {
                 className="self-start rounded-lg border border-copper/50 bg-copper/10 px-3 py-2"
               >
                 <Text className="text-xs text-copper">
-                  Може би <Text className="font-semibold">{vinSuggestion}</Text> — докосни, за да
-                  я използваш
+                  Може би <Text className="font-semibold">{vinSuggestion}</Text>? Докосни, за да
+                  я използваш.
                 </Text>
               </Pressable>
             )}
@@ -565,9 +568,9 @@ export default function VehicleSetupScreen() {
         {serviceType === "tax" && exemptFromVehicleTax(fuelType) && (
           <>
             <Notice>
-              Електрическите автомобили не дължат данък МПС (ЗМДТ чл. 58, ал. 2). Освобождаването
-              важи, след като подадеш декларация по чл. 54, ал. 4 в общината по постоянния си
-              адрес — до два месеца от придобиването на колата.
+              Електрическите коли не дължат данък МПС (ЗМДТ чл. 58, ал. 2). Освобождаването важи,
+              след като подадеш декларация по чл. 54, ал. 4 в общината по постоянния си адрес, до
+              два месеца от придобиването на колата.
             </Notice>
             <Choice
               title="Не дължа данък"

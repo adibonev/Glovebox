@@ -4,12 +4,13 @@ import {
   SupabaseUserRepository,
   SupabaseVehicleRepository,
 } from "@glovebox/core";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { useAuth } from "./auth";
 import { signedUrls } from "./documents";
-import { SERVICE_TYPE_LABELS, formatDateShort } from "./labels";
+import { useLoadWhenStale } from "./freshness";
+import { SERVICE_TYPE_ORDER, formatRecordLabel } from "./labels";
+import { reportProblem } from "./monitoring";
 import { supabase } from "./supabase";
 
 const userRepo = new SupabaseUserRepository(supabase);
@@ -17,92 +18,94 @@ const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 const documentRepo = new SupabaseDocumentRepository(supabase);
 
-export type DocView = { id: string; name: string; path: string; url: string | null; isImage: boolean };
-export type ServiceGroup = { serviceId: string; typeLabel: string; expiryLabel: string; documents: DocView[] };
-export type VehicleGroup = { vehicleId: string; name: string; services: ServiceGroup[] };
+export type DocView = {
+  id: string;
+  name: string;
+  path: string;
+  url: string | null;
+  isImage: boolean;
+  /** The Service Record the file belongs to, named. */
+  record: { id: string; label: string };
+};
+/** A Service Record a file can be attached to. */
+export type AttachableRecord = { id: string; label: string };
+export type VehicleDocuments = {
+  vehicleId: string;
+  name: string;
+  records: AttachableRecord[];
+  /** The files uploaded to this car's records, newest first. */
+  documents: DocView[];
+};
 
-/** Loads the User's Vehicles → Service Records → Documents (with signed URLs) for the docs tab. */
+const order = (serviceType: string) => {
+  const index = (SERVICE_TYPE_ORDER as readonly string[]).indexOf(serviceType);
+  return index === -1 ? SERVICE_TYPE_ORDER.length : index;
+};
+
+/**
+ * The User's uploaded files by car, each naming its Service Record, plus every record a file can
+ * be attached to. Only the files: a card per record, most of them empty, hid the few files there
+ * were (the website's Documents page works the same way).
+ */
 export function useDocuments() {
   const { session } = useAuth();
-  const [groups, setGroups] = useState<VehicleGroup[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [groups, setGroups] = useState<VehicleDocuments[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const loadedOnce = useRef(false);
 
   const load = useCallback(async () => {
     if (!session) return;
-    setError(null);
     try {
-      const user =
-        await userRepo.findOrCreateByAuthId({ authUserId: session.user.id, email: session.user.email ?? "" });
-      setUserId(user.id);
-
+      const user = await userRepo.findOrCreateByAuthId({ authUserId: session.user.id, email: session.user.email ?? "" });
       const [vehicles, services, documents] = await Promise.all([
         vehicleRepo.listByUser(user.id),
         serviceRepo.listByUser(user.id),
         documentRepo.listByUser(user.id),
       ]);
       const urls = await signedUrls(documents.map((d) => d.path));
+      const recordById = new Map(services.map((s) => [s.id, s]));
 
-      const docsByService = new Map<string, DocView[]>();
-      for (const d of documents) {
-        const list = docsByService.get(d.serviceRecordId) ?? [];
-        list.push({
-          id: d.id,
-          name: d.name,
-          path: d.path,
-          url: urls.get(d.path) ?? null,
-          isImage: (d.mimeType ?? "").startsWith("image/"),
-        });
-        docsByService.set(d.serviceRecordId, list);
-      }
-
-      const servicesByVehicle = new Map<string, ServiceGroup[]>();
-      for (const s of [...services].sort((a, b) => a.expiryDate.getTime() - b.expiryDate.getTime())) {
-        const group = servicesByVehicle.get(s.vehicleId) ?? [];
-        group.push({
-          serviceId: s.id,
-          typeLabel: SERVICE_TYPE_LABELS[s.serviceType] ?? s.serviceType,
-          expiryLabel: formatDateShort(s.expiryDate),
-          documents: docsByService.get(s.id) ?? [],
-        });
-        servicesByVehicle.set(s.vehicleId, group);
-      }
-
-      const result: VehicleGroup[] = vehicles
-        .map((v) => ({
+      setGroups(
+        vehicles.map((v) => ({
           vehicleId: v.id,
           name: `${v.brand} ${v.model}`,
-          services: servicesByVehicle.get(v.id) ?? [],
-        }))
-        .filter((g) => g.services.length > 0);
-      setGroups(result);
+          records: services
+            .filter((s) => s.vehicleId === v.id)
+            .sort((a, b) => order(a.serviceType) - order(b.serviceType) || b.expiryDate.getTime() - a.expiryDate.getTime())
+            .map((s) => ({ id: s.id, label: formatRecordLabel(s.serviceType, s.expiryDate) })),
+          // Newest first, as the repository returns them.
+          documents: documents.flatMap((d) => {
+            const record = recordById.get(d.serviceRecordId);
+            if (!record || record.vehicleId !== v.id) return [];
+            return [
+              {
+                id: d.id,
+                name: d.name,
+                path: d.path,
+                url: urls.get(d.path) ?? null,
+                isImage: (d.mimeType ?? "").startsWith("image/"),
+                record: { id: record.id, label: formatRecordLabel(record.serviceType, record.expiryDate) },
+              },
+            ];
+          }),
+        })),
+      );
+      setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Грешка при зареждане на документите.");
+      reportProblem(`documents load failed: ${e instanceof Error ? e.message : String(e)}`);
+      setError("Документите не се заредиха. Дръпни надолу, за да опиташ пак.");
+    } finally {
+      setLoading(false);
     }
   }, [session]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      load().finally(() => {
-        if (active && !loadedOnce.current) {
-          loadedOnce.current = true;
-          setLoading(false);
-        }
-      });
-      return () => {
-        active = false;
-      };
-    }, [load]),
-  );
+  const reload = useLoadWhenStale(load);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    load().finally(() => setRefreshing(false));
-  }, [load]);
+    void reload().finally(() => setRefreshing(false));
+  }, [reload]);
 
-  return { groups, userId, loading, refreshing, error, onRefresh, reload: load };
+  return { groups, loading, refreshing, error, onRefresh, reload };
 }

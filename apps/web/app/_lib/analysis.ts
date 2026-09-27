@@ -1,6 +1,8 @@
 import {
+  SupabaseRenewalRepository,
   SupabaseServiceRecordRepository,
   SupabaseVehicleRepository,
+  spendingOf,
 } from "@glovebox/core";
 
 import { createClient } from "@/lib/supabase/server";
@@ -29,14 +31,18 @@ export async function getAnalysisData(): Promise<AnalysisData | null> {
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const services = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
 
-  const records: AnalysisRecord[] = services
-    .filter((s) => s.cost != null && s.cost > 0)
-    .map((s) => ({
-      vehicleId: s.vehicleId,
-      serviceType: s.serviceType,
-      cost: s.cost as number,
-      ts: s.expiryDate.getTime(),
-    }));
+  // What renewals replaced counts too, each period on the day it was paid (core `spendingOf`).
+  const renewalRepo = new SupabaseRenewalRepository(supabase);
+  const renewals = (
+    await Promise.all(vehicles.map((v) => renewalRepo.listByVehicle(v.id).catch(() => [])))
+  ).flat();
+
+  const records: AnalysisRecord[] = spendingOf(services, renewals).map((spend) => ({
+    vehicleId: spend.vehicleId,
+    serviceType: spend.serviceType,
+    cost: spend.cost,
+    ts: spend.paidOn.getTime(),
+  }));
 
   return {
     userEmail: authUser.email ?? "",

@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 
 import { GOOGLE_CLIENT_ID, GoogleSignIn } from "@/components/GoogleSignIn";
+import { Wordmark } from "@/components/Wordmark";
 import { rememberFirstRegistration } from "@/lib/firstRegistration";
 
 import { authenticate, signInWithGoogle, type AuthState } from "./actions";
@@ -19,7 +21,7 @@ function tabClass(active: boolean): string {
 
 const inputClass =
   "rounded-xl border border-white/10 bg-ink/60 px-4 py-2.5 font-body text-ivory outline-none transition focus:border-copper/60";
-const labelClass = "font-mono text-[11px] uppercase tracking-wider text-silver/60";
+const labelClass = "font-body text-sm text-muted";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
@@ -48,11 +50,11 @@ export default function LoginPage() {
       </div>
 
       <div className="relative flex w-full max-w-sm flex-col gap-6">
-        <div className="text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-copper">
-            Glovebox
-          </p>
-          <h1 className="mt-1.5 font-display text-3xl font-bold text-ivory">
+        <div className="flex flex-col items-center text-center">
+          <Link href="/" aria-label="Glovebox, начало">
+            <Wordmark className="text-[28px]" />
+          </Link>
+          <h1 className="mt-5 font-display text-3xl font-bold text-ivory">
             {isSignup ? "Създай акаунт" : "Вход"}
           </h1>
         </div>
@@ -88,6 +90,21 @@ export default function LoginPage() {
               className={inputClass}
             />
           </label>
+
+          {!isSignup && (
+            // Takes along the address already typed above, so it need not be typed twice.
+            <a
+              href="/login/forgot"
+              onClick={(event) => {
+                const field = event.currentTarget.closest("form")?.elements.namedItem("email");
+                const email = field instanceof HTMLInputElement ? field.value.trim() : "";
+                if (email) event.currentTarget.href = `/login/forgot?email=${encodeURIComponent(email)}`;
+              }}
+              className="-mt-2 self-end font-body text-[13px] text-copper transition hover:underline"
+            >
+              Забравена парола?
+            </a>
+          )}
 
           {isSignup && (
             <label className="flex flex-col gap-1.5">

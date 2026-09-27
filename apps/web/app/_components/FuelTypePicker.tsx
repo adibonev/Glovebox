@@ -11,7 +11,7 @@ import { FUEL_TYPE_LABELS } from "../_lib/fuelType";
 export function FuelTypePicker({ value }: { value?: FuelType | null }) {
   return (
     <fieldset>
-      <legend className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-dim">
+      <legend className="mb-2 font-body text-sm text-muted">
         Гориво
       </legend>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">

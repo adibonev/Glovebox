@@ -7,7 +7,7 @@ import { BODY_TYPE_LABELS, BODY_TYPE_OPTIONS, type BodyType } from "../_lib/body
 export function BodyTypePicker({ value = "sedan" }: { value?: BodyType }) {
   return (
     <fieldset>
-      <legend className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-dim">
+      <legend className="mb-2 font-body text-sm text-muted">
         Тип каросерия
       </legend>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">

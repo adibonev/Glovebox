@@ -3,6 +3,7 @@ import { decode } from "base64-arraybuffer";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 
+import { dataChanged } from "./freshness";
 import { recordOwner } from "./ownership";
 import { supabase } from "./supabase";
 
@@ -34,7 +35,7 @@ export async function pickDocument(): Promise<PickedFile | null> {
  */
 export async function uploadDocument(authUserId: string, serviceId: string, file: PickedFile): Promise<void> {
   const record = await serviceRepo.getById(serviceId);
-  if (!record) throw new Error("Услугата не е намерена.");
+  if (!record) throw new Error("Срокът не е намерен.");
   const userId = await recordOwner(record.vehicleId);
 
   // Path prefix is the auth uid so Storage RLS keeps the file private to its owner.
@@ -59,12 +60,14 @@ export async function uploadDocument(authUserId: string, serviceId: string, file
     mimeType: file.mimeType,
     sizeBytes: file.size,
   });
+  dataChanged();
 }
 
 /** Removes the Storage object and the Document row. */
 export async function deleteDocument(id: string, path: string): Promise<void> {
   await supabase.storage.from(BUCKET).remove([path]);
   await documentRepo.delete(id);
+  dataChanged();
 }
 
 /** Batch of short-lived signed URLs (path → url) for viewing private files. */

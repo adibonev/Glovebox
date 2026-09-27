@@ -27,7 +27,7 @@ export function UploadButton({ serviceId }: { serviceId: string }) {
         }}
       />
       {error && (
-        <p role="alert" className="max-w-[240px] text-right font-body text-[12px] text-[#E0705C]">
+        <p role="alert" className="max-w-[240px] text-right font-body text-[12px] text-status-expired">
           {error}
         </p>
       )}
@@ -43,7 +43,7 @@ function Picker({ onPicked }: { onPicked: (file: File) => void }) {
         pending ? "pointer-events-none opacity-70" : ""
       }`}
     >
-      {pending ? "Качване…" : "+ Документ"}
+      {pending ? "Качване…" : "Прикачи документ"}
       <input
         type="file"
         name="file"

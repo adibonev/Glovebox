@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { calendarDay } from "@glovebox/core";
 import { NextResponse } from "next/server";
 
@@ -6,17 +8,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "../../../_lib/email";
 import { runReminderJob } from "../../../_lib/sendReminders";
 
-// The reminder cron endpoint. Protect it with a shared secret (Authorization: Bearer
-// <CRON_SECRET>) since it runs as service-role across every User. Trigger it from a
-// scheduler (Supabase pg_cron + pg_net, a hosting cron, etc.) once a day.
+// The reminder cron endpoint. It runs as service-role across every User, so it takes a shared
+// secret, and only in the Authorization header (Bearer <CRON_SECRET>), which is how Vercel Cron
+// sends it. Not in the address: a URL ends up in logs, browser history and proxies.
 export const dynamic = "force-dynamic";
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  const header = req.headers.get("authorization");
-  const url = new URL(req.url);
-  return header === `Bearer ${secret}` || url.searchParams.get("secret") === secret;
+  const given = Buffer.from(req.headers.get("authorization") ?? "");
+  const expected = Buffer.from(`Bearer ${secret}`);
+  // Compared in constant time, so the answer does not leak how much of a guess was right.
+  return given.length === expected.length && timingSafeEqual(given, expected);
 }
 
 async function run(req: Request) {
@@ -41,7 +44,7 @@ export async function POST(req: Request) {
   return run(req);
 }
 
-// GET allowed too, so simple schedulers / a manual browser hit (with ?secret=) can fire it.
+// GET as well as POST: Vercel Cron calls with GET. By hand: curl -H "Authorization: Bearer …".
 export async function GET(req: Request) {
   return run(req);
 }

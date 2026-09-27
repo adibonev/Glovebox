@@ -2,7 +2,7 @@ import { LegalPage } from "@/components/LegalPage";
 import { OperatorDetails } from "@/components/OperatorDetails";
 import { OPERATOR } from "@/lib/operator";
 
-export const metadata = { title: "Glovebox — Общи условия" };
+export const metadata = { title: "Общи условия · Glovebox" };
 
 export default function TermsPage() {
   return (

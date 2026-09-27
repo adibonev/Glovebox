@@ -1,5 +1,6 @@
 import type { ReminderWindows } from "@glovebox/core";
 
+import { dataChanged } from "./freshness";
 import { supabase } from "./supabase";
 
 /** Default Reminder Window per Service Type (days), used when the User hasn't set one. */
@@ -53,4 +54,6 @@ export async function saveReminderConfig(userId: string, config: ReminderConfig)
     .update({ reminder_settings: config.windows, reminder_enabled: config.enabled })
     .eq("id", Number(userId));
   if (error) throw new Error(error.message);
+  // A different Reminder Window can change which obligations count as expiring.
+  dataChanged();
 }

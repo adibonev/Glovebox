@@ -4,13 +4,17 @@ import { GaugePanel } from "@/components/GaugePanel";
 import { Landing } from "@/components/Landing";
 import { PlateBadge } from "@/components/PlateBadge";
 import { Shell } from "@/components/Shell";
-import { VehicleCard } from "@/components/VehicleCard";
 
 import { AddVehicleForm } from "../_components/AddVehicleForm";
 import { ServiceList } from "../_components/ServiceList";
 import { VehicleSwitcher } from "../_components/VehicleSwitcher";
 import { getDashboardData } from "../_lib/dashboard";
 
+/**
+ * The dashboard: one car, its deadlines first. The car's name and the list share the first
+ * screen with the gauge beside them; the large render of the car lives on the garage page, where
+ * it used to push this list two screens down on a phone.
+ */
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -28,22 +32,21 @@ export default async function DashboardPage({
       {added === "1" && vehicle && (
         <div
           role="status"
-          className="anim-up mb-4 flex items-center gap-3 rounded-2xl border border-status-valid/40 bg-status-valid/[0.08] px-5 py-3.5"
+          className="mb-4 flex items-center gap-3 rounded-2xl border border-status-valid/40 bg-status-valid/[0.08] px-5 py-3.5"
         >
           <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-status-valid" />
           <p className="font-body text-sm text-ivory">
-            <span className="font-semibold text-status-valid">Автомобилът е добавен успешно.</span>{" "}
-            Ще ти напомним, преди да изтече някой срок.
+            <span className="font-semibold text-status-valid">Колата е добавена успешно.</span> Ще ти
+            напомним, преди да изтече някой срок.
           </p>
         </div>
       )}
 
       {upgraded === "1" && (
-        <div className="anim-up mb-4 flex items-center gap-3 rounded-2xl border border-copper/40 bg-gradient-to-r from-copper/[0.12] to-transparent px-5 py-3.5">
-          <span aria-hidden className="text-lg">🎉</span>
+        <div className="mb-4 rounded-2xl border border-copper/40 bg-gradient-to-r from-copper/[0.12] to-transparent px-5 py-3.5">
           <p className="font-body text-sm text-ivory">
-            <span className="font-semibold text-copper">Добре дошъл в Pro!</span> Вече имаш
-            неограничено автомобили, услуги и push напомняния.
+            <span className="font-semibold text-copper">Добре дошъл в Pro.</span> Вече имаш коли и
+            срокове без ограничение и известия на телефона.
           </p>
         </div>
       )}
@@ -51,42 +54,39 @@ export default async function DashboardPage({
       {!vehicle ? (
         <EmptyHero />
       ) : (
-        <>
-          <section className="mt-2 grid gap-5 lg:grid-cols-[1.32fr_1fr]">
-            <div className="anim-up anim-d1">
-              <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">
-                Табло на автомобила
-              </p>
-              <h1 className="mt-3 font-display text-[clamp(34px,4.6vw,52px)] font-bold leading-[1.02] tracking-tight text-ivory">
-                {vehicle.name}
-              </h1>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                {vehicle.plate && <PlateBadge plate={vehicle.plate} />}
-                {vehicle.year && (
-                  <span className="font-body text-sm text-muted">{vehicle.year}</span>
-                )}
+        <div className="mt-2 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+          <div className="flex min-w-0 flex-col">
+            <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Табло</p>
+            <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] font-bold leading-[1.02] tracking-tight text-ivory">
+              {vehicle.name}
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {vehicle.plate && <PlateBadge plate={vehicle.plate} />}
+              {vehicle.year && <span className="font-body text-sm text-muted">{vehicle.year}</span>}
+            </div>
+            {/* Always rendered: it also carries the "add another car" chip. */}
+            <VehicleSwitcher vehicles={vehicles} activeId={vehicle.id} />
+
+            {/* On a phone the gauge sits between the car and its list, compact. */}
+            <div className="mt-6 lg:hidden">
+              <GaugePanel urgent={urgent} counts={counts} compact />
+            </div>
+
+            <section className="mt-8" aria-labelledby="deadlines">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <h2 id="deadlines" className="font-display text-[22px] font-bold tracking-tight text-ivory">
+                  Срокове
+                </h2>
+                <AddServiceButton vehicleId={vehicle.id} />
               </div>
-              {/* Always rendered: it also carries the "add another Vehicle" chip. */}
-              <VehicleSwitcher vehicles={vehicles} activeId={vehicle.id} />
+              {items.length > 0 ? <ServiceList items={items} /> : <EmptyServices vehicleId={vehicle.id} />}
+            </section>
+          </div>
 
-              <VehicleCard bodyType={vehicle.bodyType} alt={vehicle.name} />
-            </div>
-
-            <div className="anim-up anim-d2">
-              <GaugePanel urgent={urgent} counts={counts} />
-            </div>
-          </section>
-
-          <section className="mt-9">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <h2 className="font-display text-[22px] font-bold tracking-tight text-ivory">
-                Услуги и документи
-              </h2>
-              <AddServiceButton vehicleId={vehicle.id} />
-            </div>
-            {items.length > 0 ? <ServiceList items={items} /> : <EmptyServices vehicleId={vehicle.id} />}
-          </section>
-        </>
+          <aside className="hidden lg:sticky lg:top-6 lg:block">
+            <GaugePanel urgent={urgent} counts={counts} compact />
+          </aside>
+        </div>
       )}
     </Shell>
   );
@@ -96,14 +96,12 @@ function AddServiceButton({ vehicleId }: { vehicleId: string }) {
   return (
     <Link
       href={`/add-service?v=${vehicleId}`}
-      className="group inline-flex items-center gap-2 rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70 hover:from-copper/20 hover:shadow-[0_10px_30px_-10px_rgba(196,149,76,0.6)]"
+      className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70 hover:from-copper/20"
     >
-      <span className="grid h-4 w-4 place-items-center rounded-full bg-copper/20 text-copper transition group-hover:rotate-90">
-        <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
-          <path d="M8 3.5v9M3.5 8h9" />
-        </svg>
-      </span>
-      Добави услуга
+      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+        <path d="M8 3.5v9M3.5 8h9" />
+      </svg>
+      Добави срок
     </Link>
   );
 }
@@ -111,7 +109,7 @@ function AddServiceButton({ vehicleId }: { vehicleId: string }) {
 function EmptyServices({ vehicleId }: { vehicleId: string }) {
   return (
     <div className="rounded-[20px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-12 text-center">
-      <p className="font-body text-muted">Още нямаш добавени услуги.</p>
+      <p className="font-body text-muted">Още няма добавени срокове за тази кола.</p>
       <div className="mt-4 flex justify-center">
         <AddServiceButton vehicleId={vehicleId} />
       </div>
@@ -120,7 +118,7 @@ function EmptyServices({ vehicleId }: { vehicleId: string }) {
 }
 
 /**
- * What a User with no Vehicles sees — in practice, everyone who has just registered.
+ * What a User with no Vehicles sees: in practice, everyone who has just registered.
  *
  * Typing it in is the only route on the web. Reading a document from a photo lives in the
  * mobile app, where a camera is at hand: nobody photographs their registration certificate
@@ -128,18 +126,15 @@ function EmptyServices({ vehicleId }: { vehicleId: string }) {
  */
 function EmptyHero() {
   return (
-    <section className="anim-up anim-d1 mx-auto mt-10 max-w-xl">
-      <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">
-        Табло на автомобила
-      </p>
+    <section className="mx-auto mt-10 max-w-xl">
+      <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Табло</p>
       <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ivory">
         Добре дошъл в Glovebox
       </h1>
       <p className="mb-6 mt-2 font-body text-muted">
-        Добави първата си кола, за да започнеш да следиш сроковете.
+        Добави първата си кола и започни да следиш сроковете ѝ.
       </p>
       <AddVehicleForm />
     </section>
   );
 }
-

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@glovebox/ui";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -199,7 +200,7 @@ export function DocumentCamera({
             accessibilityLabel="Затвори камерата"
             className="h-11 w-11 items-center justify-center rounded-full bg-ink/70"
           >
-            <Text className="text-2xl leading-none text-ivory">✕</Text>
+            <Ionicons name="close" size={24} color={colors.ivory} />
           </Pressable>
 
           <Pressable
@@ -210,7 +211,7 @@ export function DocumentCamera({
               torch ? "bg-copper" : "bg-ink/70"
             }`}
           >
-            <Text className={`text-xl leading-none ${torch ? "text-ink" : "text-ivory"}`}>⚡</Text>
+            <Ionicons name={torch ? "flash" : "flash-outline"} size={20} color={torch ? colors.ink : colors.ivory} />
           </Pressable>
         </View>
 
@@ -225,8 +226,8 @@ export function DocumentCamera({
 
       <View className="gap-4 bg-ink px-6 pb-8 pt-4">
         <Text className="text-center text-sm text-silver">
-          Побери <Text className="font-semibold text-ivory">целия лист</Text> в рамката —
-          включително последния ред със срока. Докосни екрана, за да фокусираш.
+          Побери <Text className="font-semibold text-ivory">целия лист</Text> в рамката, заедно с
+          последния ред, където е срокът. Докосни екрана, за да фокусираш.
         </Text>
 
         <View className="flex-row items-center justify-center gap-4">

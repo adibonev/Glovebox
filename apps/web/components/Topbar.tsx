@@ -4,7 +4,7 @@ import { BILLING_ENABLED, type Plan } from "@glovebox/core";
 
 import { MainNav } from "./MainNav";
 import { ProfileMenu } from "./ProfileMenu";
-import { Wheel } from "./Wheel";
+import { Wordmark } from "./Wordmark";
 
 /** Topbar: the Glovebox wordmark (steering-wheel "o"), nav, plan badge, profile menu. */
 export function Topbar({
@@ -18,16 +18,8 @@ export function Topbar({
 }) {
   return (
     <header className="flex items-center gap-4 py-6">
-      <Link
-        href="/"
-        className="flex items-baseline font-brand text-[25px] font-semibold leading-none tracking-tight"
-      >
-        <span className="text-ivory">Glove</span>
-        <span className="flex items-baseline text-copper">
-          b
-          <Wheel style={{ width: "0.82em", height: "0.82em", transform: "translateY(0.08em)", margin: "0 0.01em" }} />
-          x
-        </span>
+      <Link href="/" aria-label="Glovebox, табло">
+        <Wordmark />
       </Link>
 
       <MainNav />

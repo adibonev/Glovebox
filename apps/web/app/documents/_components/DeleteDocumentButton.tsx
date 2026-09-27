@@ -16,9 +16,11 @@ export function DeleteDocumentButton({ id, name }: { id: string; name: string })
         type="submit"
         aria-label="Изтрий документа"
         title="Изтрий"
-        className="grid h-6 w-6 place-items-center rounded-md text-dim transition hover:bg-status-expired/15 hover:text-status-expired"
+        className="grid h-9 w-9 place-items-center rounded-lg text-dim transition hover:bg-status-expired/15 hover:text-status-expired"
       >
-        ✕
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
+        </svg>
       </button>
     </form>
   );

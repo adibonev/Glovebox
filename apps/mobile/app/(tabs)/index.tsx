@@ -1,32 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
-import { pendingRenewals, renewalLink } from "@glovebox/core";
+import { canAddService, pendingRenewals, renewalLink } from "@glovebox/core";
 import { colors, statusColors } from "@glovebox/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CarImage } from "@/components/CarImage";
 import { AnalyticsConsentCard } from "@/components/AnalyticsConsent";
+import { CarImage } from "@/components/CarImage";
+import { DeadlineRow } from "@/components/DeadlineRow";
 import { GaugePanel } from "@/components/GaugePanel";
-import { PushBanner } from "@/components/PushBanner";
+import { PushBanner, usePushBanner } from "@/components/PushBanner";
 import { Wordmark } from "@/components/Wordmark";
-import {
-  SERVICE_TYPE_LABELS,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  formatCost,
-  formatDaysRemaining,
-} from "@/lib/labels";
+import { useAnalyticsChoice } from "@/lib/analytics";
+import { parseBodyType } from "@/lib/bodyType";
+import { SERVICE_TYPE_LABELS } from "@/lib/labels";
 import { todayAsDate } from "@/lib/mileage";
 import { useGarage, type FlatItem } from "@/lib/useGarage";
 
+/**
+ * One car at a time, as on the website: its gauge, then every deadline and expense it has, each
+ * row opening its own screen. With several cars, a row of names switches between them.
+ */
 export default function DashboardTab() {
   const router = useRouter();
-  const { data, loading, refreshing, onRefresh, error } = useGarage();
+  const { data, loading, refreshing, onRefresh, error, selectedVehicleId, selectVehicle } = useGarage();
   const offeredAddVehicle = useRef(false);
   const { added } = useLocalSearchParams<{ added?: string }>();
   const clearAdded = useCallback(() => router.setParams({ added: undefined }), [router]);
+  const push = usePushBanner();
+  const consent = useAnalyticsChoice();
 
   /**
    * A brand-new User lands on a dashboard with nothing on it, so send them straight into adding
@@ -41,14 +44,23 @@ export default function DashboardTab() {
     router.push("/vehicle/setup");
   }, [data, loading, router]);
 
+  const cards = data?.cards ?? [];
+  const card = cards.find((c) => c.vehicle.id === selectedVehicleId) ?? cards[0];
   const attention = (data?.flat ?? []).filter((f) => f.status !== "Valid");
   // Lapsed with no new date: the question the app keeps asking until it has an answer.
   const pendingIds = new Set(pendingRenewals(attention.map((f) => f.record), todayAsDate()).map((r) => r.id));
   const pending = attention.filter((f) => pendingIds.has(f.record.id));
-  const top = attention.slice(0, 4);
-  const totalSpend = (data?.cards ?? [])
-    .flatMap((c) => c.items)
-    .reduce((sum, it) => sum + (it.record.cost ?? 0), 0);
+
+  // One banner at a time, the most useful first: four stacked on top pushed the car off screen.
+  let banner: ReactNode = null;
+  if (added === "1") banner = <AddedNotice onDone={clearAdded} />;
+  else if (pending.length > 0) banner = <RenewalBanner pending={pending} onPress={(url) => router.push(url)} />;
+  else if (cards.length > 0 && push.show) banner = <PushBanner banner={push} />;
+  else if (cards.length > 0 && consent.available && consent.choice === null) {
+    banner = <AnalyticsConsentCard consent={consent} />;
+  }
+
+  const plan = data?.plan ?? "free";
 
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
@@ -71,74 +83,89 @@ export default function DashboardTab() {
             </View>
           )}
 
-          {added === "1" && <AddedNotice onDone={clearAdded} />}
-          {pending.length > 0 && <RenewalBanner pending={pending} onPress={(url) => router.push(url)} />}
-          {data && data.cards.length > 0 && <PushBanner />}
-          {data && data.cards.length > 0 && <AnalyticsConsentCard />}
+          {banner}
 
-          {data?.urgent && <CarImage bodyType={data.urgent.bodyType} />}
-
-          <GaugePanel
-            urgent={data?.urgent ?? null}
-            counts={data?.counts ?? { valid: 0, expiring: 0, expired: 0 }}
-          />
-
-          {data && data.cards.length > 0 && (
-            <Pressable
-              onPress={() => router.push("/analysis")}
-              className="mt-4 flex-row items-center justify-between rounded-2xl border border-white/10 bg-panel px-4 py-4"
-            >
-              <View>
-                <Text className="text-sm text-muted">Анализ на разходите</Text>
-                <Text className="text-xl font-semibold text-ivory">
-                  {formatCost(totalSpend) ?? "0,00 €"}
-                </Text>
-              </View>
-              <Ionicons name="pie-chart-outline" size={22} color={colors.copper} />
-            </Pressable>
-          )}
-
-          {top.length > 0 && (
-            <View className="mt-5">
-              <Text className="mb-2 text-sm text-muted">Изискват внимание</Text>
-              {top.map((item) => (
-                <Pressable
-                  key={item.record.id}
-                  onPress={() => router.push(`/renew/${item.record.id}`)}
-                  className="mb-2 flex-row items-center gap-3 rounded-xl border border-white/10 bg-panel px-4 py-3"
-                >
-                  <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] }} />
-                  <View className="flex-1">
-                    <Text className="text-sm text-ivory">
-                      {SERVICE_TYPE_LABELS[item.record.serviceType] ?? item.record.serviceType}
-                    </Text>
-                    <Text className="text-xs text-dim">
-                      {item.vehicle.brand} {item.vehicle.model} · {formatDaysRemaining(item.days)}
-                      {formatCost(item.record.cost) ? (
-                        <Text className="text-copper"> · {formatCost(item.record.cost)}</Text>
-                      ) : null}
-                    </Text>
-                  </View>
-                  <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[item.status] }}>
-                    {STATUS_LABELS[item.status]}
+          {card ? (
+            <>
+              <View className="mb-1 flex-row items-end justify-between gap-3">
+                <View className="flex-1">
+                  <Text className="text-2xl font-semibold text-ivory" numberOfLines={1}>
+                    {card.vehicle.brand} {card.vehicle.model}
                   </Text>
-                </Pressable>
-              ))}
-              {attention.length > top.length && (
-                <Pressable onPress={() => router.push("/reminders")} className="mt-1 items-center py-2">
-                  <Text className="text-sm text-copper">Виж всички в „Напомняния"</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
+                  <Text className="mt-0.5 text-sm text-muted">
+                    {[card.vehicle.plate, card.vehicle.year ? String(card.vehicle.year) : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                </View>
+              </View>
 
-          {data && data.cards.length === 0 && (
-            <View className="mt-12 items-center">
-              <Text className="text-center text-base text-muted">Още нямаш добавени автомобили.</Text>
-              <Pressable onPress={() => router.push("/vehicle/setup")} className="mt-4 rounded-xl bg-emerald px-5 py-3">
-                <Text className="font-semibold text-ivory">+ Добави автомобил</Text>
-              </Pressable>
-            </View>
+              {cards.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 mt-3" contentContainerClassName="gap-2 px-5">
+                  {cards.map(({ vehicle }) => {
+                    const active = vehicle.id === card.vehicle.id;
+                    return (
+                      <Pressable
+                        key={vehicle.id}
+                        onPress={() => selectVehicle(vehicle.id)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                        className={`rounded-full border px-4 py-2 ${
+                          active ? "border-copper bg-copper/15" : "border-white/10 bg-panel"
+                        }`}
+                      >
+                        <Text className={`text-sm ${active ? "text-ivory" : "text-silver"}`}>
+                          {vehicle.brand} {vehicle.model}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+
+              <CarImage bodyType={parseBodyType(card.vehicle.bodyType)} />
+              <GaugePanel urgent={card.urgent} counts={card.counts} />
+
+              <View className="mb-2 mt-6 flex-row items-center justify-between">
+                <Text className="text-xl font-semibold text-ivory">Срокове</Text>
+                {canAddService(plan, card.items.length) && (
+                  <Pressable
+                    onPress={() => router.push(`/service/new?vehicleId=${card.vehicle.id}`)}
+                    accessibilityRole="button"
+                    className="flex-row items-center gap-1.5 rounded-xl border border-copper/40 bg-copper/10 px-3.5 py-2"
+                  >
+                    <Ionicons name="add" size={16} color={colors.copper} />
+                    <Text className="text-sm font-semibold text-copper">Добави срок</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {card.items.length === 0 ? (
+                <View className="rounded-2xl border border-dashed border-white/15 px-5 py-8">
+                  <Text className="text-center text-sm text-muted">Още няма срокове за тази кола.</Text>
+                </View>
+              ) : (
+                <View className="overflow-hidden rounded-2xl border border-white/10 bg-panel">
+                  {card.items.map((item, index) => (
+                    <DeadlineRow
+                      key={item.record.id}
+                      item={item}
+                      first={index === 0}
+                      onPress={() => router.push(`/service/${item.record.id}`)}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            data && (
+              <View className="mt-12 items-center">
+                <Text className="text-center text-base text-muted">Още нямаш добавени коли.</Text>
+                <Pressable onPress={() => router.push("/vehicle/setup")} className="mt-4 rounded-xl bg-emerald px-5 py-3">
+                  <Text className="font-semibold text-ivory">Добави кола</Text>
+                </Pressable>
+              </View>
+            )
           )}
         </ScrollView>
       )}
@@ -160,7 +187,7 @@ function AddedNotice({ onDone }: { onDone: () => void }) {
     <View className="mb-4 flex-row items-center gap-3 rounded-2xl border border-status-valid/50 bg-status-valid/10 px-4 py-4">
       <Ionicons name="checkmark-circle" size={24} color={statusColors.valid} />
       <View className="flex-1">
-        <Text className="text-base font-semibold text-ivory">Автомобилът е добавен успешно.</Text>
+        <Text className="text-base font-semibold text-ivory">Колата е добавена успешно.</Text>
         <Text className="mt-0.5 text-sm text-silver">Ще ти напомним, преди да изтече някой срок.</Text>
       </View>
     </View>
@@ -189,9 +216,7 @@ function RenewalBanner({ pending, onPress }: { pending: FlatItem[]; onPress: (ur
             ? `${label} на ${first.vehicle.brand} ${first.vehicle.model} изтече.`
             : `${pending.length} срока изтекоха.`}
         </Text>
-        <Text className="mt-0.5 text-sm text-silver">
-          {single ? "Въведи новия срок." : "Въведи новите дати."}
-        </Text>
+        <Text className="mt-0.5 text-sm text-silver">{single ? "Въведи новия срок." : "Въведи новите дати."}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.silver} />
     </Pressable>

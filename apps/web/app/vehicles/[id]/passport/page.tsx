@@ -9,9 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 import { passportUrl } from "../../../_lib/passport";
 import { currentAuthUser, currentUser } from "../../../_lib/session";
 
-import { createPassportLink, revokePassportLink } from "./actions";
+import { revokePassportLink } from "./actions";
+import { PublishForm } from "./PublishForm";
 
-export const metadata = { title: "Glovebox — Паспорт на автомобила" };
+export const metadata = { title: "Паспорт на колата · Glovebox" };
 
 /**
  * Where the owner publishes a Vehicle's passport: one link, with or without the amounts paid,
@@ -33,9 +34,9 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
     <Shell email={authUser.email ?? ""}>
       <section className="mx-auto mt-2 max-w-xl">
         <Link href="/vehicles" className="font-body text-sm text-muted transition hover:text-ivory">
-          ← Назад към гаража
+          ← Коли
         </Link>
-        <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Паспорт на автомобила</p>
+        <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Паспорт на колата</p>
         <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold text-ivory">
           {vehicle.brand} {vehicle.model}
         </h1>
@@ -82,24 +83,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
             </form>
           </div>
         ) : (
-          <form action={createPassportLink} className="mt-7 rounded-card border border-white/10 bg-panel p-5">
-            <input type="hidden" name="vehicleId" value={vehicle.id} />
-            <label className="flex items-start gap-3 font-body text-sm text-silver">
-              <input type="checkbox" name="includeCosts" className="mt-0.5 h-4 w-4 accent-emerald" />
-              <span>
-                Покажи и сумите
-                <span className="block text-[13px] text-dim">
-                  Колко са стрували полиците, прегледите и ремонтите.
-                </span>
-              </span>
-            </label>
-            <button
-              type="submit"
-              className="mt-5 rounded-lg bg-emerald px-5 py-2.5 font-body text-sm font-semibold text-ivory transition hover:bg-emerald/90"
-            >
-              Създай паспорт
-            </button>
-          </form>
+          <PublishForm vehicleId={vehicle.id} />
         )}
       </section>
     </Shell>

@@ -5,16 +5,16 @@ import { PlateBadge } from "@/components/PlateBadge";
 import { Shell } from "@/components/Shell";
 
 import { getGarage, type GarageVehicle } from "../_lib/vehicles";
-import { DeleteVehicleButton } from "./_components/DeleteVehicleButton";
+import { VehicleMenu } from "./_components/VehicleMenu";
 
-export const metadata = { title: "Glovebox — Автомобили" };
+export const metadata = { title: "Коли · Glovebox" };
 
 export default async function VehiclesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ share?: string }>;
+  searchParams: Promise<{ share?: string; error?: string }>;
 }) {
-  const { share } = await searchParams;
+  const { share, error } = await searchParams;
   const data = await getGarage();
   if (!data) redirect("/login");
 
@@ -23,10 +23,10 @@ export default async function VehiclesPage({
   return (
     <Shell email={data.userEmail}>
       <div className="mb-6 mt-2 flex items-end justify-between gap-4">
-        <div className="anim-up anim-d1">
-          <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Гараж</p>
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Коли</p>
           <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
-            Моите автомобили
+            Моите коли
           </h1>
         </div>
         <AddVehicleButton />
@@ -42,11 +42,16 @@ export default async function VehiclesPage({
           Поканата е използвана или е изтекла. Помоли за нова.
         </p>
       )}
+      {error === "delete" && (
+        <p className="mb-5 rounded-card border border-status-expired/40 bg-status-expired/10 px-4 py-3 font-body text-sm text-ivory">
+          Колата не беше изтрита, защото документите ѝ не се махнаха. Опитай пак след малко.
+        </p>
+      )}
 
       {vehicles.length === 0 ? (
         <EmptyGarage />
       ) : (
-        <div className="anim-up anim-d2 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           {vehicles.map((v) => (
             <VehicleGridCard key={v.id} vehicle={v} />
           ))}
@@ -94,34 +99,14 @@ function VehicleGridCard({ vehicle }: { vehicle: GarageVehicle }) {
         <StatusLine urgent={urgent} serviceCount={serviceCount} />
         <CountPills counts={counts} />
 
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
+        <div className="mt-auto flex items-center gap-2 pt-2">
           <Link
             href={`/?v=${id}`}
-            className="flex-1 rounded-lg bg-emerald/90 px-3 py-2 text-center font-body text-sm font-semibold text-ivory transition hover:bg-emerald"
+            className="flex-1 rounded-lg bg-emerald/90 px-3 py-2.5 text-center font-body text-sm font-semibold text-ivory transition hover:bg-emerald"
           >
             Отвори
           </Link>
-          {!shared && (
-            <Link
-              href={`/vehicles/${id}/passport`}
-              className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-copper/50 hover:text-copper"
-            >
-              Паспорт
-            </Link>
-          )}
-          <Link
-            href={`/vehicles/${id}/share`}
-            className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-copper/50 hover:text-copper"
-          >
-            {shared ? "Семейство" : "Сподели"}
-          </Link>
-          <Link
-            href={`/vehicles/${id}/edit`}
-            className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-copper/50 hover:text-copper"
-          >
-            Редакция
-          </Link>
-          {!shared && <DeleteVehicleButton id={id} name={name} />}
+          <VehicleMenu id={id} name={name} shared={shared} />
         </div>
       </div>
     </article>
@@ -136,7 +121,7 @@ function StatusLine({
   serviceCount: number;
 }) {
   if (serviceCount === 0) {
-    return <p className="font-body text-sm text-dim">Няма добавени услуги</p>;
+    return <p className="font-body text-sm text-dim">Няма добавени срокове</p>;
   }
   if (!urgent || urgent.status === "Valid") {
     return <p className="font-body text-sm text-status-valid">Всичко е в ред</p>;
@@ -148,14 +133,16 @@ function StatusLine({
   );
 }
 
+/**
+ * How many need attention, and only when it is more than the one the status line already names:
+ * "Всичко е в ред" above "6 в сила" said the same thing twice.
+ */
 function CountPills({ counts }: { counts: GarageVehicle["counts"] }) {
+  if (counts.expiring + counts.expired < 2) return null;
   const pills = [
-    { n: counts.valid, label: "в сила", token: "bg-status-valid" },
-    { n: counts.expiring, label: "изтичат", token: "bg-status-expiring" },
-    { n: counts.expired, label: "изтекли", token: "bg-status-expired" },
+    { n: counts.expiring, label: counts.expiring === 1 ? "изтича" : "изтичат", token: "bg-status-expiring" },
+    { n: counts.expired, label: counts.expired === 1 ? "изтекъл" : "изтекли", token: "bg-status-expired" },
   ].filter((p) => p.n > 0);
-
-  if (pills.length === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -180,15 +167,15 @@ function AddVehicleButton() {
           <path d="M8 3.5v9M3.5 8h9" />
         </svg>
       </span>
-      Добави автомобил
+      Добави кола
     </Link>
   );
 }
 
 function EmptyGarage() {
   return (
-    <div className="anim-up anim-d2 rounded-[22px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-16 text-center">
-      <p className="font-body text-muted">Още нямаш добавени автомобили.</p>
+    <div className="rounded-[22px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-16 text-center">
+      <p className="font-body text-muted">Още нямаш добавени коли.</p>
       <div className="mt-5 flex justify-center">
         <AddVehicleButton />
       </div>

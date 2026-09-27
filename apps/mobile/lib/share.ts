@@ -6,6 +6,7 @@ import { Alert } from "react-native";
 
 import { track } from "./analytics";
 import { useAuth } from "./auth";
+import { dataChanged } from "./freshness";
 import { supabase } from "./supabase";
 
 const PENDING = "glovebox.pendingShareToken";
@@ -25,7 +26,10 @@ export async function rememberShareToken(token: string): Promise<void> {
 export async function acceptShare(authUserId: string, email: string, token: string): Promise<boolean> {
   await users.findOrCreateByAuthId({ authUserId, email });
   const vehicleId = await sharing.join(token);
-  if (vehicleId) track("vehicle_joined");
+  if (vehicleId) {
+    track("vehicle_joined");
+    dataChanged();
+  }
   Alert.alert(
     vehicleId ? "Колата е в гаража ти" : "Поканата не важи",
     vehicleId
@@ -48,7 +52,7 @@ export function usePendingShare() {
       if (!token) return;
       await AsyncStorage.removeItem(PENDING);
       if (await acceptShare(session.user.id, session.user.email ?? "", token)) {
-        router.push("/(tabs)/vehicles");
+        router.push("/vehicles");
       }
     })().catch(() => {
       // Offline: the token is gone, but the link still works when opened again.

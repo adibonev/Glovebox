@@ -8,8 +8,46 @@ const R = 80;
 const C = 2 * Math.PI * R;
 const ARC = C * 0.75; // a 270° gauge, open at the bottom
 
-/** Glass panel: the instrument gauge for the nearest deadline + the three status counts. */
-export function GaugePanel({ urgent, counts }: { urgent: GaugeView | null; counts: Counts }) {
+/**
+ * Glass panel: the instrument gauge for the nearest deadline + the three status counts.
+ *
+ * `compact` is the dashboard's: a smaller gauge with the counts beside it on a phone, so the list
+ * of deadlines starts on the first screen instead of two screens down.
+ */
+export function GaugePanel({
+  urgent,
+  counts,
+  compact = false,
+}: {
+  urgent: GaugeView | null;
+  counts: Counts;
+  compact?: boolean;
+}) {
+  const stats = (
+    <div className="grid grid-cols-3 gap-2">
+      <Stat n={counts.valid} label="в сила" tone="valid" />
+      <Stat n={counts.expiring} label="изтичат" tone="expiring" />
+      <Stat n={counts.expired} label="изтекли" tone="expired" />
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div className="rounded-card border border-white/10 bg-gradient-to-b from-panel to-ink2 p-4 lg:p-6">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Най-близък срок</p>
+        <div className="flex items-center gap-4 lg:flex-col lg:items-stretch">
+          <div className="shrink-0">
+            {urgent ? <Gauge urgent={urgent} size={150} /> : <AllClear size={150} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-4 hidden h-px bg-white/[0.06] lg:block" />
+            {stats}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col rounded-card border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">Най-близък срок</p>
@@ -18,23 +56,19 @@ export function GaugePanel({ urgent, counts }: { urgent: GaugeView | null; count
 
       <div className="my-4 h-px bg-white/[0.06]" />
 
-      <div className="grid grid-cols-3 gap-2">
-        <Stat n={counts.valid} label="в сила" tone="valid" />
-        <Stat n={counts.expiring} label="изтичат" tone="expiring" />
-        <Stat n={counts.expired} label="изтекли" tone="expired" />
-      </div>
+      {stats}
     </div>
   );
 }
 
-function Gauge({ urgent }: { urgent: GaugeView }) {
+function Gauge({ urgent, size = 212 }: { urgent: GaugeView; size?: number }) {
   const frac = Math.max(0, Math.min(1, urgent.fraction));
   const expired = urgent.days < 0;
   // Overdue → show a full (alarming) ring rather than an empty one.
   const displayFrac = expired ? 1 : frac;
 
   return (
-    <div className="relative mx-auto my-3 h-[212px] w-[212px]">
+    <div className="relative mx-auto my-3" style={{ width: size, height: size }}>
       <svg viewBox="0 0 200 200" className="h-full w-full">
         <circle
           cx="100"
@@ -65,8 +99,8 @@ function Gauge({ urgent }: { urgent: GaugeView }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
-          className="font-brand text-[62px] font-semibold leading-none"
-          style={{ color: urgent.color }}
+          className="font-brand font-semibold leading-none"
+          style={{ color: urgent.color, fontSize: Math.round(size * 0.29) }}
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.45 }}
@@ -79,17 +113,21 @@ function Gauge({ urgent }: { urgent: GaugeView }) {
         >
           дни
         </span>
-        <span className="mt-1.5 line-clamp-2 max-w-[150px] px-2 text-center font-body text-[12.5px] leading-tight text-muted">
-          {expired ? `${urgent.typeLabel} изтече` : `до ${urgent.typeLabel}`}
+        {/* The name on its own: "до Винетка" read as a misplaced capital. */}
+        <span
+          className="mt-1.5 line-clamp-2 px-2 text-center font-body text-[12.5px] leading-tight text-muted"
+          style={{ maxWidth: size * 0.72 }}
+        >
+          {expired ? `${urgent.typeLabel} · изтече` : urgent.typeLabel}
         </span>
       </div>
     </div>
   );
 }
 
-function AllClear() {
+function AllClear({ size = 212 }: { size?: number }) {
   return (
-    <div className="my-3 flex h-[212px] flex-col items-center justify-center gap-3 text-center">
+    <div className="my-3 flex flex-col items-center justify-center gap-3 text-center" style={{ height: size }}>
       <div className="grid h-20 w-20 place-items-center rounded-full border border-status-valid/30 bg-status-valid/10">
         <svg
           viewBox="0 0 24 24"

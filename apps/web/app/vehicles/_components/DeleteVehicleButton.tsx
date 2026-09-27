@@ -2,23 +2,28 @@
 
 import { deleteVehicle } from "@/app/_lib/actions";
 
-/** Delete a Vehicle (and its Service Records) after a confirmation prompt. */
-export function DeleteVehicleButton({ id, name }: { id: string; name: string }) {
+/** Delete a Vehicle with its Service Records and Documents, after a question. */
+export function DeleteVehicleButton({
+  id,
+  name,
+  className = "rounded-xl border border-status-expired/40 px-4 py-2.5 font-body text-sm font-semibold text-status-expired transition hover:bg-status-expired/10",
+}: {
+  id: string;
+  name: string;
+  className?: string;
+}) {
   return (
     <form
       action={deleteVehicle}
       onSubmit={(e) => {
-        if (!confirm(`Да изтрия ли „${name}“? Това ще премахне и всичките ѝ услуги.`)) {
+        if (!confirm(`Да изтрия ли „${name}“? Изтриват се и всичките ѝ срокове и документи.`)) {
           e.preventDefault();
         }
       }}
     >
       <input type="hidden" name="id" value={id} />
-      <button
-        type="submit"
-        className="rounded-lg border border-white/10 px-3 py-2 font-body text-sm font-medium text-muted transition hover:border-status-expired/50 hover:text-status-expired"
-      >
-        Изтрий
+      <button type="submit" className={className}>
+        Изтрий колата
       </button>
     </form>
   );

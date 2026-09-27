@@ -8,7 +8,8 @@
     "start:cached": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@bacons/apple-targets": "^5.0.0",
@@ -56,6 +57,7 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.17",
     "babel-preset-expo": "~54.0.11",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "vitest": "^2.1.9"
   }
 }

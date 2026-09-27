@@ -6,7 +6,10 @@ import { useInviteClaim } from "@/lib/invite";
 import { useNotificationRoutes, usePushRegistration } from "@/lib/push";
 import { usePendingShare } from "@/lib/share";
 
-/** Bottom tab bar — the mobile counterpart of the web's primary nav. */
+/**
+ * Bottom tab bar: the same five places as the website's top nav, in the same order (Табло, Коли,
+ * Документи, Анализ, Профил). Reminder settings are a screen of their own, reached from Профил.
+ */
 export default function TabsLayout() {
   usePushRegistration();
   useNotificationRoutes();
@@ -35,7 +38,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="vehicles"
         options={{
-          title: "Автомобили",
+          title: "Коли",
           tabBarIcon: ({ color, size }) => <Ionicons name="car-sport-outline" color={color} size={size} />,
         }}
       />
@@ -47,10 +50,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="reminders"
+        name="analysis"
         options={{
-          title: "Напомняния",
-          tabBarIcon: ({ color, size }) => <Ionicons name="notifications-outline" color={color} size={size} />,
+          title: "Анализ",
+          tabBarIcon: ({ color, size }) => <Ionicons name="pie-chart-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

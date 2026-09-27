@@ -10,7 +10,7 @@ export function AdminView({
   email?: string;
 }) {
   return (
-    <section className="anim-up anim-d1 mx-auto mt-2 max-w-xl">
+    <section className="mx-auto mt-2 max-w-xl">
       <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Админ</p>
       <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
         Pro пасове
@@ -22,7 +22,7 @@ export function AdminView({
       {ok && (
         <div className="mt-5 rounded-xl border border-status-valid/40 bg-status-valid/[0.08] px-4 py-3 font-body text-sm text-ivory">
           <span className="font-semibold text-status-valid">{email}</span> вече е{" "}
-          <span className="font-semibold">{ok === "pro" ? "Pro" : "Free"}</span>. ✅
+          <span className="font-semibold">{ok === "pro" ? "Pro" : "Free"}</span>.
         </div>
       )}
       {error === "notfound" && (

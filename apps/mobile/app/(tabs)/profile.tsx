@@ -1,26 +1,29 @@
+import { Ionicons } from "@expo/vector-icons";
 import { BILLING_ENABLED, hasPassword, signInProviders, type Plan } from "@glovebox/core";
-import { useEffect, useState } from "react";
+import { colors } from "@glovebox/ui";
+import { useRouter } from "expo-router";
+import { useEffect, useState, type ReactNode } from "react";
 import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Field, PrimaryButton } from "@/components/forms";
 import { AnalyticsSetting } from "@/components/AnalyticsConsent";
+import { Field, PrimaryButton } from "@/components/forms";
+import { HelpSection } from "@/components/HelpSection";
 import { InviteCard } from "@/components/InviteCard";
-import { PushSettings } from "@/components/PushSettings";
-import {
-  deleteAccount,
-  getName,
-  requestPasswordChange,
-  updateName,
-  updatePassword,
-} from "@/lib/account";
+import { deleteAccount, getName, requestPasswordChange, updateName, updatePassword } from "@/lib/account";
 import { signOut, useAuth } from "@/lib/auth";
-import { APP_STORE_REVIEW_URL, SITE_URL } from "@/lib/config";
+import { SITE_URL } from "@/lib/config";
 import { useGarage } from "@/lib/useGarage";
 
-const PLAN_LABELS: Record<Plan, string> = { free: "Free", pro: "Pro", legacy: "Legacy" };
+const PLAN_LABELS: Record<Plan, string> = { free: "Безплатен", pro: "Pro", legacy: "Legacy" };
 
+/**
+ * Profile and settings, in the website's order: who you are, how you sign in, your reminders,
+ * then inviting, privacy and help. Signing out is an ordinary action; deleting the profile comes
+ * last, apart, and asks twice.
+ */
 export default function ProfileTab() {
+  const router = useRouter();
   const { session } = useAuth();
   const { data } = useGarage();
   const plan = data?.plan ?? "free";
@@ -33,11 +36,12 @@ export default function ProfileTab() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [code, setCode] = useState("");
   const [awaitingCode, setAwaitingCode] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // A User who only ever signed in with Apple or Google has no password to change.
   const providers = signInProviders(session?.user.app_metadata?.providers ?? []);
   const canSetPassword = hasPassword(providers);
-  const [deleting, setDeleting] = useState(false);
+  const providerNames = providers.map((p) => (p === "apple" ? "Apple" : "Google")).join(" и ");
 
   useEffect(() => {
     if (!userId) return;
@@ -55,9 +59,9 @@ export default function ProfileTab() {
     setSavingName(true);
     try {
       await updateName(userId, name);
-      Alert.alert("Запазено", "Името е обновено.");
-    } catch (e) {
-      Alert.alert("Грешка", e instanceof Error ? e.message : "Неуспешен запис.");
+      Alert.alert("Името е запазено.");
+    } catch {
+      Alert.alert("Името не е запазено", "Провери връзката и опитай пак.");
     } finally {
       setSavingName(false);
     }
@@ -74,8 +78,8 @@ export default function ProfileTab() {
       await requestPasswordChange();
       setAwaitingCode(true);
       Alert.alert("Провери пощата си", "Изпратихме ти код за потвърждение.");
-    } catch (e) {
-      Alert.alert("Грешка", e instanceof Error ? e.message : "Кодът не се изпрати.");
+    } catch {
+      Alert.alert("Кодът не се изпрати", "Опитай пак след малко.");
     } finally {
       setSavingPassword(false);
     }
@@ -88,9 +92,9 @@ export default function ProfileTab() {
       setPassword("");
       setCode("");
       setAwaitingCode(false);
-      Alert.alert("Запазено", "Паролата е сменена.");
-    } catch (e) {
-      Alert.alert("Грешка", e instanceof Error ? e.message : "Кодът е грешен или изтекъл.");
+      Alert.alert("Паролата е сменена.");
+    } catch {
+      Alert.alert("Паролата не е сменена", "Кодът е грешен или изтекъл. Опитай пак.");
     } finally {
       setSavingPassword(false);
     }
@@ -101,8 +105,8 @@ export default function ProfileTab() {
     try {
       await deleteAccount();
       // The auth listener sees the cleared session and routes back to login.
-    } catch (e) {
-      Alert.alert("Грешка", e instanceof Error ? e.message : "Изтриването не успя.");
+    } catch {
+      Alert.alert("Профилът не е изтрит", "Опитай пак след малко.");
       setDeleting(false);
     }
   };
@@ -110,8 +114,8 @@ export default function ProfileTab() {
   // Two steps on purpose: this erases everything and cannot be undone.
   const confirmDelete = () => {
     Alert.alert(
-      "Изтриване на акаунта",
-      "Профилът ти и всичко към него — автомобили, услуги, документи и напомняния — ще бъдат изтрити завинаги. Данните не могат да бъдат възстановени.",
+      "Изтриване на профила",
+      "Профилът ти и всичко в него (колите, сроковете, документите и напомнянията) ще бъдат изтрити завинаги. Данните не могат да бъдат възстановени.",
       [
         { text: "Отказ", style: "cancel" },
         {
@@ -134,142 +138,158 @@ export default function ProfileTab() {
       </View>
 
       <ScrollView contentContainerClassName="px-5 pb-10" keyboardShouldPersistTaps="handled">
-        <View className="rounded-2xl border border-white/10 bg-panel p-4">
-          <Text className="text-xs uppercase tracking-wider text-dim">Имейл</Text>
-          <Text className="mt-1 text-base text-ivory">{session?.user.email ?? "—"}</Text>
-
-          {BILLING_ENABLED && (
-            <>
-              <View className="my-4 h-px bg-white/10" />
-              <Text className="text-xs uppercase tracking-wider text-dim">План</Text>
-              <View className="mt-1.5 flex-row items-center gap-2">
-                <View className="rounded-lg border border-copper/40 bg-copper/15 px-2.5 py-1">
-                  <Text className="text-sm font-semibold text-copper">{PLAN_LABELS[plan]}</Text>
-                </View>
-              </View>
-            </>
-          )}
-        </View>
-
-        <View className="mt-4">
-          <PushSettings />
-        </View>
-        <AnalyticsSetting />
-
-        {userId && <InviteCard userId={userId} />}
-
-        {/* Name */}
-        <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
+        <Group title="Име и имейл">
           <Field label="Име" value={name} onChangeText={setName} placeholder="Твоето име" />
-          <PrimaryButton label="Запази името" onPress={saveName} loading={savingName} />
-        </View>
+          <Text className="mb-1 text-sm text-muted">
+            Имейл: <Text className="text-silver">{session?.user.email}</Text>
+          </Text>
+          <PrimaryButton label="Запази името" onPress={() => void saveName()} loading={savingName} />
+        </Group>
 
-        {/* Password — only for Users who actually have one. */}
-        {!canSetPassword ? (
-          <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
-            <Text className="text-xs uppercase tracking-wider text-dim">Вход</Text>
-            <Text className="mt-2 text-base text-ivory">
-              Влизаш с {providers.map((p) => (p === "apple" ? "Apple" : "Google")).join(" и ")}
-            </Text>
-            <Text className="mt-1.5 text-sm leading-5 text-silver">
-              Профилът ти няма парола — самоличността ти се потвърждава от{" "}
-              {providers.includes("apple") ? "Apple" : "Google"} при всеки вход.
-            </Text>
-          </View>
-        ) : (
-        <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
-          <Field
-            label="Нова парола"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="поне 6 символа"
-            secureTextEntry
-            autoCapitalize="none"
-            editable={!awaitingCode}
-          />
-          {awaitingCode ? (
+        <Group title="Вход и парола">
+          {!canSetPassword ? (
             <>
-              <Field
-                label="Код от имейла"
-                value={code}
-                onChangeText={setCode}
-                placeholder="6 цифри"
-                keyboardType="number-pad"
-                autoCapitalize="none"
-              />
-              <PrimaryButton
-                label="Потвърди и смени"
-                onPress={savePassword}
-                loading={savingPassword}
-                disabled={code.trim().length < 6}
-              />
-              <Pressable onPress={() => setAwaitingCode(false)} className="items-center py-3">
-                <Text className="text-sm text-dim">Откажи</Text>
-              </Pressable>
+              <Text className="text-base text-ivory">Влизаш с {providerNames}.</Text>
+              <Text className="mt-1.5 text-sm leading-5 text-silver">
+                Профилът ти няма парола: при всеки вход {providers.includes("apple") ? "Apple" : "Google"} потвърждава,
+                че си ти.
+              </Text>
             </>
           ) : (
-            <PrimaryButton
-              label="Смени паролата"
-              onPress={askForCode}
-              loading={savingPassword}
-              disabled={password.length < 6}
-            />
+            <>
+              <Field
+                label="Нова парола"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="поне 6 символа"
+                secureTextEntry
+                autoCapitalize="none"
+                editable={!awaitingCode}
+              />
+              {awaitingCode ? (
+                <>
+                  <Field
+                    label="Код от имейла"
+                    value={code}
+                    onChangeText={setCode}
+                    placeholder="6 цифри"
+                    keyboardType="number-pad"
+                    autoCapitalize="none"
+                  />
+                  <PrimaryButton
+                    label="Смени паролата"
+                    onPress={() => void savePassword()}
+                    loading={savingPassword}
+                    disabled={code.trim().length < 6}
+                  />
+                  <Pressable onPress={() => setAwaitingCode(false)} className="items-center py-3">
+                    <Text className="text-sm text-dim">Откажи</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <PrimaryButton
+                  label="Изпрати код за смяна"
+                  onPress={() => void askForCode()}
+                  loading={savingPassword}
+                  disabled={password.length < 6}
+                />
+              )}
+            </>
           )}
-        </View>
+        </Group>
+
+        <Group title="Напомняния">
+          <LinkRow
+            icon="notifications-outline"
+            label="Кога да ти напомняме"
+            detail="Известия и колко дни преди срока"
+            onPress={() => router.push("/reminders")}
+          />
+        </Group>
+
+        {BILLING_ENABLED && (
+          <Group title="План">
+            <View className="flex-row items-center gap-2">
+              <View className="rounded-lg border border-copper/40 bg-copper/15 px-2.5 py-1">
+                <Text className="text-sm font-semibold text-copper">{PLAN_LABELS[plan]}</Text>
+              </View>
+            </View>
+            {plan === "free" && (
+              <Text className="mt-2 text-sm leading-5 text-silver">
+                С Pro добавяш колкото искаш коли и срокове и получаваш известия. Надграждането е от сайта.
+              </Text>
+            )}
+          </Group>
         )}
 
-        {BILLING_ENABLED && plan === "free" && (
-          <View className="mt-4 rounded-2xl border border-copper/40 bg-panel p-4">
-            <Text className="text-base font-semibold text-ivory">Надгради до Pro</Text>
-            <Text className="mt-1 text-sm text-silver">
-              Неограничено автомобили и услуги, push известия и още. Надграждането става от уеб
-              приложението (плащане в приложението идва скоро).
-            </Text>
+        {userId && <InviteCard userId={userId} />}
+        <AnalyticsSetting />
+        <HelpSection />
+
+        {isAdmin && (
+          <View className="mt-4 rounded-2xl border border-white/10 bg-panel px-4 py-3">
+            <LinkRow
+              icon="shield-outline"
+              label="Администрация"
+              detail="Отваря се в сайта"
+              onPress={() => void Linking.openURL(`${SITE_URL}/admin`)}
+            />
           </View>
         )}
 
-        {isAdmin && (
-          <Pressable
-            onPress={() => Linking.openURL(`${SITE_URL}/admin`)}
-            className="mt-4 flex-row items-center justify-center gap-2 rounded-xl border border-copper/40 bg-copper/10 py-4"
-          >
-            <Text className="text-base font-semibold text-copper">♛ Админ панел</Text>
-          </Pressable>
-        )}
-
-        {/* The stars themselves live in the system prompt after a scan; this is for anyone who
-            goes looking to say something. */}
-        <Pressable
-          onPress={() => Linking.openURL(APP_STORE_REVIEW_URL)}
-          className="mt-4 flex-row items-center justify-center gap-2 rounded-xl border border-white/10 bg-panel py-4"
-        >
-          <Text className="text-base font-semibold text-ivory">★ Оцени Glovebox</Text>
+        <Pressable onPress={signOut} accessibilityRole="button" className="mt-6 items-center rounded-xl border border-white/10 py-4">
+          <Text className="text-base font-semibold text-silver">Изход</Text>
         </Pressable>
 
-        <Pressable onPress={signOut} className="mt-6 items-center rounded-xl border border-white/10 py-4">
-          <Text className="text-base font-semibold text-status-expired">Изход</Text>
-        </Pressable>
-
-        {/* Right to erasure (GDPR Art. 17) — required in-app by App Store Guideline 5.1.1(v). */}
+        {/* Right to erasure (GDPR Art. 17): required in-app by App Store Guideline 5.1.1(v). */}
         <View className="mt-8 rounded-2xl border border-status-expired/25 bg-panel p-4">
-          <Text className="text-xs uppercase tracking-wider text-status-expired">
-            Изтриване на акаунта
-          </Text>
+          <Text className="text-xs uppercase tracking-wider text-status-expired">Изтриване на профила</Text>
           <Text className="mt-2 text-sm leading-5 text-silver">
-            Профилът и всичките ти данни — автомобили, услуги, документи и напомняния — се
-            изтриват завинаги. Действието е необратимо.
+            Профилът и всичките ти данни (колите, сроковете, документите и напомнянията) се изтриват
+            завинаги. Това не може да бъде отменено.
           </Text>
           <Pressable
             onPress={confirmDelete}
             disabled={deleting}
             className="mt-4 items-center rounded-xl border border-status-expired/50 py-3.5"
           >
-            <Text className="text-base font-semibold text-status-expired">
-              {deleting ? "Изтриване…" : "Изтрий акаунта"}
-            </Text>
+            <Text className="text-base font-semibold text-status-expired">{deleting ? "Изтриване…" : "Изтрий профила"}</Text>
           </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** A titled card, the same small heading as "Покани приятел" and "Помощ" below it. */
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View className="mt-4 rounded-2xl border border-white/10 bg-panel p-4">
+      <Text className="mb-3 text-xs uppercase tracking-wider text-dim">{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function LinkRow({
+  icon,
+  label,
+  detail,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  detail: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link" className="flex-row items-center gap-3 py-1">
+      <Ionicons name={icon} size={20} color={colors.silver} />
+      <View className="flex-1">
+        <Text className="text-base text-ivory">{label}</Text>
+        <Text className="text-xs text-dim">{detail}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={colors.dim} />
+    </Pressable>
   );
 }

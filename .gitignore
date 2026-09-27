@@ -35,3 +35,7 @@ apps/web/public/cars/_*.png
 
 # Google Play upload key for `eas submit` (a secret; never commit)
 apps/mobile/google-play-service-account.json
+
+# Playwright (apps/web e2e)
+test-results/
+playwright-report/

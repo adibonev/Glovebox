@@ -2,7 +2,7 @@ import { LegalPage } from "@/components/LegalPage";
 import { OperatorDetails } from "@/components/OperatorDetails";
 import { OPERATOR } from "@/lib/operator";
 
-export const metadata = { title: "Glovebox — Политика за поверителност" };
+export const metadata = { title: "Политика за поверителност · Glovebox" };
 
 const CONTACT_EMAIL = OPERATOR.email;
 

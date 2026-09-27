@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { cumulativeAt, cumulativePoints, spendByMonth, spendShares } from "./analysis";
+import { cumulativeAt, cumulativePoints, spendByMonth, spendShares, spendingOf } from "./analysis";
+import type { Renewal, ServiceRecord } from "./domain";
 
 describe("spendShares", () => {
   it("sums costs and breaks spend down by key, largest first", () => {
@@ -76,5 +77,53 @@ describe("spendByMonth", () => {
       { period: "2026-01", total: 50 },
       { period: "2026-03", total: 125 },
     ]);
+  });
+});
+
+describe("spendingOf — when the money was spent", () => {
+  const record = (fields: Partial<ServiceRecord>): ServiceRecord => ({
+    id: "s1",
+    vehicleId: "audi",
+    serviceType: "civil_liability",
+    expiryDate: new Date("2027-08-11"),
+    cost: 193.27,
+    ...fields,
+  });
+
+  it("counts a cost on the day it was entered, not on the Expiry Date", () => {
+    const spending = spendingOf([record({ costDate: new Date("2026-08-12") })], []);
+    expect(spending).toEqual([
+      { vehicleId: "audi", serviceType: "civil_liability", cost: 193.27, paidOn: new Date("2026-08-12") },
+    ]);
+  });
+
+  it("counts a Repair on its own date: that date is the day of the expense", () => {
+    const repair = record({ serviceType: "repair", expiryDate: new Date("2026-05-02"), costDate: new Date("2026-09-01") });
+    expect(spendingOf([repair], [])[0]?.paidOn).toEqual(new Date("2026-05-02"));
+  });
+
+  it("adds what every renewed period cost, on the day that cost was entered", () => {
+    const renewal: Renewal = {
+      id: "r1",
+      vehicleId: "audi",
+      serviceType: "civil_liability",
+      previousExpiryDate: new Date("2026-08-11"),
+      previousCost: 180,
+      previousCostDate: new Date("2025-08-10"),
+      renewedAt: new Date("2026-08-12"),
+    };
+    const spending = spendingOf([record({ costDate: new Date("2026-08-12") })], [renewal]);
+    expect(spending.map((s) => [s.cost, s.paidOn.toISOString().slice(0, 10)])).toEqual([
+      [180, "2025-08-10"],
+      [193.27, "2026-08-12"],
+    ]);
+  });
+
+  it("leaves out anything without a cost", () => {
+    expect(spendingOf([record({ cost: null }), record({ cost: 0 })], [])).toEqual([]);
+  });
+
+  it("falls back to the Expiry Date while the database does not keep the day yet", () => {
+    expect(spendingOf([record({ costDate: null })], [])[0]?.paidOn).toEqual(new Date("2027-08-11"));
   });
 });

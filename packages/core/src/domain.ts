@@ -52,6 +52,13 @@ export interface ServiceRecord {
   expiryDate: Date;
   /** Amount paid for this Service Record, in EUR (`services.cost`), when recorded. */
   cost: number | null;
+  /** The User's own note (`services.notes`), if any. */
+  notes?: string | null;
+  /**
+   * The day the cost was entered (`services.cost_date`): when the record was added, its cost
+   * changed or it was renewed. Spending counts on this day, not on the Expiry Date.
+   */
+  costDate?: Date | null;
 }
 
 /** A user-uploaded file (PDF or image) attached to a Service Record. */
@@ -126,6 +133,8 @@ export interface Renewal {
   previousExpiryDate: Date;
   /** What that period cost, in EUR, when it was recorded. */
   previousCost: number | null;
+  /** The day that cost was entered, when known (renewals recorded before it was kept have none). */
+  previousCostDate?: Date | null;
   renewedAt: Date;
 }
 
@@ -176,6 +185,7 @@ export interface NewServiceRecord {
   serviceType: string;
   expiryDate: Date;
   cost?: number | null;
+  notes?: string | null;
 }
 
 /** Editable Service Record fields; an omitted key is left unchanged. */
@@ -183,6 +193,7 @@ export interface ServiceRecordChanges {
   serviceType?: string;
   expiryDate?: Date;
   cost?: number | null;
+  notes?: string | null;
 }
 
 /**

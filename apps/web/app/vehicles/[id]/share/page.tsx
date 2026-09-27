@@ -11,7 +11,7 @@ import { currentAuthUser, currentUser } from "../../../_lib/session";
 import { removeFromCar } from "./actions";
 import { InviteForm } from "./InviteForm";
 
-export const metadata = { title: "Glovebox — Споделяне на колата" };
+export const metadata = { title: "Споделяне на колата · Glovebox" };
 
 const who = (person: VehiclePerson) => person.name?.trim() || person.email;
 

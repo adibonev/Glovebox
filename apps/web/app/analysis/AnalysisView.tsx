@@ -95,7 +95,7 @@ export function AnalysisView({ vehicles, records }: Props) {
   const maxY = Math.max(1, ...series.map((s) => s.points.at(-1)?.cumulative ?? 0));
 
   return (
-    <div className="anim-up anim-d2">
+    <div>
       <div className="mb-5 flex flex-col gap-3">
         <FilterRow
           label="Кола"
@@ -149,7 +149,7 @@ export function AnalysisView({ vehicles, records }: Props) {
 
             <div className="rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6">
               <h2 className="mb-3 font-display text-[18px] font-bold text-ivory">
-                {groupByCar ? "По автомобил" : "По вид услуга"}
+                {groupByCar ? "По кола" : "По вид"}
               </h2>
               <ul className="flex flex-col">
                 {pie.map((s) => (
@@ -338,16 +338,16 @@ function FilterRow({
 
 function EmptyState() {
   return (
-    <div className="anim-up anim-d2 rounded-[22px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-16 text-center">
+    <div className="rounded-[22px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-16 text-center">
       <p className="font-body text-muted">
-        Още нямаш записани разходи. Добави цена към услугите, за да видиш анализа.
+        Още нямаш записани разходи. Добави цена към сроковете си, за да видиш анализа.
       </p>
       <div className="mt-5 flex justify-center">
         <Link
           href="/add-service"
           className="rounded-xl border border-copper/40 bg-gradient-to-b from-copper/[0.13] to-copper/[0.04] px-4 py-2.5 font-body text-sm font-semibold text-copper transition hover:border-copper/70"
         >
-          Добави услуга с цена
+          Добави срок с цена
         </Link>
       </div>
     </div>

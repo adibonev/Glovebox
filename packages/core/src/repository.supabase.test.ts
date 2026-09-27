@@ -83,12 +83,16 @@ describe.skipIf(!hasEnv)("Supabase repositories (integration)", () => {
     const records = await new SupabaseServiceRecordRepository(admin).listByUser(
       String(userId),
     );
-    expect(records).toContainEqual({
-      id: String(serviceId),
-      vehicleId: String(carId),
-      serviceType: "civil_liability",
-      expiryDate: new Date("2026-06-15"),
-      cost: null,
-    });
+    // `costDate` is the database's own stamp (null until its migration runs), so it is left out.
+    expect(records).toContainEqual(
+      expect.objectContaining({
+        id: String(serviceId),
+        vehicleId: String(carId),
+        serviceType: "civil_liability",
+        expiryDate: new Date("2026-06-15"),
+        cost: null,
+        notes: null,
+      }),
+    );
   });
 });

@@ -1,20 +1,25 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SupabaseVehicleRepository } from "@glovebox/core";
+import { SupabaseVehicleRepository, calendarDay } from "@glovebox/core";
+import { addYears } from "@glovebox/core/schedule";
 
-import { currentUser } from "@/app/_lib/session";
+import { currentAuthUser, currentUser } from "@/app/_lib/session";
+import { Shell } from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 
 import { AddServiceView } from "./AddServiceView";
+
+export const metadata = { title: "Нов срок · Glovebox" };
 
 export default async function AddServicePage({
   searchParams,
 }: {
   searchParams: Promise<{ v?: string; type?: string; next?: string }>;
 }) {
+  const authUser = await currentAuthUser();
   const user = await currentUser();
-  if (!user) redirect("/login");
+  if (!authUser || !user) redirect("/login");
 
   // Scope to the owner explicitly — RLS alone is NOT enough here: an Administrator's policy
   // grants SELECT on every `cars` row, so a bare select handed them someone else's Vehicle
@@ -30,33 +35,37 @@ export default async function AddServicePage({
   // Arriving from the setup checklist: start on the Service Type it asked for, and go back
   // there afterwards so the remaining ones stay in front of the User.
   const backToSetup = next === "setup";
+  const back = backToSetup ? `/vehicles/${vehicle.id}/setup` : `/?v=${vehicle.id}`;
+
+  // Today in Sofia, not on the server's clock: at 01:00 in Bulgaria it is still yesterday in UTC.
+  const today = calendarDay(new Date());
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(110%_70%_at_50%_-10%,rgba(20,80,58,0.30),transparent_55%)]" />
-      </div>
-
-      <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col gap-8 px-6 py-16">
-        <header className="flex flex-col gap-2">
-          <Link
-            href={backToSetup ? `/vehicles/${vehicle.id}/setup` : "/"}
-            className="font-mono text-[11px] uppercase tracking-[0.25em] text-silver/55 transition hover:text-copper"
-          >
-            ← Назад
+    <Shell email={authUser.email ?? ""}>
+      <section className="mx-auto mt-2 flex max-w-xl flex-col gap-6">
+        <header className="flex flex-col gap-3">
+          <Link href={back} className="font-body text-sm text-muted transition hover:text-ivory">
+            ← {backToSetup ? "Назад" : "Табло"}
           </Link>
-          <h1 className="font-display text-4xl font-bold text-ivory">Нова услуга</h1>
+          <h1 className="font-display text-[clamp(30px,4vw,42px)] font-bold tracking-tight text-ivory">Нов срок</h1>
         </header>
 
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 backdrop-blur-md">
+        <div className="rounded-card border border-white/10 bg-panel p-6 sm:p-7">
           <AddServiceView
+            // The setup checklist is about one car, so it offers no other.
+            vehicles={(backToSetup ? [vehicle] : vehicles).map((candidate) => ({
+              id: candidate.id,
+              name: `${candidate.brand} ${candidate.model}`,
+              plate: candidate.plate,
+            }))}
             vehicleId={vehicle.id}
-            plate={vehicle.plate}
             initialType={type}
+            today={today.toISOString().slice(0, 10)}
+            yearOn={addYears(today, 1).toISOString().slice(0, 10)}
             returnTo={backToSetup ? `/vehicles/${vehicle.id}/setup` : null}
           />
         </div>
-      </div>
-    </main>
+      </section>
+    </Shell>
   );
 }

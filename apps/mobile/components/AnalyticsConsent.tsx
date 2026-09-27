@@ -7,8 +7,8 @@ import { useAnalyticsChoice } from "@/lib/analytics";
  * Asked once, on the dashboard, after there is a car (not in the middle of signing up): may the
  * app count how it is used? Nothing is counted before a yes, and "Не" is as easy as "Да".
  */
-export function AnalyticsConsentCard() {
-  const { available, choice, choose } = useAnalyticsChoice();
+export function AnalyticsConsentCard({ consent }: { consent: ReturnType<typeof useAnalyticsChoice> }) {
+  const { available, choice, choose } = consent;
   if (!available || choice !== null) return null;
 
   return (

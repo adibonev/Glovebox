@@ -1,35 +1,80 @@
 import { Ionicons } from "@expo/vector-icons";
-import { canAddService, canAddVehicle } from "@glovebox/core";
-import { colors } from "@glovebox/ui";
+import { canAddVehicle } from "@glovebox/core";
+import { colors, statusColors } from "@glovebox/ui";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ActionMenu, type MenuAction } from "@/components/ActionMenu";
 import { CarImage } from "@/components/CarImage";
 import { parseBodyType } from "@/lib/bodyType";
-import {
-  SERVICE_TYPE_LABELS,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  formatCost,
-  formatDateShort,
-  formatDaysRemaining,
-} from "@/lib/labels";
-import { useGarage } from "@/lib/useGarage";
+import { DELETE_FAILED, deleteVehicle } from "@/lib/erasure";
+import { SERVICE_TYPE_LABELS, formatDaysRemaining } from "@/lib/labels";
+import { useGarage, type VehicleCard } from "@/lib/useGarage";
 
+/**
+ * The garage: each car with how it stands, one button to open it on the dashboard, and the rest
+ * (edit, share, passport, delete) behind ⋯. Its deadlines are listed on the dashboard, not here.
+ */
 export default function VehiclesTab() {
   const router = useRouter();
-  const { data, loading, refreshing, onRefresh, error } = useGarage();
+  const { data, loading, refreshing, onRefresh, error, selectVehicle } = useGarage();
+  // The card stays chosen while the sheet slides away, so it does not empty out mid-animation.
+  const [menuFor, setMenuFor] = useState<VehicleCard | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const plan = data?.plan ?? "free";
   // Only the cars the User owns count; one shared with them is someone else's quota.
   const owned = (data?.cards ?? []).filter(({ vehicle }) => vehicle.userId === data?.userId).length;
   const canAddVehicleNow = canAddVehicle(plan, owned);
 
+  const open = (vehicleId: string) => {
+    selectVehicle(vehicleId);
+    router.navigate("/");
+  };
+
+  const confirmDelete = (card: VehicleCard) => {
+    const name = `${card.vehicle.brand} ${card.vehicle.model}`;
+    Alert.alert(`Да изтрия ли ${name}?`, "Изтриват се и всичките ѝ срокове и документи.", [
+      { text: "Отказ", style: "cancel" },
+      {
+        text: "Изтрий",
+        style: "destructive",
+        onPress: () => {
+          deleteVehicle(card.vehicle.id)
+            .then(onRefresh)
+            .catch(() => Alert.alert("Колата не е изтрита", DELETE_FAILED));
+        },
+      },
+    ]);
+  };
+
+  const actionsFor = (card: VehicleCard): MenuAction[] => {
+    const mine = card.vehicle.userId === data?.userId;
+    const id = card.vehicle.id;
+    return [
+      { label: "Редактирай", onPress: () => router.push(`/vehicle/${id}`) },
+      { label: mine ? "Сподели" : "Семейство", onPress: () => router.push(`/share/${id}`) },
+      ...(mine ? [{ label: "Паспорт", onPress: () => router.push(`/passport/${id}`) }] : []),
+      ...(mine ? [{ label: "Изтрий колата", destructive: true, onPress: () => confirmDelete(card) }] : []),
+    ];
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
-      <View className="px-5 pb-3 pt-2">
-        <Text className="text-2xl font-semibold text-ivory">Автомобили</Text>
+      <View className="flex-row items-center justify-between px-5 pb-3 pt-2">
+        <Text className="text-2xl font-semibold text-ivory">Коли</Text>
+        {canAddVehicleNow && (
+          <Pressable
+            onPress={() => router.push("/vehicle/setup")}
+            accessibilityRole="button"
+            className="flex-row items-center gap-1.5 rounded-xl border border-copper/40 bg-copper/10 px-3.5 py-2"
+          >
+            <Ionicons name="add" size={16} color={colors.copper} />
+            <Text className="text-sm font-semibold text-copper">Добави кола</Text>
+          </Pressable>
+        )}
       </View>
 
       {loading ? (
@@ -47,124 +92,109 @@ export default function VehiclesTab() {
             </View>
           )}
 
-          {canAddVehicleNow ? (
-            <View className="mb-4">
-              {/* One entry point; how to add is asked on the next screen, not here. */}
-              <Pressable
-                onPress={() => router.push("/vehicle/setup")}
-                className="items-center rounded-2xl border border-emerald/60 bg-emerald/15 py-4"
-              >
-                <Text className="text-base font-semibold text-ivory">+ Добави автомобил</Text>
-              </Pressable>
-            </View>
-          ) : (
+          {!canAddVehicleNow && (
             <View className="mb-4 rounded-2xl border border-copper/40 bg-panel p-4">
               <Text className="text-sm text-silver">
-                Free е до 1 автомобил. Надгради до Pro от уеб приложението за неограничено.
+                Безплатният план е за 1 кола. С Pro добавяш колкото искаш, от сайта.
               </Text>
             </View>
           )}
 
-          {data?.cards.map(({ vehicle, items }) => {
+          {data?.cards.length === 0 && (
+            <View className="mt-12 items-center">
+              <Text className="text-center text-base text-muted">Още нямаш добавени коли.</Text>
+            </View>
+          )}
+
+          {data?.cards.map((card) => {
+            const { vehicle } = card;
             const mine = vehicle.userId === data.userId;
             return (
-            <View key={vehicle.id} className="mb-5 rounded-2xl border border-white/10 bg-panel p-4">
-              <CarImage bodyType={parseBodyType(vehicle.bodyType)} height={130} />
-              {!mine && (
-                <View className="mb-1 self-start rounded-full border border-copper/40 bg-copper/10 px-2.5 py-1">
-                  <Text className="text-[11px] text-copper">Споделена с теб</Text>
+              <View key={vehicle.id} className="mb-5 rounded-2xl border border-white/10 bg-panel p-4">
+                <CarImage bodyType={parseBodyType(vehicle.bodyType)} height={130} />
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="flex-1 text-lg font-semibold text-ivory" numberOfLines={1}>
+                    {vehicle.brand} {vehicle.model}
+                  </Text>
+                  {vehicle.year !== null && <Text className="text-sm text-dim">{vehicle.year}</Text>}
                 </View>
-              )}
-
-              <Pressable
-                onPress={() => router.push(`/vehicle/${vehicle.id}`)}
-                className="mb-3 mt-1 flex-row items-center justify-between"
-              >
-                <Text className="text-lg font-semibold text-ivory">
-                  {vehicle.brand} {vehicle.model}
-                </Text>
-                <View className="flex-row items-center gap-2">
+                <View className="mt-1 flex-row flex-wrap items-center gap-2">
                   {vehicle.plate && (
-                    <Text className="text-xs uppercase tracking-wider text-silver">{vehicle.plate}</Text>
+                    <Text className="text-sm uppercase tracking-wider text-silver">{vehicle.plate}</Text>
                   )}
-                  <Text className="text-xs text-dim">Ред.</Text>
+                  {!mine && (
+                    <View className="rounded-full border border-copper/40 bg-copper/10 px-2.5 py-0.5">
+                      <Text className="text-[11px] text-copper">Споделена с теб</Text>
+                    </View>
+                  )}
                 </View>
-              </Pressable>
 
-              {items.length === 0 ? (
-                <Text className="mb-3 text-sm text-dim">Няма добавени услуги.</Text>
-              ) : (
-                <View className="mb-3 gap-2.5">
-                  {items.map(({ record, status, days, expiring }) => {
-                    const cost = formatCost(record.cost);
-                    return (
-                      <Pressable
-                        key={record.id}
-                        onPress={() => router.push(`/service/${record.id}`)}
-                        className="flex-row items-center gap-3"
-                      >
-                        <View
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: expiring ? STATUS_COLORS[status] : colors.muted }}
-                        />
-                        <View className="flex-1">
-                          <Text className="text-sm text-ivory">
-                            {SERVICE_TYPE_LABELS[record.serviceType] ?? record.serviceType}
-                          </Text>
-                          <Text className="text-xs text-dim">
-                            {expiring
-                              ? `${formatDateShort(record.expiryDate)} · ${formatDaysRemaining(days)}`
-                              : formatDateShort(record.expiryDate)}
-                            {cost ? <Text className="text-copper"> · {cost}</Text> : null}
-                          </Text>
-                        </View>
-                        {expiring ? (
-                          <Text className="text-[11px] uppercase tracking-wider" style={{ color: STATUS_COLORS[status] }}>
-                            {STATUS_LABELS[status]}
-                          </Text>
-                        ) : (
-                          <Text className="text-[11px] uppercase tracking-wider text-dim">Разход</Text>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              )}
+                <StatusLine card={card} />
 
-              {canAddService(plan, items.length) ? (
-                <Pressable
-                  onPress={() => router.push(`/service/new?vehicleId=${vehicle.id}`)}
-                  className="items-center rounded-xl border border-white/10 py-2.5"
-                >
-                  <Text className="text-sm font-semibold text-copper">+ Добави услуга</Text>
-                </Pressable>
-              ) : (
-                <Text className="text-xs text-dim">Free е до 2 услуги. Pro премахва лимита.</Text>
-              )}
-
-              <View className="mt-2 flex-row">
-                {mine && (
+                <View className="mt-4 flex-row items-center gap-2">
                   <Pressable
-                    onPress={() => router.push(`/passport/${vehicle.id}`)}
-                    className="flex-1 flex-row items-center justify-center gap-2 py-2.5"
+                    onPress={() => open(vehicle.id)}
+                    accessibilityRole="button"
+                    className="flex-1 items-center rounded-xl bg-emerald py-3"
                   >
-                    <Ionicons name="document-text-outline" size={16} color={colors.silver} />
-                    <Text className="text-sm text-silver">Паспорт</Text>
+                    <Text className="text-base font-semibold text-ivory">Отвори</Text>
                   </Pressable>
-                )}
-                <Pressable
-                  onPress={() => router.push(`/share/${vehicle.id}`)}
-                  className="flex-1 flex-row items-center justify-center gap-2 py-2.5"
-                >
-                  <Ionicons name="people-outline" size={16} color={colors.silver} />
-                  <Text className="text-sm text-silver">{mine ? "Сподели" : "Семейство"}</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setMenuFor(card);
+                      setMenuOpen(true);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Още за ${vehicle.brand} ${vehicle.model}`}
+                    className="h-12 w-12 items-center justify-center rounded-xl border border-white/10"
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={20} color={colors.silver} />
+                  </Pressable>
+                </View>
               </View>
-            </View>
             );
           })}
         </ScrollView>
       )}
+
+      <ActionMenu
+        title={menuFor ? `${menuFor.vehicle.brand} ${menuFor.vehicle.model}` : undefined}
+        actions={menuFor ? actionsFor(menuFor) : []}
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
     </SafeAreaView>
+  );
+}
+
+/**
+ * How the car stands, in one line: its most pressing deadline, or that all is well. The counts
+ * follow only when more than that one needs attention, or they would say the same thing twice.
+ */
+function StatusLine({ card }: { card: VehicleCard }) {
+  const obligations = card.items.filter((item) => item.expiring);
+  if (card.items.length === 0) return <Text className="mt-3 text-sm text-dim">Няма добавени срокове</Text>;
+  const head = obligations.find((item) => item.status !== "Valid");
+  if (!head) return <Text className="mt-3 text-sm" style={{ color: statusColors.valid }}>Всичко е в ред</Text>;
+
+  const { expiring, expired } = card.counts;
+  const color = head.status === "Expired" ? statusColors.expired : statusColors.expiring;
+  const more = expiring + expired > 1;
+  return (
+    <View className="mt-3">
+      <Text className="text-sm" style={{ color }}>
+        {SERVICE_TYPE_LABELS[head.record.serviceType] ?? head.record.serviceType} · {formatDaysRemaining(head.days)}
+      </Text>
+      {more && (
+        <Text className="mt-0.5 text-xs text-muted">
+          {[
+            expiring > 0 ? `${expiring} ${expiring === 1 ? "изтича" : "изтичат"}` : null,
+            expired > 0 ? `${expired} ${expired === 1 ? "изтекъл" : "изтекли"}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </Text>
+      )}
+    </View>
   );
 }

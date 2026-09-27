@@ -8,7 +8,7 @@ const R = 80;
 const C = 2 * Math.PI * R;
 const ARC = C * 0.75; // a 270° gauge, open at the bottom (matches web)
 
-/** The instrument gauge for the nearest deadline + the three status counts. */
+/** The instrument gauge for the car's nearest deadline, and its three status counts. */
 export function GaugePanel({ urgent, counts }: { urgent: UrgentView; counts: Counts }) {
   return (
     <View className="rounded-3xl border border-white/10 bg-panel p-5">
@@ -75,7 +75,8 @@ function Gauge({ urgent }: { urgent: NonNullable<UrgentView> }) {
           преглед" — wrapped onto three lines and collided with the arc. Out here they have
           the full panel. */}
       <Text className="mt-3 px-2 text-center text-sm text-silver" numberOfLines={2}>
-        {urgent.expired ? `${urgent.typeLabel} изтече` : `до ${urgent.typeLabel}`}
+        {/* The name alone, as on the website: "до Винетка" put a capital mid-sentence. */}
+        {urgent.expired ? `${urgent.typeLabel} · изтече` : urgent.typeLabel}
       </Text>
     </View>
   );

@@ -24,7 +24,7 @@ export default function ShareLinkScreen() {
         return;
       }
       const joined = await acceptShare(session.user.id, session.user.email ?? "", token).catch(() => false);
-      router.replace(joined ? "/(tabs)/vehicles" : "/");
+      router.replace(joined ? "/vehicles" : "/");
     })();
   }, [token, session, loading, router]);
 

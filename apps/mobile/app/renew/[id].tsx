@@ -26,8 +26,9 @@ import { RegistryCheckLink } from "@/components/RegistryCheckLink";
 import { Screen } from "@/components/Screen";
 import { correctedFields, track } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
-import { parseCost } from "@/lib/cost";
-import { SERVICE_TYPE_LABELS, formatCost, formatDateShort } from "@/lib/labels";
+import { DELETE_FAILED, deleteServiceRecord } from "@/lib/erasure";
+import { dataChanged } from "@/lib/freshness";
+import { SERVICE_TYPE_LABELS, formatCost, formatDateShort, parseCost } from "@/lib/labels";
 import { maybeOfferInvite } from "@/lib/invite";
 import { parseKm, todayAsDate } from "@/lib/mileage";
 import { recordOwner } from "@/lib/ownership";
@@ -109,7 +110,7 @@ export default function RenewScreen() {
 
   if (loading || !record) {
     return (
-      <Screen title="Подновяване">
+      <Screen title="Поднови">
         <View className="mt-10 items-center">
           {loading ? (
             <ActivityIndicator color={colors.copper} />
@@ -195,11 +196,12 @@ export default function RenewScreen() {
         expiryDate,
         cost: parseCost(cost),
       });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Грешка при запис.");
+    } catch {
+      setError("Новият срок не е записан. Провери връзката и опитай пак.");
       setSaving(false);
       return;
     }
+    dataChanged();
 
     const km = method === "inspectionScan" ? parseKm(mileage) : null;
     if (km !== null && session) {
@@ -212,6 +214,7 @@ export default function RenewScreen() {
           readOn: mileageReadOn ?? todayAsDate(),
           source: mileageSource(km, kmRead),
         });
+        dataChanged();
       } catch {
         // The new Expiry Date is saved by now; say so, rather than suggest that nothing was.
         setError("Срокът е записан, но километрите не. Опитай пак.");
@@ -252,10 +255,10 @@ export default function RenewScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await serviceRepo.delete(record.id);
+            await deleteServiceRecord(record.id);
             close();
-          } catch (e) {
-            setError(e instanceof Error ? e.message : "Грешка при изтриване.");
+          } catch {
+            setError(DELETE_FAILED);
           }
         },
       },

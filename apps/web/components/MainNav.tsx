@@ -4,12 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+/**
+ * The five sections, the same as the phone app's tabs. Each also lights up on the pages that
+ * belong to it: a Service Record's page and adding one sit under the dashboard, the reminder
+ * settings under the profile.
+ */
 const LINKS = [
-  { href: "/", label: "Табло" },
-  { href: "/vehicles", label: "Автомобили" },
-  { href: "/documents", label: "Документи" },
-  { href: "/analysis", label: "Анализ" },
-  { href: "/reminders", label: "Напомняния" },
+  { href: "/", label: "Табло", also: ["/services", "/add-service"] },
+  { href: "/vehicles", label: "Коли", also: [] },
+  { href: "/documents", label: "Документи", also: [] },
+  { href: "/analysis", label: "Анализ", also: [] },
+  { href: "/account", label: "Профил", also: ["/reminders"] },
 ];
 
 /** Primary nav: a segmented control on desktop, a hamburger menu on mobile. */
@@ -18,8 +23,11 @@ export function MainNav() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    const link = LINKS.find((l) => l.href === href);
+    const owns = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
+    return (href === "/" ? pathname === "/" : owns(href)) || (link?.also ?? []).some(owns);
+  };
 
   useEffect(() => {
     function onDoc(event: MouseEvent) {

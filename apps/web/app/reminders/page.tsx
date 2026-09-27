@@ -12,7 +12,7 @@ const REMINDER_TYPES = SERVICE_TYPE_ORDER.filter(isExpiringServiceType);
 import { getRemindersData, type UpcomingReminder } from "../_lib/reminders";
 import { WINDOW_OPTIONS } from "../_lib/reminderSettings";
 
-export const metadata = { title: "Glovebox — Напомняния" };
+export const metadata = { title: "Напомняния · Glovebox" };
 
 export default async function RemindersPage({
   searchParams,
@@ -29,19 +29,19 @@ export default async function RemindersPage({
 
   return (
     <Shell email={data.userEmail}>
-      <div className="anim-up anim-d1 mb-6 mt-2">
+      <div className="mb-6 mt-2">
         <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-copper">Напомняния</p>
         <h1 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-bold tracking-tight text-ivory">
           Кога да те подсетим
         </h1>
         <p className="mt-2 font-body text-muted">
-          Избери колко дни преди изтичане да получаваш напомняне за всеки вид услуга.
+          Избери колко дни преди изтичане да получаваш напомняне за всеки вид срок.
         </p>
       </div>
 
       <form
         action={saveReminderSettings}
-        className="anim-up anim-d2 rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6 sm:p-7"
+        className="rounded-[22px] border border-white/10 bg-gradient-to-b from-panel to-ink2 p-6 sm:p-7"
       >
         {setupVehicleId && <input type="hidden" name="setup" value={setupVehicleId} />}
         <label className="relative flex cursor-pointer items-center gap-3 pb-5">
@@ -111,7 +111,7 @@ export default async function RemindersPage({
           </ul>
         ) : (
           <div className="rounded-[20px] border border-dashed border-white/[0.12] bg-white/[0.02] px-6 py-12 text-center">
-            <p className="font-body text-muted">Няма услуги, за които да напомняме още.</p>
+            <p className="font-body text-muted">Още няма срокове, за които да напомняме.</p>
           </div>
         )}
       </section>

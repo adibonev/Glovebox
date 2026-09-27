@@ -4,6 +4,9 @@
  * by Vehicle, …) so the same maths drives every breakdown.
  */
 
+import type { Renewal, ServiceRecord } from "./domain";
+import { isExpiringServiceType } from "./reminder";
+
 /** One group's slice of the total spend. */
 export interface SpendSlice {
   key: string;
@@ -95,4 +98,41 @@ export function cumulativeAt(points: readonly CumulativePoint[], t: number): num
     else break;
   }
   return value;
+}
+
+/** One amount paid, on the day it was paid. */
+export interface Spend {
+  vehicleId: string;
+  serviceType: string;
+  cost: number;
+  paidOn: Date;
+}
+
+/**
+ * Every recorded cost as spending on the day it was paid: each Service Record's current cost on
+ * the day it was entered, and the cost of every period a renewal replaced on its own day.
+ *
+ * It used to count on the Expiry Date, which put a policy paid in 2026 under 2027 and ran the
+ * spend line into the future. A Repair keeps its own date, which is the day of the expense.
+ * Until the database keeps the day (`cost_date`), the Expiry Date stands in.
+ */
+export function spendingOf(records: readonly ServiceRecord[], renewals: readonly Renewal[]): Spend[] {
+  const spending: Spend[] = [];
+  for (const record of records) {
+    if (record.cost == null || record.cost <= 0) continue;
+    const paidOn = isExpiringServiceType(record.serviceType)
+      ? (record.costDate ?? record.expiryDate)
+      : record.expiryDate;
+    spending.push({ vehicleId: record.vehicleId, serviceType: record.serviceType, cost: record.cost, paidOn });
+  }
+  for (const renewal of renewals) {
+    if (renewal.previousCost == null || renewal.previousCost <= 0) continue;
+    spending.push({
+      vehicleId: renewal.vehicleId,
+      serviceType: renewal.serviceType,
+      cost: renewal.previousCost,
+      paidOn: renewal.previousCostDate ?? renewal.previousExpiryDate,
+    });
+  }
+  return spending.sort((a, b) => a.paidOn.getTime() - b.paidOn.getTime());
 }
