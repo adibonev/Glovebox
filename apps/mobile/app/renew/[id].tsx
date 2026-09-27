@@ -4,6 +4,7 @@ import {
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   SupabaseVehicleRepository,
+  daysUntil,
   inspectionDue,
   mileageSource,
   renewalMethod,
@@ -37,8 +38,6 @@ const serviceRepo = new SupabaseServiceRecordRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
 const mileageRepo = new SupabaseMileageReadingRepository(supabase);
 const userRepo = new SupabaseUserRepository(supabase);
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 /** Obligations a driver may simply stop having, and how saying so is worded. */
 const LET_GO: Record<string, { title: string; confirm: string }> = {
@@ -86,7 +85,7 @@ export default function RenewScreen() {
       const found = await serviceRepo.getById(id);
       if (!active || !found) return;
       setRecord(found);
-      setExpiryDate(suggestedExpiry(found.expiryDate, new Date()));
+      setExpiryDate(suggestedExpiry(found.expiryDate, todayAsDate()));
       const method = renewalMethod(found.serviceType);
       const scannable = method === "inspectionScan" || method === "policyScan";
       setStage(scannable && DOCUMENT_SCAN_ENABLED ? "choice" : "form");
@@ -282,7 +281,7 @@ export default function RenewScreen() {
     );
   }
 
-  const days = Math.round((record.expiryDate.getTime() - Date.now()) / MS_PER_DAY);
+  const days = daysUntil(record.expiryDate, todayAsDate());
   const when = formatDateShort(record.expiryDate);
   const status =
     days < 0

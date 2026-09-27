@@ -65,9 +65,30 @@ export function remindByEmail(stage: ReminderStage): boolean {
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-/** Whole days from `today` to `expiryDate` (negative once expired). Shared by both functions. */
-function daysUntil(expiryDate: Date, today: Date): number {
-  return Math.round((expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
+/**
+ * Whole calendar days from `today` to `expiryDate`: 0 on the Expiry Date (its last valid day),
+ * negative once it has passed. Both are read as calendar days (their UTC date, the domain's date
+ * convention), so the hour `today` carries does not matter. It used to: counting from the clock
+ * time, a policy showed as expired from 15:00 on its last valid day. Pass the User's own day
+ * ({@link calendarDay} on a server, the phone's local date in the app), not a raw `new Date()`.
+ */
+export function daysUntil(expiryDate: Date, today: Date): number {
+  const day = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  return Math.round((expiryDate.getTime() - day) / MS_PER_DAY);
+}
+
+/**
+ * The calendar day it is in `timeZone` at `now`, as that date at UTC midnight. A server runs in
+ * UTC, while a driver's day turns at midnight in Sofia: between 00:00 and 03:00 the two disagree.
+ */
+export function calendarDay(now: Date, timeZone = "Europe/Sofia"): Date {
+  const iso = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  return new Date(`${iso}T00:00:00Z`);
 }
 
 export type ExpiryStatus = "Valid" | "ExpiringSoon" | "Expired";

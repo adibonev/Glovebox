@@ -1,3 +1,4 @@
+import { calendarDay } from "@glovebox/core";
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,7 +27,7 @@ async function run(req: Request) {
     // ?dry=1 → compute who/what would be emailed without sending or recording (repeatable).
     const dry = new URL(req.url).searchParams.get("dry") === "1";
     const mailer = dry ? async () => ({ ok: true }) : sendEmail;
-    const result = await runReminderJob(createAdminClient(), mailer, new Date(), { persist: !dry });
+    const result = await runReminderJob(createAdminClient(), mailer, calendarDay(new Date()), { persist: !dry });
     return NextResponse.json({ dry, ...result });
   } catch (error) {
     return NextResponse.json(

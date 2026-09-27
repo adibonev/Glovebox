@@ -4,6 +4,7 @@ import {
   SupabaseRenewalRepository,
   SupabaseServiceRecordRepository,
   SupabaseVehicleRepository,
+  calendarDay,
   vehiclePassport,
   type ExpiryStatus,
   type MileageSource,
@@ -27,7 +28,7 @@ export type LoadedPassport = { passport: VehiclePassport; link: PassportLink };
  * person opening it is usually not signed in, and scoped entirely by the link: the token names
  * one Vehicle and nothing else is read.
  */
-export async function passportByToken(token: string, today = new Date()): Promise<LoadedPassport | null> {
+export async function passportByToken(token: string, today = calendarDay(new Date())): Promise<LoadedPassport | null> {
   if (!TOKEN.test(token)) return null;
   const admin = createAdminClient();
 

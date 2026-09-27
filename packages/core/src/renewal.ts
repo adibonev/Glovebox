@@ -7,15 +7,8 @@
  */
 
 import type { ServiceRecord } from "./domain";
-import { isExpiringServiceType } from "./reminder";
+import { daysUntil, isExpiringServiceType } from "./reminder";
 import { addYears } from "./schedule";
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-/** Whole days from `today` to `date` (negative once it has passed). */
-function daysUntil(date: Date, today: Date): number {
-  return Math.round((date.getTime() - today.getTime()) / MS_PER_DAY);
-}
 
 /**
  * Service Records whose Expiry Date has passed with no new one entered, the longest-lapsed first.

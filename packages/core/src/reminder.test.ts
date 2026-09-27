@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ServiceRecord } from "./domain";
-import { dueReminders, remindByEmail } from "./reminder";
+import { calendarDay, daysUntil, dueReminders, isExpiringServiceType, remindByEmail } from "./reminder";
 
 describe("dueReminders", () => {
   it("returns a Reminder for a Service Record whose Expiry Date is within its Service Type's Reminder Window", () => {
@@ -214,5 +214,36 @@ describe("reminderStage — the ladder that keeps nagging until it is renewed", 
     expect(remindByEmail("twoDays")).toBe(false);
     expect(remindByEmail("oneDay")).toBe(false);
     expect(remindByEmail("expired")).toBe(false);
+  });
+});
+
+describe("daysUntil — whole calendar days to the Expiry Date", () => {
+  it("counts the day of expiry as 0, whatever the hour today carries", () => {
+    const expiry = new Date("2026-12-04");
+    expect(daysUntil(expiry, new Date("2026-12-04T00:00:00Z"))).toBe(0);
+    expect(daysUntil(expiry, new Date("2026-12-04T23:59:00Z"))).toBe(0);
+  });
+
+  it("counts the day before as 1, whatever the hour", () => {
+    expect(daysUntil(new Date("2026-12-04"), new Date("2026-12-03T22:00:00Z"))).toBe(1);
+  });
+});
+
+describe("isExpiringServiceType", () => {
+  it("treats every obligation as expiring and a Repair as a dated expense", () => {
+    for (const type of ["civil_liability", "casco", "vignette", "inspection", "tax", "fire_extinguisher", "maintenance"]) {
+      expect(isExpiringServiceType(type)).toBe(true);
+    }
+    expect(isExpiringServiceType("repair")).toBe(false);
+  });
+});
+
+describe("calendarDay — the driver's date, not the server's", () => {
+  it("turns the day at midnight in Sofia, not at midnight UTC", () => {
+    // 22:30 UTC on 4 December is 00:30 on the 5th in Sofia (UTC+2 in winter).
+    expect(calendarDay(new Date("2026-12-04T22:30:00Z"))).toEqual(new Date("2026-12-05"));
+    // 21:30 UTC on 1 July is 00:30 on the 2nd (UTC+3 in summer); 20:30 UTC is still the 1st.
+    expect(calendarDay(new Date("2026-07-01T21:30:00Z"))).toEqual(new Date("2026-07-02"));
+    expect(calendarDay(new Date("2026-07-01T20:30:00Z"))).toEqual(new Date("2026-07-01"));
   });
 });

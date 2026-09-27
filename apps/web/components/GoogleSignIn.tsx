@@ -91,7 +91,9 @@ export function GoogleSignIn({ onError }: { onError: () => void }) {
   return (
     <>
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setLoaded(true)} />
-      <div ref={slot} className="flex min-h-[44px] w-full justify-center" />
+      {/* colorScheme "normal": Google's button is a light iframe, and inside our dark page Chrome
+          painted an opaque white box around it; matching schemes keeps it transparent. */}
+      <div ref={slot} className="flex min-h-[44px] w-full justify-center" style={{ colorScheme: "normal" }} />
     </>
   );
 }

@@ -1,7 +1,10 @@
 import {
   SupabaseServiceRecordRepository,
   SupabaseVehicleRepository,
+  calendarDay,
+  daysUntil,
   expiryStatus,
+  isExpiringServiceType,
   type ExpiryStatus,
 } from "@glovebox/core";
 
@@ -12,8 +15,6 @@ import { type Counts } from "./dashboard";
 import { SERVICE_TYPE_LABELS, STATUS_COLORS, formatDaysRemaining } from "./labels";
 import { getReminderConfig } from "./reminderSettings";
 import { currentAuthUser, currentUser } from "./session";
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export type GarageVehicleUrgent = {
   typeLabel: string;
@@ -55,16 +56,19 @@ export async function getGarage(): Promise<GarageData | null> {
   const visibleVehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const records = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
   const { windows } = await getReminderConfig(supabase, user.id);
-  const today = new Date();
+  const today = calendarDay(new Date());
   const window = (serviceType: string) => windows[serviceType] ?? 30;
 
   const vehicles: GarageVehicle[] = visibleVehicles.map((v) => {
-    const enriched = records
-      .filter((r) => r.vehicleId === v.id)
+    const own = records.filter((r) => r.vehicleId === v.id);
+    // Only obligations have a status: a Repair is a dated expense, and one in the past is not
+    // an "expired" car (it used to be counted, and could even headline the card).
+    const enriched = own
+      .filter((record) => isExpiringServiceType(record.serviceType))
       .map((record) => ({
         record,
         status: expiryStatus(record, window(record.serviceType), today),
-        days: Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY),
+        days: daysUntil(record.expiryDate, today),
       }))
       .sort((a, b) => a.days - b.days);
 
@@ -92,7 +96,7 @@ export async function getGarage(): Promise<GarageData | null> {
       year: v.year,
       bodyType: parseBodyType(v.bodyType),
       shared: v.userId !== user.id,
-      serviceCount: enriched.length,
+      serviceCount: own.length,
       counts,
       urgent,
     };

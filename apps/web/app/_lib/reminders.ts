@@ -1,7 +1,10 @@
 import {
   SupabaseServiceRecordRepository,
   SupabaseVehicleRepository,
+  calendarDay,
+  daysUntil,
   expiryStatus,
+  isExpiringServiceType,
   type ExpiryStatus,
 } from "@glovebox/core";
 
@@ -44,16 +47,18 @@ export async function getRemindersData(): Promise<RemindersData | null> {
   const config = await getReminderConfig(supabase, user.id);
   const vehicles = await new SupabaseVehicleRepository(supabase).listByUser(user.id);
   const records = await new SupabaseServiceRecordRepository(supabase).listByUser(user.id);
-  const today = new Date();
+  const today = calendarDay(new Date());
 
   const nameById = new Map(vehicles.map((v) => [v.id, `${v.brand} ${v.model}`]));
 
   const upcoming: UpcomingReminder[] = records
+    // A Repair is a dated expense: nothing to remind about.
+    .filter((record) => isExpiringServiceType(record.serviceType))
     .map((record) => {
       const windowDays = config.windows[record.serviceType] ?? 30;
       const status = expiryStatus(record, windowDays, today);
       const reminderDate = new Date(record.expiryDate.getTime() - windowDays * MS_PER_DAY);
-      const daysUntilReminder = Math.round((reminderDate.getTime() - today.getTime()) / MS_PER_DAY);
+      const daysUntilReminder = daysUntil(reminderDate, today);
       return {
         id: record.id,
         serviceTypeLabel: SERVICE_TYPE_LABELS[record.serviceType] ?? record.serviceType,

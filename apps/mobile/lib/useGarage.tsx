@@ -2,6 +2,7 @@ import {
   SupabaseServiceRecordRepository,
   SupabaseUserRepository,
   SupabaseVehicleRepository,
+  daysUntil,
   expiryStatus,
   isExpiringServiceType,
   type ExpiryStatus,
@@ -15,13 +16,13 @@ import { useCallback, useRef, useState } from "react";
 import { useAuth } from "./auth";
 import { parseBodyType, type BodyType } from "./bodyType";
 import { SERVICE_TYPE_LABELS, STATUS_COLORS } from "./labels";
+import { todayAsDate } from "./mileage";
 import { getPlan } from "./plan";
 import { DEFAULT_WINDOW, loadReminderConfig } from "./reminderSettings";
 import { supabase } from "./supabase";
 import { publishDeadlines } from "./widget";
 
 const CRITICAL_DAYS = 3;
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 const userRepo = new SupabaseUserRepository(supabase);
 const vehicleRepo = new SupabaseVehicleRepository(supabase);
@@ -78,7 +79,9 @@ export function useGarage() {
       const { windows } = await loadReminderConfig(user.id);
       const windowFor = (serviceType: string) => windows[serviceType] ?? DEFAULT_WINDOW;
       const vehicles = await vehicleRepo.listByUser(user.id);
-      const today = new Date();
+      // The phone's own date: counting from the clock time showed a policy as expired from the
+      // afternoon of its last valid day.
+      const today = todayAsDate();
 
       const cards: VehicleCard[] = [];
       const flat: FlatItem[] = [];
@@ -92,7 +95,7 @@ export function useGarage() {
             const status: ExpiryStatus = expiring
               ? expiryStatus(record, windowFor(record.serviceType), today)
               : "Valid";
-            const days = Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
+            const days = daysUntil(record.expiryDate, today);
             return { record, status, days, expiring };
           })
           // Obligations first (by urgency), then expenses (newest first).

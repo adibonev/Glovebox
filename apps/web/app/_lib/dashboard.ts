@@ -1,6 +1,8 @@
 import {
   SupabaseServiceRecordRepository,
   SupabaseVehicleRepository,
+  calendarDay,
+  daysUntil,
   expiryStatus,
   isExpiringServiceType,
   type ExpiryStatus,
@@ -21,8 +23,6 @@ import {
 } from "./labels";
 import { getReminderConfig } from "./reminderSettings";
 import { currentAuthUser, currentUser } from "./session";
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export type GaugeView = {
   days: number;
@@ -108,7 +108,8 @@ export async function getDashboardData(
   const records = active
     ? await new SupabaseServiceRecordRepository(supabase).listByVehicle(active.id)
     : [];
-  const today = new Date();
+  // The driver's date in Sofia: the server runs in UTC, whose day turns three hours later.
+  const today = calendarDay(new Date());
 
   // Reminder Windows come from the User's settings (falling back to defaults).
   const window = (serviceType: string) => windows[serviceType] ?? 30;
@@ -120,7 +121,7 @@ export async function getDashboardData(
       const status: ExpiryStatus = expiring
         ? expiryStatus(record, window(record.serviceType), today)
         : "Valid";
-      const days = Math.round((record.expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
+      const days = daysUntil(record.expiryDate, today);
       return { record, status, days, expiring };
     })
     // Obligations first (by urgency), then expenses (newest first).

@@ -18,6 +18,7 @@ import {
   formatCost,
   formatDaysRemaining,
 } from "@/lib/labels";
+import { todayAsDate } from "@/lib/mileage";
 import { useGarage, type FlatItem } from "@/lib/useGarage";
 
 export default function DashboardTab() {
@@ -42,7 +43,7 @@ export default function DashboardTab() {
 
   const attention = (data?.flat ?? []).filter((f) => f.status !== "Valid");
   // Lapsed with no new date: the question the app keeps asking until it has an answer.
-  const pendingIds = new Set(pendingRenewals(attention.map((f) => f.record), new Date()).map((r) => r.id));
+  const pendingIds = new Set(pendingRenewals(attention.map((f) => f.record), todayAsDate()).map((r) => r.id));
   const pending = attention.filter((f) => pendingIds.has(f.record.id));
   const top = attention.slice(0, 4);
   const totalSpend = (data?.cards ?? [])

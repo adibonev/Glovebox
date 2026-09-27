@@ -35,7 +35,10 @@ export function ServiceList({ items }: { items: ServiceItem[] }) {
 
 function Row({ item, index }: { item: ServiceItem; index: number }) {
   const expired = item.status === "Expired";
-  const note = expired ? "преди това" : item.days === 0 ? "днес" : "остават";
+  const count = Math.abs(item.days);
+  // The Expiry Date is the last valid day: "Днес" there, and "1 ден", not "1 дни".
+  const figure = item.days === 0 ? "Днес" : `${count} ${count === 1 ? "ден" : "дни"}`;
+  const note = expired ? "преди това" : item.days === 0 ? "последен ден" : "остават";
 
   return (
     <motion.div
@@ -79,7 +82,7 @@ function Row({ item, index }: { item: ServiceItem; index: number }) {
                 }`}
                 style={item.status === "Valid" ? undefined : { color: item.color }}
               >
-                {Math.abs(item.days)} дни
+                {figure}
               </div>
               <div className="mt-0.5 font-body text-[11px] text-dim">{note}</div>
             </div>
@@ -103,7 +106,15 @@ function Row({ item, index }: { item: ServiceItem; index: number }) {
           ✎
         </Link>
 
-        <form action={deleteService}>
+        {/* Asked first, as deleting a car or a document is: one stray click used to be enough. */}
+        <form
+          action={deleteService}
+          onSubmit={(event) => {
+            if (!confirm(`Да изтрия ли „${item.typeLabel}“? Изтриват се и документите към този срок.`)) {
+              event.preventDefault();
+            }
+          }}
+        >
           <input type="hidden" name="serviceId" value={item.id} />
           <button
             type="submit"
