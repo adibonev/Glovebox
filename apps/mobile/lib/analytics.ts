@@ -4,6 +4,7 @@ import PostHog from "posthog-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "./auth";
+import { startMetaAds } from "./metaAds";
 
 /**
  * Product analytics (PostHog, EU). Off unless the build carries EXPO_PUBLIC_POSTHOG_KEY, and even
@@ -26,8 +27,10 @@ export type AnalyticsChoice = "granted" | "denied";
 export async function setAnalyticsChoice(choice: AnalyticsChoice): Promise<void> {
   await AsyncStorage.setItem(CHOICE, choice);
   if (!posthog) return;
-  if (choice === "granted") await posthog.optIn();
-  else await posthog.optOut();
+  if (choice === "granted") {
+    await posthog.optIn();
+    void startMetaAds();
+  } else await posthog.optOut();
 }
 
 /** The answer so far (null: not asked yet), and a way to change it. Null too when analytics is off. */
@@ -64,6 +67,15 @@ export function useAnalyticsTracking() {
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
   const previous = useRef<string | null>(null);
+
+  // Someone who already said yes on an earlier launch: start Meta again for this one.
+  useEffect(() => {
+    AsyncStorage.getItem(CHOICE)
+      .then((value) => {
+        if (value === "granted") void startMetaAds();
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (posthog && pathname) posthog.screen(pathname);

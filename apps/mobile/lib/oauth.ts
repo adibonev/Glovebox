@@ -2,6 +2,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 
+import { metaSignedUp } from "./metaAds";
 import { supabase } from "./supabase";
 
 // Lets the auth browser tab dismiss itself and hand control back to the app.
@@ -32,8 +33,10 @@ export async function signInWithProvider(provider: OAuthProvider): Promise<void>
   const code = typeof queryParams?.code === "string" ? queryParams.code : null;
   if (!code) throw new Error("Входът не върна код за оторизация.");
 
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+  const { data: exchanged, error: exchangeError } =
+    await supabase.auth.exchangeCodeForSession(code);
   if (exchangeError) throw exchangeError;
+  if (justCreated(exchanged.user?.created_at)) metaSignedUp(provider);
   // The auth gate (RootNavigator) reacts to the new session and routes into the app.
 }
 
@@ -61,10 +64,19 @@ export async function signInWithApple(): Promise<void> {
 
   if (!credential.identityToken) throw new Error("Apple не върна identity token.");
 
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data, error } = await supabase.auth.signInWithIdToken({
     provider: "apple",
     token: credential.identityToken,
   });
   if (error) throw error;
+  if (justCreated(data.user?.created_at)) metaSignedUp("apple");
   // The auth gate (RootNavigator) reacts to the new session and routes into the app.
+}
+
+/**
+ * Social sign-in is the same call for a new and a returning User; an account made in the last
+ * minute is a sign-up.
+ */
+function justCreated(createdAt: string | undefined): boolean {
+  return !!createdAt && Date.now() - new Date(createdAt).getTime() < 60_000;
 }

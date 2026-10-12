@@ -70,7 +70,26 @@
         }
       ],
       "@bacons/apple-targets",
-      "expo-localization"
+      "expo-localization",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "2164472027791072",
+          "clientToken": "b707580ecc2ffdd3bb23c1a2a5f96272",
+          "displayName": "Glovebox",
+          "scheme": "fb2164472027791072",
+          "isAutoInitEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "advertiserIDCollectionEnabled": false,
+          "iosUserTrackingPermission": false
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Позволява да разберем коя реклама те е довела до Glovebox. Без имейл, документи или данни за колата."
+        }
+      ]
     ]
   }
 }

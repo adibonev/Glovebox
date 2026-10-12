@@ -20,6 +20,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { SITE_URL } from "@/lib/config";
 import { rememberInviteCode } from "@/lib/invite";
 import { authErrorMessage } from "@/lib/labels";
+import { metaSignedUp } from "@/lib/metaAds";
 import { reportProblem } from "@/lib/monitoring";
 import { signInWithApple, signInWithProvider } from "@/lib/oauth";
 import { requestPasswordReset } from "@/lib/passwordReset";
@@ -88,6 +89,7 @@ export default function LoginScreen() {
           options: { emailRedirectTo: Linking.createURL("auth-callback") },
         });
         if (err) throw err;
+        metaSignedUp("email");
         setNotice("Изпратихме ти имейл за потвърждение. Потвърди и влез.");
         setMode("signin");
       }

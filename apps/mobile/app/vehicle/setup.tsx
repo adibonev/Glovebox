@@ -37,6 +37,7 @@ import { FUEL_TYPE_LABELS } from "@/lib/fuelType";
 import { SERVICE_TYPE_LABELS, formatDateShort, parseCost } from "@/lib/labels";
 import { getPlan } from "@/lib/plan";
 import { correctedFields, track } from "@/lib/analytics";
+import { metaVehicleSaved } from "@/lib/metaAds";
 import { earliestFirstRegistration, firstRegistrationError } from "@/lib/firstRegistration";
 import { offerPush } from "@/lib/push";
 import { maybeAskForReview } from "@/lib/review";
@@ -227,6 +228,7 @@ export default function VehicleSetupScreen() {
         });
       }
       track("vehicle_saved", { source: vehicleRead ? "scan" : "manual" });
+      metaVehicleSaved();
 
       // The Inspection came off the certificate; record it before asking for anything else.
       const recorded: string[] = [];
