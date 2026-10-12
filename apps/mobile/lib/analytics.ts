@@ -4,7 +4,7 @@ import PostHog from "posthog-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "./auth";
-import { startMetaAds } from "./metaAds";
+import { metaAdsAvailable, startMetaAds, stopMetaAds } from "./metaAds";
 
 /**
  * Product analytics (PostHog, EU). Off unless the build carries EXPO_PUBLIC_POSTHOG_KEY, and even
@@ -27,6 +27,7 @@ export type AnalyticsChoice = "granted" | "denied";
 export async function setAnalyticsChoice(choice: AnalyticsChoice): Promise<void> {
   await AsyncStorage.setItem(CHOICE, choice);
   if (choice === "granted") void startMetaAds();
+  else stopMetaAds();
   if (!posthog) return;
   if (choice === "granted") await posthog.optIn();
   else await posthog.optOut();
@@ -48,8 +49,8 @@ export function useAnalyticsChoice() {
   }, []);
 
   return {
-    /** Analytics exists in this build at all. */
-    available: posthog !== null,
+    /** Analytics exists in this build at all: PostHog, or the Meta SDK for ads. */
+    available: posthog !== null || metaAdsAvailable,
     /** undefined while reading; null when never asked. */
     choice,
     choose,

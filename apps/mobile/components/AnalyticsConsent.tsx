@@ -15,8 +15,8 @@ export function AnalyticsConsentCard({ consent }: { consent: ReturnType<typeof u
     <View className="mb-4 rounded-2xl border border-white/10 bg-panel p-4">
       <Text className="text-base font-semibold text-ivory">Помагаш ли ни да подобрим Glovebox?</Text>
       <Text className="mt-1 text-sm leading-5 text-silver">
-        Ако разрешиш, броим кои екрани се ползват и къде хората се отказват. Без имейл, без
-        документи и без данните за колата.
+        Ако разрешиш, броим кои екрани се ползват и къде хората се отказват, и казваме на Meta
+        дали си дошъл от реклама. Без имейл, без документи и без данните за колата.
       </Text>
       <View className="mt-3 flex-row gap-2">
         <Pressable onPress={() => void choose("granted")} className="flex-1 items-center rounded-xl bg-emerald py-3">
@@ -47,7 +47,8 @@ export function AnalyticsSetting() {
         />
       </View>
       <Text className="mt-1 text-xs leading-4 text-dim">
-        Кои екрани се ползват. Без имейл, без документи и без данните за колата.
+        Кои екрани се ползват и от коя реклама си дошъл (Meta). Без имейл, без документи и без
+        данните за колата.
       </Text>
     </View>
   );
