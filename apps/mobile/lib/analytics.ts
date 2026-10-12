@@ -26,11 +26,10 @@ export type AnalyticsChoice = "granted" | "denied";
 /** Record the User's answer and start or stop capturing accordingly. */
 export async function setAnalyticsChoice(choice: AnalyticsChoice): Promise<void> {
   await AsyncStorage.setItem(CHOICE, choice);
+  if (choice === "granted") void startMetaAds();
   if (!posthog) return;
-  if (choice === "granted") {
-    await posthog.optIn();
-    void startMetaAds();
-  } else await posthog.optOut();
+  if (choice === "granted") await posthog.optIn();
+  else await posthog.optOut();
 }
 
 /** The answer so far (null: not asked yet), and a way to change it. Null too when analytics is off. */
