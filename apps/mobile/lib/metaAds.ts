@@ -23,7 +23,7 @@ export async function startMetaAds(): Promise<void> {
   Settings.initializeSDK();
 }
 
-/** First Vehicle saved: the moment an install becomes a real User. */
+/** First Vehicle saved: the moment an install becomes a real User. Call it for that one only. */
 export function metaVehicleSaved(): void {
   if (!started) return;
   // Standard event so Meta can optimise for it (custom names are weaker under AEM/SKAN).

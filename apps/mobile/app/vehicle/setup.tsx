@@ -203,7 +203,8 @@ export default function VehicleSetupScreen() {
       const plan = await getPlan(user.id);
       const existing = await vehicleRepo.listByUser(user.id);
       // Only the cars the User owns count; one shared with them is someone else's quota.
-      if (!canAddVehicle(plan, existing.filter((v) => v.userId === user.id).length)) {
+      const owned = existing.filter((v) => v.userId === user.id).length;
+      if (!canAddVehicle(plan, owned)) {
         return fail("Безплатният план е за 1 кола. С Pro добавяш колкото искаш, от сайта.");
       }
 
@@ -228,7 +229,8 @@ export default function VehicleSetupScreen() {
         });
       }
       track("vehicle_saved", { source: vehicleRead ? "scan" : "manual" });
-      metaVehicleSaved();
+      // Meta optimises for the install that becomes a real User: the first Vehicle only.
+      if (owned === 0) metaVehicleSaved();
 
       // The Inspection came off the certificate; record it before asking for anything else.
       const recorded: string[] = [];
