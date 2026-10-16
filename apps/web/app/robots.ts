@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
         "/i/",
         "/s/",
         "/start",
+        "/iphone",
         "/account",
         "/admin",
         "/analysis",
