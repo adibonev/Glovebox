@@ -22,9 +22,11 @@ const COPY = {
 } as const;
 
 /**
- * The page an iPhone gets on /iphone. A plain 302 to apps.apple.com leaves Facebook's and
- * Instagram's in-app browsers on a blank page, so instead: try the itms-apps:// link at once,
- * and show a real App Store button for the tap the in-app browser does let through.
+ * The page /iphone serves to everyone. A plain 302 to apps.apple.com leaves Facebook's and
+ * Instagram's in-app browsers on a blank page, so on an iPhone it opens the itms-apps:// link at
+ * once and shows a real App Store button for the tap the in-app browser does let through. The
+ * device is checked on the phone itself: Facebook's link crawler is not an iPhone, and a server
+ * redirect for it would make Messenger remember the landing page instead of /iphone.
  */
 export function storeHandoffHtml(): string {
   return `<!doctype html>
@@ -43,6 +45,6 @@ img{height:56px}
 <p>${COPY.opening}</p>
 <a href="${APP_STORE_URL}" id="store"><img src="/app-store-badge.svg" alt="${COPY.button}"></a>
 </main>
-<script>location.href=${JSON.stringify(APP_STORE_DEEP_LINK)};</script>
+<script>if(/iPhone|iPad|iPod/.test(navigator.userAgent)){location.href=${JSON.stringify(APP_STORE_DEEP_LINK)};}else{location.replace("/");}</script>
 </body></html>`;
 }

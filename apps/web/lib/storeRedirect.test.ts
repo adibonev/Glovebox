@@ -26,6 +26,7 @@ describe("storeHandoffHtml", () => {
   it("opens the App Store app at once and keeps a tappable App Store link as the fallback", () => {
     const html = storeHandoffHtml();
     expect(html).toContain(`location.href=${JSON.stringify(APP_STORE_DEEP_LINK)}`);
+    expect(html).toContain(`location.replace("/")`);
     expect(html).toContain(`href="${APP_STORE_URL}"`);
   });
 });
